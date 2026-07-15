@@ -1,0 +1,299 @@
+<div class="page">
+  <!-- radial glow latar -->
+  <div class="glow g1"></div>
+  <div class="glow g2"></div>
+
+  <!-- ============ NAV ============ -->
+  <nav class="nav">
+    <img class="wordmark" src="assets/monthley-wordmark-white.png" alt="Monthley" />
+    <div class="nav-right">
+      <span class="nav-link" (click)="scrollTo('ciri')">Ciri</span>
+      <span class="nav-link" (click)="scrollTo('sektor')">Sektor</span>
+      <button class="pill-outline" (click)="loginOpen.set(true)">Log Masuk</button>
+      <button class="pill-lime" (click)="contactOpen.set(true)">Mula Sekarang</button>
+    </div>
+  </nav>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <div>
+      <div class="badge-pill">● Untuk SME · NGO · Individu</div>
+      <h1>Bil &amp; kutipan berkala, kini <span class="grad">dalam talian.</span></h1>
+      <p class="lede">
+        Monthley automasikan bil, kutipan bulanan dan akaun pelanggan anda —
+        <em>cashless</em>, paperless dan tanpa perlu ilmu perakaunan.
+        Sesuai untuk mana-mana organisasi yang membuat kutipan berkala.
+      </p>
+      <div class="hero-cta">
+        <button class="btn-lime" (click)="contactOpen.set(true)">Mula Sekarang →</button>
+        <button class="btn-soft" (click)="loginOpen.set(true)">Log Masuk</button>
+      </div>
+      <p class="sectors-line">Komuniti · Persatuan · Tadika · Kelab · Nurseri · Bas Sekolah</p>
+    </div>
+
+    <!-- mockup terapung -->
+    <div class="float">
+      <div class="mock">
+        <div class="mock-head">
+          <div class="mock-brand">
+            <img src="assets/monthley-badge.png" alt="" />
+            <div>
+              <div class="mock-title">Dashboard Kutipan</div>
+              <div class="mock-sub">Persatuan Penduduk Sri Indah</div>
+            </div>
+          </div>
+          <span class="live">● Live</span>
+        </div>
+
+        <div class="mock-stats">
+          <div class="mstat">
+            <div class="mstat-label">Terkumpul (Julai)</div>
+            <div class="mstat-value">RM 18,450</div>
+          </div>
+          <div class="mstat">
+            <div class="mstat-label">Tunggakan</div>
+            <div class="mstat-value warn">RM 2,120</div>
+          </div>
+        </div>
+
+        <div class="mock-progress">
+          <div class="mp-head"><span>Kadar kutipan bulan ini</span><span>84%</span></div>
+          <div class="mp-track"><div class="mp-fill"></div></div>
+        </div>
+
+        <div class="mock-rows">
+          <div class="mrow">
+            <div class="mrow-left">
+              <div class="mrow-ic ok">✓</div>
+              <div>
+                <div class="mrow-title">Unit A-12-03</div>
+                <div class="mrow-sub">Yuran Penyelenggaraan · Julai</div>
+              </div>
+            </div>
+            <span class="mrow-status ok">Dibayar</span>
+          </div>
+          <div class="mrow">
+            <div class="mrow-left">
+              <div class="mrow-ic warn">!</div>
+              <div>
+                <div class="mrow-title">Unit B-08-11</div>
+                <div class="mrow-sub">Yuran Penyelenggaraan · Julai</div>
+              </div>
+            </div>
+            <span class="mrow-status warn">Tertunggak</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MASALAH ============ -->
+  <section class="sec">
+    <div class="sec-head narrow">
+      <div class="eyebrow dim">Kenapa tinggalkan cara manual?</div>
+      <h2>Buku &amp; Excel dah tak mampu ikut</h2>
+    </div>
+    <div class="grid3">
+      @for (p of problems; track p.title) {
+        <div class="dark-card">
+          <div class="ic-box warn">{{ p.icon }}</div>
+          <h3>{{ p.title }}</h3>
+          <p>{{ p.desc }}</p>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- ============ PENYELESAIAN ============ -->
+  <section class="sec solution">
+    <div class="sol-grid">
+      <div>
+        <div class="eyebrow lime">Cara Monthley membantu</div>
+        <h2 class="sol-h2">Automasi penuh,<br>rekod yang telus.</h2>
+        <p class="sol-p">
+          Semua bil &amp; kutipan direkod automatik dan boleh diakses oleh
+          organisasi dan pelanggan serentak.
+        </p>
+      </div>
+      <div class="sol-list">
+        @for (s of solutions; track s.title) {
+          <div class="sol-item">
+            <div class="sol-ic">✓</div>
+            <div>
+              <h3>{{ s.title }}</h3>
+              <p>{{ s.desc }}</p>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SEKTOR ============ -->
+  <section class="sec" id="sektor">
+    <div class="sec-head narrow">
+      <div class="eyebrow dim">Satu sistem, pelbagai sektor</div>
+      <h2>Sesiapa yang membuat kutipan berkala</h2>
+      <p class="sec-sub">Kalau anda kutip bayaran setiap bulan, Monthley untuk anda.</p>
+    </div>
+    <div class="grid4">
+      @for (s of sectors; track s.label) {
+        <div class="dark-card center">
+          <div class="sector-ic">{{ s.icon }}</div>
+          <div class="sector-label">{{ s.label }}</div>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- ============ CIRI ============ -->
+  <section class="sec features-sec" id="ciri">
+    <div class="sec-head narrow">
+      <div class="eyebrow lime">Ciri-ciri utama</div>
+      <h2>Semua yang organisasi anda perlukan</h2>
+    </div>
+    <div class="grid3">
+      @for (f of features; track f.title) {
+        <div class="dark-card">
+          <div class="feat-ic">{{ f.icon }}</div>
+          <h3>{{ f.title }}</h3>
+          <p>{{ f.desc }}</p>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- ============ CTA ============ -->
+  <section class="cta-wrap">
+    <div class="cta">
+      <h2>Transformasi ke arah dunia digital.</h2>
+      <p>Automasikan bil &amp; kutipan organisasi anda dengan Monthley.</p>
+      <div class="cta-btns">
+        <button class="cta-navy" (click)="contactOpen.set(true)">Mula Sekarang</button>
+        <button class="cta-white" (click)="loginOpen.set(true)">Log Masuk</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="foot">
+    <img class="wordmark sm" src="assets/monthley-wordmark-white.png" alt="Monthley" />
+    <div class="foot-links">
+      <span (click)="scrollTo('ciri')">Ciri</span>
+      <span (click)="scrollTo('sektor')">Sektor</span>
+      <span>Harga</span>
+      <span (click)="contactOpen.set(true)">Hubungi</span>
+    </div>
+    <span class="copy">© 2026 Monthley.my</span>
+  </footer>
+
+  <!-- ============ MODAL: LOG MASUK ============ -->
+  @if (loginOpen()) {
+    <div class="backdrop" (click)="loginOpen.set(false)">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-head">
+          <img src="assets/monthley-badge.png" alt="" class="modal-badge" />
+          <button class="close" (click)="loginOpen.set(false)">✕</button>
+        </div>
+        <h3>Log Masuk</h3>
+        <p class="modal-sub">
+          Satu log masuk untuk semua — sistem kenal pasti akaun anda
+          (Individu atau SP Admin) secara automatik dari ID.
+        </p>
+
+        <label>ID Pengguna</label>
+        <input class="minput" placeholder="cth: admin@organisasi.com" [(ngModel)]="loginId" />
+
+        <label>Kata Laluan</label>
+        <input class="minput" type="password" placeholder="••••••••" [(ngModel)]="loginPassword" />
+
+        <div class="forgot"><a>Lupa kata laluan?</a></div>
+
+        @if (authError()) { <div class="auth-err">{{ authError() }}</div> }
+
+        <button class="btn-lime full" (click)="login()" [disabled]="busy()">
+          {{ busy() ? 'Sedang log masuk…' : 'Log Masuk' }}
+        </button>
+
+        <div class="modal-foot">Belum ada akaun? <a (click)="openRegister()">Daftar sekarang</a></div>
+      </div>
+    </div>
+  }
+
+
+  <!-- ============ MODAL: DAFTAR ============ -->
+  @if (registerOpen()) {
+    <div class="backdrop" (click)="registerOpen.set(false)">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-head">
+          <img src="assets/monthley-badge.png" alt="" class="modal-badge" />
+          <button class="close" (click)="registerOpen.set(false)">✕</button>
+        </div>
+        <h3>Daftar Akaun</h3>
+        <p class="modal-sub">
+          Daftar sekali sahaja. Akaun anda akan dipautkan oleh organisasi,
+          atau dinaik taraf menjadi admin SP kemudian.
+        </p>
+
+        <label>Nama Penuh</label>
+        <input class="minput" placeholder="cth: Kamaruzaman bin Kasim" [(ngModel)]="rName" />
+
+        <label>E-mel</label>
+        <input class="minput" type="email" placeholder="cth: nama@email.com" [(ngModel)]="rEmail" />
+
+        <label>No. Telefon</label>
+        <input class="minput" placeholder="cth: 0123456789" [(ngModel)]="rMobile" />
+
+        <label>Kata Laluan</label>
+        <input class="minput" type="password" placeholder="minimum 6 aksara" [(ngModel)]="rPassword" />
+
+        @if (authError()) { <div class="auth-err">{{ authError() }}</div> }
+
+        <button class="btn-lime full" (click)="register()" [disabled]="busy()">
+          {{ busy() ? 'Sedang daftar…' : 'Daftar' }}
+        </button>
+
+        <div class="modal-foot">Sudah ada akaun? <a (click)="openLogin()">Log masuk</a></div>
+      </div>
+    </div>
+  }
+
+  <!-- ============ MODAL: HUBUNGI ADMIN ============ -->
+  @if (contactOpen()) {
+    <div class="backdrop" (click)="contactOpen.set(false)">
+      <div class="modal wide" (click)="$event.stopPropagation()">
+        <div class="modal-head">
+          <img src="assets/monthley-badge.png" alt="" class="modal-badge" />
+          <button class="close" (click)="contactOpen.set(false)">✕</button>
+        </div>
+        <h3>Hubungi Admin Monthley</h3>
+        <p class="modal-sub">
+          Nak mula guna Monthley atau ada pertanyaan? Isi borang ni, kami hubungi anda semula.
+        </p>
+
+        <div class="form-grid">
+          <div><label>Nama Penuh</label><input class="minput" [(ngModel)]="cName" /></div>
+          <div><label>Emel</label><input class="minput" type="email" [(ngModel)]="cEmail" /></div>
+          <div><label>No. Telefon</label><input class="minput" [(ngModel)]="cPhone" /></div>
+          <div><label>Nama Organisasi <span class="opt">(pilihan)</span></label><input class="minput" [(ngModel)]="cOrg" /></div>
+          <div class="span2">
+            <label>Subjek</label>
+            <select class="minput" [(ngModel)]="cSubject">
+              <option>Nak mula guna Monthley</option>
+              <option>Pertanyaan harga / pakej</option>
+              <option>Sokongan teknikal</option>
+              <option>Kerjasama / lain-lain</option>
+            </select>
+          </div>
+          <div class="span2">
+            <label>Mesej</label>
+            <textarea class="minput ta" placeholder="Ceritakan keperluan anda..." [(ngModel)]="cMessage"></textarea>
+          </div>
+        </div>
+
+        <button class="btn-lime full">Hantar Permintaan</button>
+        <div class="modal-foot">Atau emel terus: <a>hello&#64;monthley.my</a></div>
+      </div>
+    </div>
+  }
+</div>

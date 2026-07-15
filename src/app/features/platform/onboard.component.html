@@ -1,0 +1,159 @@
+<div class="m-fade" style="max-width:1000px">
+  <h1 class="h1">Onboard Service Provider</h1>
+  <p class="sub">Daftar organisasi baharu &amp; naik taraf admin.</p>
+
+  @if (result()) {
+    <div style="display:flex;align-items:flex-start;gap:12px;margin:20px 0;background:var(--green-soft);border:1px solid var(--green-line);border-radius:12px;padding:16px 18px">
+      <span style="color:var(--green-dark);font-weight:800;font-size:18px">✓</span>
+      <div>
+        <div style="font-family:'Sora',sans-serif;font-weight:700;color:var(--green-dark);margin-bottom:4px">
+          {{ result()!.name }} berjaya di-onboard
+        </div>
+        <div style="font-size:13px;color:var(--green-dark)">
+          SP Code: <strong>{{ result()!.spCode }}</strong> ·
+          Admin: <strong>{{ result()!.adminEmail }}</strong> (dinaik taraf ke SP_ADMIN) ·
+          Carta akaun standard dicipta
+        </div>
+      </div>
+    </div>
+  }
+  @if (error()) { <div class="alert">{{ error() }}</div> }
+
+  <!-- ===== MAKLUMAT SERVICE PROVIDER ===== -->
+  <div class="card-filter" style="padding:24px;margin-bottom:16px">
+    <h3 class="sec-t">Maklumat Service Provider</h3>
+
+    <div class="g2">
+      <div><label>Nama SP *</label><input class="fld" [(ngModel)]="name" placeholder="cth: Perbadanan Pengurusan Seri Indah" /></div>
+      <div><label>ROC / ROS / No. KP</label><input class="fld" [(ngModel)]="registrationNo" /></div>
+    </div>
+
+    <div class="g1">
+      <div><label>Keterangan Organisasi</label><input class="fld" [(ngModel)]="businessDesc" /></div>
+    </div>
+
+    <div class="g2">
+      <div><label>Halaman Web</label><input class="fld" [(ngModel)]="website" placeholder="https://" /></div>
+      <div><label>Tarikh Daftar Organisasi</label><input class="fld" type="date" [(ngModel)]="orgRegisteredDate" /></div>
+    </div>
+
+    <div class="g1">
+      <div><label>Alamat</label><input class="fld" [(ngModel)]="addrLine1" placeholder="Baris 1" /></div>
+    </div>
+    <div class="g1">
+      <div><input class="fld" [(ngModel)]="addrLine2" placeholder="Baris 2 (pilihan)" /></div>
+    </div>
+
+    <div class="g3">
+      <div><label>Bandar</label><input class="fld" [(ngModel)]="city" /></div>
+      <div><label>Poskod</label><input class="fld" [(ngModel)]="postcode" /></div>
+      <div>
+        <label>Negeri</label>
+        <select class="fld" [(ngModel)]="state">
+          <option value="">Pilih negeri</option>
+          @for (n of negeri; track n) { <option [value]="n">{{ n }}</option> }
+        </select>
+      </div>
+    </div>
+
+    <div class="g3">
+      <div><label>Negara</label><input class="fld" [(ngModel)]="country" /></div>
+      <div>
+        <label>Pelan Perkhidmatan</label>
+        <select class="fld" [(ngModel)]="servicePlanId">
+          <option [ngValue]="null">Pilih pakej</option>
+          @for (p of plans(); track p.id) {
+            <option [ngValue]="p.id">{{ p.name }} — sehingga {{ p.accountLimit }} akaun</option>
+          }
+        </select>
+      </div>
+      <div>
+        <label>Pelan Bayaran</label>
+        <select class="fld" [(ngModel)]="billingPlan">
+          <option value="MONTHLY">Bulanan</option>
+          <option value="YEARLY">Tahunan</option>
+        </select>
+      </div>
+    </div>
+
+    @if (planPrice()) {
+      <div class="plan-note">
+        <span>💡</span>
+        <span>
+          <strong>{{ planPrice()!.amount | number:'1.2-2' }}</strong> / {{ planPrice()!.unit }} ·
+          had {{ planPrice()!.limit }} akaun
+        </span>
+      </div>
+    }
+
+    <div class="g2">
+      <div>
+        <label>Anggaran Bil. Invois (sebulan)</label>
+        <input class="fld" type="number" [(ngModel)]="estInvoicesMonth" placeholder="cth: 120" />
+      </div>
+      <div></div>
+    </div>
+  </div>
+
+  <!-- ===== ORANG PERHUBUNGAN ===== -->
+  <div class="card-filter" style="padding:24px;margin-bottom:16px">
+    <h3 class="sec-t">Orang Perhubungan</h3>
+    <div class="g3">
+      <div><label>Nama *</label><input class="fld" [(ngModel)]="contactName" /></div>
+      <div>
+        <label>Email Admin *</label>
+        <input class="fld" type="email" [(ngModel)]="adminEmail" placeholder="mesti berdaftar dgn Monthley" />
+      </div>
+      <div><label>No. Telefon</label><input class="fld" [(ngModel)]="contactPhone" /></div>
+    </div>
+    <div class="hint">
+      ⚠️ E-mel ini <strong>mesti sudah berdaftar</strong> dengan Monthley.
+      Pengguna tersebut akan dinaik taraf menjadi <strong>SP Admin</strong> organisasi ini.
+    </div>
+  </div>
+
+  <!-- ===== KHIDMAT PEMBAYARAN ONLINE ===== -->
+  <div class="card-filter" style="padding:24px;margin-bottom:16px">
+    <h3 class="sec-t">Khidmat Pembayaran Online</h3>
+
+    <div class="radio-row">
+      <label class="radio" [class.on]="absorb">
+        <input type="radio" [value]="true" [(ngModel)]="absorb" name="absorb" />
+        <div>
+          <strong>Organisasi serap (Absorb)</strong>
+          <span>SP tanggung caj FPX — pelanggan bayar amaun invois sahaja.</span>
+        </div>
+      </label>
+      <label class="radio" [class.on]="!absorb">
+        <input type="radio" [value]="false" [(ngModel)]="absorb" name="absorb" />
+        <div>
+          <strong>Pelanggan bayar</strong>
+          <span>Caj FPX ditambah pada bayaran pelanggan (RM1.50 / RM2.00).</span>
+        </div>
+      </label>
+    </div>
+
+    <div class="g3" style="align-items:end">
+      <div><label>Merchant ID</label><input class="fld" [(ngModel)]="merchantId" readonly /></div>
+      <div><label>Gateway Key</label><input class="fld mono" [(ngModel)]="gatewayKey" readonly /></div>
+      <div>
+        <button class="btn btn-navy" style="width:100%" (click)="generateKey()" [disabled]="keyBusy()">
+          {{ keyBusy() ? 'Menjana…' : '🔑 Jana Key' }}
+        </button>
+      </div>
+    </div>
+
+    <h4 class="sub-t">Akaun Bank</h4>
+    <div class="g3">
+      <div><label>Nama Bank</label><input class="fld" [(ngModel)]="bankName" /></div>
+      <div><label>No. Akaun Bank</label><input class="fld" [(ngModel)]="bankAccountNo" /></div>
+      <div><label>Nama Pemegang Akaun</label><input class="fld" [(ngModel)]="bankAccountName" /></div>
+    </div>
+  </div>
+
+  <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:40px">
+    <button class="btn btn-green" (click)="submit()" [disabled]="busy()">
+      {{ busy() ? 'Memproses…' : 'Onboard SP' }}
+    </button>
+  </div>
+</div>

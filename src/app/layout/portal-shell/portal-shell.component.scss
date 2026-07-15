@@ -2,7 +2,8 @@
 
 /* ============ SIDEBAR ============ */
 .side {
-  width: 264px; flex: none; background: var(--navy);
+  width: 264px; flex: none; background: var(--side-bg);
+  border-right: 1px solid var(--side-line);
   display: flex; flex-direction: column; padding: 22px 16px;
   position: sticky; top: 0; height: 100vh;
 }
@@ -50,7 +51,7 @@
 .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 
 .top {
-  height: 70px; flex: none; background: #fff; border-bottom: 1px solid var(--line);
+  height: 70px; flex: none; background: var(--surface); border-bottom: 1px solid var(--line);
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 28px; position: sticky; top: 0; z-index: 30;
 }
@@ -101,3 +102,33 @@
 }
 
 .body { flex: 1; padding: 28px; overflow-y: auto; }
+
+/* butang tukar tema */
+.theme-btn {
+  padding: 9px 12px;
+  font-size: 15px;
+  line-height: 1;
+}
+
+/* logo imej sebenar */
+.badge-img { height: 38px; width: 38px; border-radius: 50%; }
+.wm-img { height: 22px; width: auto; }
+
+/* SP switcher menu */
+.sp-wrap { position: relative; }
+.sp-menu {
+  position: absolute; top: 56px; left: 0; z-index: 40; min-width: 280px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  box-shadow: 0 16px 40px rgba(0,0,0,.16); overflow: hidden;
+}
+.sp-opt {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+  width: 100%; text-align: left; padding: 12px 16px; border: none;
+  background: var(--surface); cursor: pointer; border-bottom: 1px solid var(--line-soft);
+  span { font-family: 'Sora', sans-serif; font-weight: 600; font-size: 14px; color: var(--ink); }
+  small { font-size: 11px; color: var(--muted); }
+  &:hover { background: var(--row-hover); }
+  &.on { background: var(--green-soft); }
+  &:last-child { border-bottom: none; }
+}
+.logout { cursor: pointer; }

@@ -1,7 +1,9 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { SpContextService } from '../../core/services/sp-context.service';
+import { ThemeService } from '../../core/services/theme.service';
+import { AuthService } from '../../core/auth/auth.service';
 
 interface NavItem { id: string; icon: string; label: string; route?: string; }
 
@@ -14,14 +16,26 @@ interface NavItem { id: string; icon: string; label: string; route?: string; }
 })
 export class PortalShellComponent {
   readonly sp = inject(SpContextService);
+  readonly themeSvc = inject(ThemeService);
+  readonly auth = inject(AuthService);
+
   readonly lang = signal<'BM' | 'EN'>('BM');
   readonly custOpen = signal(true);
   readonly spOpen = signal(true);
+  readonly platOpen = signal(true);
+  readonly spSwitchOpen = signal(false);
 
-  /** Menu Pelanggan — ikon & label tepat dari prototaip (navCust) */
+  /** Platform — superadmin sahaja */
+  readonly navPlatform: NavItem[] = [
+    { id: 'p_sps',      icon: '🏢', label: 'Service Providers', route: '/platform/service-providers' },
+    { id: 'p_onboard',  icon: '➕', label: 'Onboard SP',        route: '/platform/onboard' },
+    { id: 'p_users',    icon: '👤', label: 'Pengguna' }
+  ];
+
+  /** Menu Pelanggan — ikon & label tepat dari prototaip */
   readonly navCust: NavItem[] = [
-    { id: 'c_dashboard',  icon: '📊',  label: 'Dashboard' },
-    { id: 'c_accounts',   icon: '📁',  label: 'Akaun Saya' },
+    { id: 'c_dashboard',  icon: '📊',  label: 'Dashboard',  route: '/portal/my-accounts' },
+    { id: 'c_accounts',   icon: '📁',  label: 'Akaun Saya', route: '/portal/my-accounts' },
     { id: 'c_donations',  icon: '🤲',  label: 'Sumbangan' },
     { id: 'c_complaints', icon: '🗣️', label: 'Aduan' },
     { id: 'c_memo',       icon: '📝',  label: 'Memo' }
@@ -31,9 +45,9 @@ export class PortalShellComponent {
   readonly navSP: NavItem[] = [
     { id: 'dashboard',    icon: '📊',  label: 'Panel Utama' },
     { id: 'settings',     icon: '⚙️', label: 'Tetapan' },
-    { id: 'products',     icon: '📦',  label: 'Produk', route: '/products' },
-    { id: 'accounts',     icon: '👥',  label: 'Akaun', route: '/accounts' },
-    { id: 'invoicing',    icon: '🧾',  label: 'Jana Bil', route: '/invoicing' },
+    { id: 'products',     icon: '📦',  label: 'Produk', route: '/portal/products' },
+    { id: 'accounts',     icon: '👥',  label: 'Akaun', route: '/portal/accounts' },
+    { id: 'invoicing',    icon: '🧾',  label: 'Jana Bil', route: '/portal/invoicing' },
     { id: 'finance',      icon: '📁',  label: 'Dokumen Kewangan' },
     { id: 'adhoc',        icon: '⚡',  label: 'Adhoc Invois' },
     { id: 'reports',      icon: '📈',  label: 'Laporan' },
@@ -45,7 +59,23 @@ export class PortalShellComponent {
     { id: 'donation',     icon: '🤲',  label: 'Kutipan Derma' }
   ];
 
+  /** Inisial untuk avatar SP */
+  readonly spInitial = computed(() => (this.sp.spName() || '?').charAt(0).toUpperCase());
+  readonly userInitial = computed(() => (this.auth.displayName() || '?').charAt(0).toUpperCase());
+
+  readonly userRole = computed(() => {
+    if (this.auth.isSuperadmin()) return 'Superadmin';
+    if (this.auth.isSpAdmin()) return 'SP Admin';
+    return 'Pelanggan';
+  });
+
   toggleLang() { this.lang.set(this.lang() === 'BM' ? 'EN' : 'BM'); }
   toggleCust() { this.custOpen.set(!this.custOpen()); }
   toggleSP()   { this.spOpen.set(!this.spOpen()); }
+  togglePlat() { this.platOpen.set(!this.platOpen()); }
+
+  switchSp(code: string) {
+    this.sp.setSp(code);
+    this.spSwitchOpen.set(false);
+  }
 }

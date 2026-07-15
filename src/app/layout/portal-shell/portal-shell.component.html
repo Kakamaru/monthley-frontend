@@ -3,21 +3,35 @@
   <!-- ============ SIDEBAR ============ -->
   <aside class="side">
     <div class="brand">
-      <div class="badge">M</div>
-      <div class="wm">
-        <strong>Monthley</strong>
-        <small>The Unified Billing Portal</small>
-      </div>
+      <img src="assets/monthley-badge.png" alt="" class="badge-img" />
+      <img src="assets/monthley-wordmark-white.png" alt="Monthley" class="wm-img" />
     </div>
 
     <div class="nav-scroll">
-      <!-- Menu Pelanggan -->
+      <!-- Platform — superadmin sahaja -->
+      @if (auth.isSuperadmin()) {
+        <button class="grp-btn" (click)="togglePlat()">
+          <span>Platform</span><span class="chev">{{ platOpen() ? '▾' : '▸' }}</span>
+        </button>
+        @if (platOpen()) {
+          @for (it of navPlatform; track it.id) {
+            @if (it.route) {
+              <a class="nav" [routerLink]="it.route" routerLinkActive="on">
+                <span class="ic">{{ it.icon }}</span>{{ it.label }}
+              </a>
+            } @else {
+              <span class="nav off"><span class="ic">{{ it.icon }}</span>{{ it.label }}</span>
+            }
+          }
+        }
+      }
+
+      <!-- Menu Pelanggan — semua orang -->
       <button class="grp-btn" (click)="toggleCust()">
-        <span>Menu Pelanggan</span>
-        <span class="chev">{{ custOpen() ? '▾' : '▸' }}</span>
+        <span>Menu Pelanggan</span><span class="chev">{{ custOpen() ? '▾' : '▸' }}</span>
       </button>
       @if (custOpen()) {
-        @for (it of navCust; track it.label) {
+        @for (it of navCust; track it.id) {
           @if (it.route) {
             <a class="nav" [routerLink]="it.route" routerLinkActive="on">
               <span class="ic">{{ it.icon }}</span>{{ it.label }}
@@ -28,55 +42,81 @@
         }
       }
 
-      <!-- Service Provider -->
-      <button class="grp-btn" (click)="toggleSP()">
-        <span>Service Provider</span>
-        <span class="chev">{{ spOpen() ? '▾' : '▸' }}</span>
-      </button>
-      @if (spOpen()) {
-        @for (it of navSP; track it.label) {
-          @if (it.route) {
-            <a class="nav" [routerLink]="it.route" routerLinkActive="on">
-              <span class="ic">{{ it.icon }}</span>{{ it.label }}
-            </a>
-          } @else {
-            <span class="nav off"><span class="ic">{{ it.icon }}</span>{{ it.label }}</span>
+      <!-- Service Provider — hanya jika ada akses -->
+      @if (auth.isSpAdmin()) {
+        <button class="grp-btn" (click)="toggleSP()">
+          <span>Service Provider</span><span class="chev">{{ spOpen() ? '▾' : '▸' }}</span>
+        </button>
+        @if (spOpen()) {
+          @for (it of navSP; track it.id) {
+            @if (it.route) {
+              <a class="nav" [routerLink]="it.route" routerLinkActive="on">
+                <span class="ic">{{ it.icon }}</span>{{ it.label }}
+              </a>
+            } @else {
+              <span class="nav off"><span class="ic">{{ it.icon }}</span>{{ it.label }}</span>
+            }
           }
         }
-        <span class="nav off"><span class="ic">🔄</span>Manage Service Provider</span>
       }
     </div>
 
     <div class="side-foot">
-      <div class="sf-label">Fasa Automasi aktif</div>
-      <div class="sf-value">Konfigurasi lengkap ✓</div>
+      <div class="sf-label">Log masuk sebagai</div>
+      <div class="sf-value">{{ userRole() }}</div>
     </div>
   </aside>
 
   <!-- ============ MAIN ============ -->
   <div class="main">
-
-    <!-- TOPBAR -->
     <header class="top">
-      <button class="sp-btn">
-        <div class="sp-logo">S</div>
-        <div class="sp-txt">
-          <div class="sp-name">{{ sp.spName() }}</div>
-          <div class="sp-sub">SP Code: {{ sp.currentSp() }} · Tukar SP ▾</div>
+      <!-- SP switcher — hanya jika ada SP -->
+      @if (auth.isSpAdmin()) {
+        <div class="sp-wrap">
+          <button class="sp-btn" (click)="spSwitchOpen.set(!spSwitchOpen())">
+            <div class="sp-logo">{{ spInitial() }}</div>
+            <div class="sp-txt">
+              <div class="sp-name">{{ sp.spName() }}</div>
+              <div class="sp-sub">
+                SP Code: {{ sp.currentSp() }}
+                @if (sp.hasMultipleSp()) { <span> · Tukar SP ▾</span> }
+              </div>
+            </div>
+          </button>
+          @if (spSwitchOpen() && sp.hasMultipleSp()) {
+            <div class="sp-menu">
+              @for (a of auth.spAccess(); track a.spCode) {
+                <button class="sp-opt" [class.on]="a.spCode === sp.currentSp()"
+                        (click)="switchSp(a.spCode)">
+                  <span>{{ a.spName }}</span>
+                  <small>{{ a.spCode }} · {{ a.role }}</small>
+                </button>
+              }
+            </div>
+          }
         </div>
-      </button>
+      } @else {
+        <div class="sp-txt">
+          <div class="sp-name">{{ auth.isSuperadmin() ? 'Platform Monthley' : 'Portal Pelanggan' }}</div>
+          <div class="sp-sub">{{ auth.session()?.email }}</div>
+        </div>
+      }
 
       <div class="top-right">
+        <button class="lang theme-btn" (click)="themeSvc.toggle()"
+                [attr.data-tip]="themeSvc.theme() === 'light' ? 'Tema gelap' : 'Tema terang'">
+          {{ themeSvc.theme() === 'light' ? '🌙' : '💡' }}
+        </button>
         <button class="lang" (click)="toggleLang()">🌐 {{ lang() }}</button>
         <div class="bell">🔔<span class="dot"></span></div>
         <div class="user">
-          <div class="avatar">P</div>
+          <div class="avatar">{{ userInitial() }}</div>
           <div>
-            <div class="u-name">Pentadbir</div>
-            <div class="u-role">Administrator</div>
+            <div class="u-name">{{ auth.displayName() }}</div>
+            <div class="u-role">{{ userRole() }}</div>
           </div>
         </div>
-        <a class="logout" title="Log Keluar">⏻</a>
+        <button class="logout" title="Log Keluar" (click)="auth.logout()">⏻</button>
       </div>
     </header>
 
