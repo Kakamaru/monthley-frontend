@@ -1,0 +1,61 @@
+.shell { display: flex; min-height: 100vh; }
+
+/* ---- sidebar ---- */
+.side {
+  width: 232px; flex-shrink: 0; background: var(--navy); color: #cbd5e1;
+  display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh;
+}
+.brand { display: flex; align-items: center; gap: 10px; padding: 18px 16px; }
+.mark {
+  width: 30px; height: 30px; border-radius: 8px; background: var(--brand);
+  color: #fff; font-family: 'Sora', sans-serif; font-weight: 700;
+  display: grid; place-items: center; font-size: 16px;
+}
+.wordmark strong { display: block; color: #fff; font-family: 'Sora', sans-serif; font-size: 15px; }
+.wordmark small  { color: #64748b; font-size: 10px; }
+
+.nav { flex: 1; overflow-y: auto; padding: 6px 0 20px; }
+.grp { margin-bottom: 6px; }
+.grp-title {
+  padding: 12px 16px 6px; font-size: 10px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: #475569;
+}
+.item {
+  display: flex; align-items: center; gap: 10px; padding: 9px 16px;
+  color: #cbd5e1; text-decoration: none; font-size: 13.5px; font-weight: 500;
+  border-left: 3px solid transparent;
+  &:hover { background: var(--navy-soft); color: #fff; }
+  &.on { background: var(--brand); color: #fff; border-left-color: #86efac; font-weight: 600; }
+  &.disabled { opacity: .38; cursor: default; &:hover { background: none; color: #cbd5e1; } }
+}
+.ic { width: 16px; text-align: center; opacity: .85; }
+
+/* ---- kanan ---- */
+.main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+.top {
+  display: flex; justify-content: space-between; align-items: center;
+  background: #fff; border-bottom: 1px solid var(--line); padding: 10px 24px;
+}
+.sp { display: flex; align-items: center; gap: 12px; }
+.logo {
+  width: 36px; height: 36px; border-radius: 50%; background: #f1f5f9;
+  display: grid; place-items: center; font-weight: 700; color: var(--navy); font-size: 12px;
+}
+.sp-name { font-family: 'Sora', sans-serif; font-weight: 600; font-size: 14px; }
+.sp-code { color: var(--muted); font-size: 12px; }
+
+.right { display: flex; align-items: center; gap: 14px; }
+.lang {
+  border: 1px solid var(--line); background: #f8fafc; border-radius: 999px;
+  padding: 4px 12px; font-size: 12px; font-weight: 600; color: var(--muted);
+}
+.user { color: var(--brand); font-weight: 600; font-size: 13.5px; }
+
+.body { flex: 1; }
+
+.foot {
+  border-top: 1px solid var(--line); background: #fff; padding: 12px 24px;
+  font-size: 12px; color: var(--muted); text-align: right;
+  a { color: var(--brand); text-decoration: none; }
+}

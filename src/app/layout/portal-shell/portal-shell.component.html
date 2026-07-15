@@ -1,0 +1,56 @@
+<div class="shell">
+  <!-- Sidebar -->
+  <aside class="side">
+    <div class="brand">
+      <span class="mark">M</span>
+      <div class="wordmark">
+        <strong>Monthley</strong>
+        <small>The Unified Billing Portal</small>
+      </div>
+    </div>
+
+    <nav class="nav">
+      @for (g of groups; track g.title) {
+        <div class="grp">
+          <div class="grp-title">{{ g.title }}</div>
+          @for (it of g.items; track it.label) {
+            @if (it.route) {
+              <a class="item" [routerLink]="it.route" routerLinkActive="on">
+                <span class="ic">{{ it.icon }}</span>{{ it.label }}
+              </a>
+            } @else {
+              <span class="item disabled" title="Belum tersedia">
+                <span class="ic">{{ it.icon }}</span>{{ it.label }}
+              </span>
+            }
+          }
+        </div>
+      }
+    </nav>
+  </aside>
+
+  <!-- Kanan -->
+  <div class="main">
+    <header class="top">
+      <div class="sp">
+        <div class="logo">SW</div>
+        <div>
+          <div class="sp-name">{{ sp.spName() }}</div>
+          <div class="sp-code">{{ sp.currentSp() }}</div>
+        </div>
+      </div>
+      <div class="right">
+        <button class="lang" (click)="toggleLang()">{{ lang() }}</button>
+        <span class="user">mohd kamarul hafiz ⌄</span>
+      </div>
+    </header>
+
+    <main class="body">
+      <router-outlet />
+    </main>
+
+    <footer class="foot">
+      Monthley ® is provided by <a href="#">Rapidevelop Technology Sdn.Bhd.</a> All copyrights reserved.
+    </footer>
+  </div>
+</div>
