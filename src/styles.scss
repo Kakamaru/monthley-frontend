@@ -1,34 +1,231 @@
-/* Monthley — gaya global (rujuk handoff §6: warna jenama & fon) */
-@import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Manrope:wght@400;500;600&display=swap');
+/* =====================================================================
+   Monthley — Sistem Design
+   Token diekstrak terus dari prototaip: Monthley Portal.dc.html
+   ===================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap');
 
 :root {
-  --brand:        #16a34a;   /* hijau — utama/CTA */
-  --brand-dark:   #15803d;
-  --navy:         #122029;   /* sidebar / header jadual */
-  --navy-soft:    #1c2f3b;
-  --ink:          #0f172a;
-  --muted:        #64748b;
-  --line:         #e2e8f0;
-  --bg:           #f8fafc;
-  --white:        #ffffff;
-  --amber:        #f59e0b;   /* belum bayar */
-  --purple:       #7c3aed;   /* penyelarasan pengurangan */
-  --red:          #dc2626;
+  /* permukaan */
+  --bg:           #eef2ef;
+  --surface:      #ffffff;
+  --surface-alt:  #f4f7f4;   /* header jadual */
+  --surface-pager:#fafbfa;
+  --row-hover:    #f4f9f4;
+
+  /* teks */
+  --ink:          #16262f;
+  --muted:        #6b7f86;
+  --muted-2:      #4a5d64;
+  --muted-3:      #3a4c53;
+
+  /* sempadan */
+  --line:         #e6ebe7;
+  --line-input:   #dbe3de;
+  --line-soft:    #f0f3f0;
+  --line-off:     #cdd8d0;
+
+  /* jenama */
+  --green:        #16a34a;
+  --green-dark:   #128a41;
+  --green-soft:   #e7f6ec;
+  --green-tint:   #eaf7ef;
+  --green-line:   #cfe3d5;
+  --navy:         #122029;
+  --navy-2:       #1b3a2f;
+  --lime:         #bcd634;
+
+  /* status */
+  --red:          #d64545;
+  --orange:       #e0863b;
+
+  /* sidebar */
+  --side-muted:   #8ca0a8;
+  --side-ink:     #eaf1ee;
+  --side-dim:     #5f757e;
 }
 
 * { box-sizing: border-box; }
 
-html, body {
+body {
   margin: 0;
-  padding: 0;
-  height: 100%;
-  font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+  font-family: 'Manrope', sans-serif;
+  -webkit-font-smoothing: antialiased;
   background: var(--bg);
   color: var(--ink);
-  font-size: 14px;
 }
 
-h1, h2, h3, h4 { font-family: 'Sora', system-ui, sans-serif; margin: 0; }
+a { color: var(--green); text-decoration: none; &:hover { color: var(--green-dark); } }
 
-button { font-family: inherit; cursor: pointer; }
-input, select { font-family: inherit; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--green) !important; }
+
+/* =====================================================================
+   LAPISAN INTERAKSI — disalin TEPAT dari prototaip (Monthley Portal.dc.html)
+   Jangan ubah nilai; ia sebahagian reka bentuk.
+   ===================================================================== */
+
+[data-card] {
+  transition: transform .22s cubic-bezier(.2,.7,.3,1), box-shadow .22s ease, border-color .22s ease;
+}
+[data-card]:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 46px rgba(18,32,41,.14);
+  border-color: #c9dbcd;
+}
+
+[data-row] { transition: background .14s ease; }
+[data-row]:hover { background: #f4f9f4; }
+
+button { transition: transform .12s ease, filter .16s ease, box-shadow .18s ease; }
+button:active { transform: scale(.975); }
+
+[data-cta]:hover { filter: brightness(1.06); box-shadow: 0 12px 28px rgba(22,163,74,.34); }
+[data-soft]:hover { background: #e9efe9; }
+
+[data-bar] { transition: filter .18s ease, transform .18s ease; transform-origin: bottom; }
+[data-bar]:hover { filter: brightness(1.08) saturate(1.1); }
+
+@keyframes m-fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes m-rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes m-grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+
+/* tooltip hover — disalin tepat */
+[data-tip] { position: relative; }
+[data-tip]::after {
+  content: attr(data-tip); position: absolute; bottom: calc(100% + 8px); left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: #122029; color: #fff; font-family: 'Manrope', sans-serif;
+  font-size: 12px; font-weight: 600; white-space: nowrap; padding: 6px 10px;
+  border-radius: 7px; opacity: 0; pointer-events: none;
+  transition: opacity .16s ease, transform .16s ease; z-index: 40;
+  box-shadow: 0 8px 20px rgba(0,0,0,.22);
+}
+[data-tip]::before {
+  content: ''; position: absolute; bottom: calc(100% + 3px); left: 50%;
+  transform: translateX(-50%); border: 5px solid transparent;
+  border-top-color: #122029; opacity: 0; transition: opacity .16s ease; z-index: 40;
+}
+[data-tip]:hover::after { opacity: 1; transform: translateX(-50%) translateY(0); }
+[data-tip]:hover::before { opacity: 1; }
+
+
+/* ---------- kelas kongsi (rujuk prototaip) ---------- */
+
+.m-fade { animation: m-fade .3s ease; }
+
+.h1 { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 28px; margin: 0; }
+.sub { color: var(--muted); font-size: 15px; margin: 6px 0 0; }
+
+/* kad */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+.card-filter {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+/* medan */
+.fld {
+  padding: 11px 14px;
+  border: 1.5px solid var(--line-input);
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: 'Manrope', sans-serif;
+  background: #fff;
+  width: 100%;
+}
+select.fld { color: var(--muted); }
+
+/* butang */
+.btn {
+  font-family: 'Sora', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  border: none;
+}
+.btn-green { background: var(--green); color: #fff; padding: 11px 24px; }
+.btn-navy  { background: var(--navy); color: #fff; padding: 11px 26px;
+  &:hover { filter: brightness(1.15); } }
+.btn-ghost { background: #fff; color: var(--muted); border: 1.5px solid var(--line-input); padding: 11px 22px;
+  &:hover { background: #f7faf8; } }
+.btn-chev {
+  width: 42px; height: 42px; border-radius: 10px;
+  border: 1.5px solid var(--green-line); background: var(--green-tint);
+  color: var(--green); font-size: 15px; font-weight: 800; cursor: pointer;
+}
+
+/* tab — dua gaya (prototaip guna dua-dua) */
+.tabs-text { display: flex; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
+.tab-text {
+  padding: 10px 4px; margin-right: 28px; background: transparent; border: none;
+  cursor: pointer; font-family: 'Sora', sans-serif; font-weight: 700; font-size: 15px;
+  border-bottom: 3px solid transparent; color: var(--muted);
+  &.on { border-bottom-color: var(--green); color: var(--green); }
+}
+
+.tabs-pill { display: flex; gap: 10px; margin-bottom: 16px; border-bottom: 1px solid var(--line); padding-bottom: 16px; }
+.tab-pill {
+  padding: 9px 20px; border-radius: 10px; cursor: pointer;
+  font-family: 'Sora', sans-serif; font-weight: 700; font-size: 14px;
+  background: #fff; color: var(--muted); border: 1.5px solid var(--line);
+  &.on { background: var(--navy); color: #fff; border-color: var(--navy); }
+}
+
+/* jadual grid */
+.grid-head {
+  display: grid; background: var(--surface-alt); padding: 13px 20px;
+  font-size: 12px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .03em;
+}
+.grid-row {
+  display: grid; padding: 14px 20px; font-size: 14px;
+  border-top: 1px solid var(--line-soft); align-items: center;
+}
+.r { text-align: right; } .c { text-align: center; }
+
+/* ikon tindakan (kotak hijau) */
+.act {
+  width: 34px; height: 34px; border-radius: 8px; border: none;
+  background: var(--green); color: #fff; cursor: pointer; font-size: 15px;
+  display: inline-flex; align-items: center; justify-content: center;
+  &:hover { filter: brightness(1.08); }
+}
+.acts { display: flex; gap: 7px; }
+
+/* pager */
+.pager {
+  display: flex; align-items: center; justify-content: flex-end; gap: 14px;
+  padding: 16px 20px; border-top: 1px solid var(--line-soft); background: var(--surface-pager);
+}
+.pager-label { font-size: 13px; color: var(--muted); font-weight: 600; }
+.pg {
+  min-width: 34px; height: 34px; padding: 0 8px; border-radius: 9px; cursor: pointer;
+  font-weight: 700; font-size: 13px; font-family: 'Manrope', sans-serif;
+  border: 1.5px solid var(--line); background: #fff; color: var(--muted-3);
+  &.on { border-color: var(--green); background: var(--green); color: #fff; }
+}
+.pg-nav {
+  width: 34px; height: 34px; border-radius: 9px; font-size: 15px; font-weight: 700;
+  font-family: 'Manrope', sans-serif; border: 1.5px solid var(--line);
+  background: #fff; color: var(--muted-3); cursor: pointer;
+  &:disabled { color: var(--line-off); cursor: default; }
+}
+.per-page {
+  margin-left: 6px; padding: 7px 12px; border: 1.5px solid var(--line);
+  border-radius: 9px; font-size: 13px; color: var(--muted);
+}
+
+/* keadaan */
+.empty { text-align: center; color: var(--muted); padding: 40px 20px; font-size: 14px; }
+.alert {
+  background: #fdecec; border: 1px solid #f5c6c6; color: var(--red);
+  padding: 12px 16px; border-radius: 10px; margin-bottom: 16px; font-size: 13px; font-weight: 600;
+}
+

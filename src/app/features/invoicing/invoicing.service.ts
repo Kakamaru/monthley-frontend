@@ -1,0 +1,26 @@
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { Observable } from 'rxjs';
+
+export interface GenerateRequest {
+  period?: string | null;   // 'YYYY-MM'
+  mode?: 'CURRENT' | 'PREPAID' | 'POSTPAID';
+  taxRate?: number | null;
+  minDenom?: number | null;
+}
+
+export interface GenerateResult {
+  spCode: string;
+  period: string;
+  mode: string;
+  invoicesPosted: number;
+}
+
+@Injectable({ providedIn: 'root' })
+export class InvoicingService {
+  private http = inject(HttpClient);
+
+  generate(body: GenerateRequest): Observable<GenerateResult> {
+    return this.http.post<GenerateResult>('/api/v1/tools/generate-invoices', body);
+  }
+}

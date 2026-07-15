@@ -1,0 +1,110 @@
+<div class="m-fade">
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px">
+    <div>
+      <h1 class="h1">Accounts</h1>
+      <p class="sub">Urus, tambah &amp; semak akaun pelanggan.</p>
+    </div>
+  </div>
+
+  <!-- tabs pill -->
+  <div class="tabs-pill">
+    <button class="tab-pill" [class.on]="activeTab()"  (click)="switchTab(true)">Active Accounts</button>
+    <button class="tab-pill" [class.on]="!activeTab()" (click)="switchTab(false)">Inactive Accounts</button>
+  </div>
+
+  <!-- filter -->
+  <div class="card-filter">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+      <input class="fld" placeholder="Account" [(ngModel)]="fAccount" (keyup.enter)="search()" />
+      <input class="fld" placeholder="Name" [(ngModel)]="fName" (keyup.enter)="search()" />
+      <select class="fld" [(ngModel)]="fCategory">
+        <option [ngValue]="null">Please Select Category</option>
+        <option [ngValue]="1">Pemilik</option>
+        <option [ngValue]="2">Penyewa</option>
+        <option [ngValue]="3">Komersial</option>
+        <option [ngValue]="4">Persatuan</option>
+      </select>
+    </div>
+
+    @if (searchOpen()) {
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px">
+        <input class="fld" placeholder="Balance From" [(ngModel)]="fBalFrom" />
+        <input class="fld" placeholder="Balance To" [(ngModel)]="fBalTo" />
+        <select class="fld" [(ngModel)]="fLinked">
+          <option value="">Please Select Account Link Status</option>
+          <option value="true">Linked</option>
+          <option value="false">Not Linked</option>
+        </select>
+        <select class="fld" [(ngModel)]="fProdCategory">
+          <option [ngValue]="null">Please Select Product Category</option>
+          @for (c of categories(); track c.id) {
+            <option [ngValue]="c.id">{{ c.name }}</option>
+          }
+        </select>
+        <select class="fld" style="grid-column:span 2" [(ngModel)]="fProduct">
+          <option [ngValue]="null">Please Select Product</option>
+          @for (p of products(); track p.id) {
+            <option [ngValue]="p.id">{{ p.name }}</option>
+          }
+        </select>
+      </div>
+    }
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px">
+      <button class="btn btn-green" data-cta>Add</button>
+      <div style="display:flex;gap:10px;align-items:center">
+        <button class="btn btn-navy" (click)="search()">Search</button>
+        <button class="btn btn-ghost" (click)="clear()">Clear</button>
+        <button class="btn-chev" title="Kembang / tutup kriteria" (click)="toggleSearch()">
+          {{ searchOpen() ? '⌃' : '⌄' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  @if (error()) { <div class="alert">{{ error() }}</div> }
+
+  <!-- jadual -->
+  <div class="card" style="overflow:visible">
+    <div class="grid-head" [style.grid-template-columns]="cols">
+      <span>Account</span><span>Name</span><span>Bill To</span>
+      <span class="r">Balance</span><span class="c">Action</span>
+    </div>
+
+    @if (loading()) {
+      <div class="empty">Memuatkan…</div>
+    } @else if (rows().length === 0) {
+      <div class="empty">Tiada akaun dijumpai.</div>
+    } @else {
+      @for (a of rows(); track a.id) {
+        <div class="grid-row" data-row [style.grid-template-columns]="cols">
+          <span style="font-weight:700;color:var(--green);cursor:pointer">{{ a.no }}</span>
+          <span style="display:flex;align-items:center;gap:6px">
+            {{ a.name }}
+            @if (a.linked) { <span style="color:var(--green);font-size:12px">🔗</span> }
+          </span>
+          <span style="color:var(--muted-2)">{{ a.billTo || '—' }}</span>
+          <span class="r" [style.color]="balColor(a.balance)"
+                style="font-family:'Sora',sans-serif;font-weight:700">
+            {{ fmtBal(a.balance) }}
+          </span>
+          <span class="acts" style="justify-content:center">
+            <button class="act" data-tip="View Statement">🧾</button>
+            <button class="act" data-tip="Print Statement">🖨</button>
+            <button class="act" data-tip="More" style="font-size:16px;font-weight:800">⋯</button>
+          </span>
+        </div>
+      }
+    }
+
+    <div class="pager">
+      <span class="pager-label">{{ pageLabel() }}</span>
+      <button class="pg-nav" [disabled]="page() === 0" (click)="goPage(page() - 1)">‹</button>
+      @for (n of pageNumbers(); track n) {
+        <button class="pg" [class.on]="n === page()" (click)="goPage(n)">{{ n + 1 }}</button>
+      }
+      <button class="pg-nav" [disabled]="page() >= totalPages() - 1" (click)="goPage(page() + 1)">›</button>
+      <span class="per-page">{{ size() }} / page</span>
+    </div>
+  </div>
+</div>

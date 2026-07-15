@@ -1,90 +1,79 @@
-<div class="page">
-  <header class="page-head">
-    <h1>Products</h1>
-    <p class="sub">Item &amp; perkhidmatan yang dicajkan kepada pelanggan.</p>
-  </header>
+<div class="m-fade">
+  <h1 style="font-family:'Sora',sans-serif;font-weight:800;font-size:28px;margin:0 0 4px">Products</h1>
+  <p style="color:var(--muted);margin:0 0 18px;font-size:15px">Item &amp; perkhidmatan yang dicajkan kepada pelanggan.</p>
 
-  <!-- Tab: Active / Inactive -->
-  <nav class="tabs">
-    <button class="tab" [class.on]="activeTab()"  (click)="switchTab(true)">Active Products</button>
-    <button class="tab" [class.on]="!activeTab()" (click)="switchTab(false)">Inactive Products</button>
-  </nav>
+  <!-- tabs (gaya teks/underline — prototaip guna tabTextStyle) -->
+  <div class="tabs-text">
+    <button class="tab-text" [class.on]="activeTab()"  (click)="switchTab(true)">Active Products</button>
+    <button class="tab-text" [class.on]="!activeTab()" (click)="switchTab(false)">Inactive Products</button>
+  </div>
 
-  <!-- Filter bar -->
-  <section class="filter">
-    <input class="fld" type="text" placeholder="Cari nama atau kod produk…"
-           [(ngModel)]="searchName" (keyup.enter)="search()" />
-    <div class="acts">
-      <button class="btn ghost" (click)="clear()">Clear</button>
-      <button class="btn primary" (click)="search()">Search</button>
-      <button class="btn primary">+ Add</button>
+  <!-- filter -->
+  <div class="card-filter" style="padding:18px">
+    <div style="display:flex;gap:14px;align-items:center">
+      <input class="fld" style="flex:1" placeholder="Name"
+             [(ngModel)]="searchName" (keyup.enter)="search()" />
+      <select class="fld" style="flex:1" [(ngModel)]="category">
+        <option [ngValue]="null">Product Category</option>
+        @for (c of categories(); track c.id) {
+          <option [ngValue]="c.id">{{ c.name }}</option>
+        }
+      </select>
     </div>
-  </section>
-
-  <!-- Ralat -->
-  @if (error()) {
-    <div class="alert">{{ error() }}</div>
-  }
-
-  <!-- Jadual -->
-  <section class="card">
-    <table class="tbl">
-      <thead>
-        <tr>
-          <th>Code</th>
-          <th>Subscription Code</th>
-          <th>Name</th>
-          <th class="r">Rate</th>
-          <th>Frequency</th>
-          <th>Status</th>
-          <th class="c">Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        @if (loading()) {
-          <tr><td colspan="7" class="empty">Memuatkan…</td></tr>
-        } @else if (rows().length === 0) {
-          <tr><td colspan="7" class="empty">Tiada produk dijumpai.</td></tr>
-        } @else {
-          @for (p of rows(); track p.id) {
-            <tr>
-              <td class="mono">{{ p.code }}</td>
-              <td class="mono muted">{{ p.subscriptionCode || '—' }}</td>
-              <td>
-                {{ p.name }}
-                @if (p.anchorMonth) {
-                  <span class="chip">anchor: bulan {{ p.anchorMonth }}</span>
-                }
-                @if (p.prorated) { <span class="chip alt">prorate</span> }
-              </td>
-              <td class="r mono">{{ p.rate | number:'1.2-2' }}</td>
-              <td>{{ freqLabel(p.chargeFrequency) }}</td>
-              <td>
-                <span class="badge" [class.off]="!p.active">
-                  {{ p.active ? 'Active' : 'Inactive' }}
-                </span>
-              </td>
-              <td class="c">
-                <button class="ico" title="Edit">✎</button>
-                <button class="ico" title="View Account">👥</button>
-                <button class="ico" title="Add Account">➕</button>
-              </td>
-            </tr>
-          }
-        }
-      </tbody>
-    </table>
-
-    <!-- Pagination -->
-    <footer class="pager">
-      <span class="muted">{{ pageLabel() }}</span>
-      <div class="pages">
-        <button class="pg" [disabled]="page() === 0" (click)="goPage(page() - 1)">‹</button>
-        @for (n of pageNumbers(); track n) {
-          <button class="pg" [class.on]="n === page()" (click)="goPage(n)">{{ n + 1 }}</button>
-        }
-        <button class="pg" [disabled]="page() >= totalPages() - 1" (click)="goPage(page() + 1)">›</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px">
+      <button class="btn btn-green" data-cta style="padding:10px 26px;border-radius:9px">Add</button>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-green" data-cta style="padding:10px 26px;border-radius:9px" (click)="search()">Search</button>
+        <button class="btn btn-ghost" style="padding:10px 24px;border-radius:9px" (click)="clear()">Clear</button>
       </div>
-    </footer>
-  </section>
+    </div>
+  </div>
+
+  @if (error()) { <div class="alert">{{ error() }}</div> }
+
+  <!-- jadual -->
+  <div class="card" data-card style="overflow:hidden">
+    <div class="grid-head" [style.grid-template-columns]="cols">
+      <span>Code</span><span>Subscription Code</span><span>Product Category</span>
+      <span>Name</span><span class="r">Rate</span><span>Frequency</span>
+      <span>Status</span><span class="r">Action</span>
+    </div>
+
+    @if (loading()) {
+      <div class="empty">Memuatkan…</div>
+    } @else if (rows().length === 0) {
+      <div class="empty">Tiada produk dijumpai.</div>
+    } @else {
+      @for (p of rows(); track p.id) {
+        <div class="grid-row" data-row [style.grid-template-columns]="cols" style="padding:15px 20px">
+          <span style="font-weight:700">{{ p.code }}</span>
+          <span style="color:var(--muted-2)">{{ p.subscriptionCode || '—' }}</span>
+          <span style="color:var(--muted-2)">{{ categoryName(p.categoryId) }}</span>
+          <span style="font-weight:700">{{ p.name }}</span>
+          <span class="r" style="font-family:'Sora',sans-serif;font-weight:700">
+            {{ p.rate | number:'1.2-2' }}
+          </span>
+          <span style="color:var(--muted-2)">{{ freqLabel(p.chargeFrequency) }}</span>
+          <span [style.color]="p.active ? 'var(--green)' : 'var(--muted)'" style="font-weight:700">
+            {{ p.active ? 'Active' : 'Inactive' }}
+          </span>
+          <span class="acts" style="justify-content:flex-end">
+            <button class="act" data-tip="Edit" style="font-size:14px">✎</button>
+            <button class="act" data-tip="Delete" style="font-size:14px">🗑</button>
+            <button class="act" data-tip="More" style="font-size:16px;font-weight:800">⋯</button>
+          </span>
+        </div>
+      }
+    }
+
+    <!-- pager -->
+    <div class="pager">
+      <span class="pager-label">{{ pageLabel() }}</span>
+      <button class="pg-nav" [disabled]="page() === 0" (click)="goPage(page() - 1)">‹</button>
+      @for (n of pageNumbers(); track n) {
+        <button class="pg" [class.on]="n === page()" (click)="goPage(n)">{{ n + 1 }}</button>
+      }
+      <button class="pg-nav" [disabled]="page() >= totalPages() - 1" (click)="goPage(page() + 1)">›</button>
+    </div>
+  </div>
 </div>

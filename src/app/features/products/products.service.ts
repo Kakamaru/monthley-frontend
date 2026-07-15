@@ -3,6 +3,8 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Page, Product } from '../../core/models/product.model';
 
+export interface ProductCategory { id: number; code: string; name: string; }
+
 export interface ProductQuery {
   active: boolean;
   category?: number | null;
@@ -21,15 +23,13 @@ export class ProductsService {
       .set('active', String(query.active))
       .set('page', String(query.page))
       .set('size', String(query.size));
-
     if (query.category != null) params = params.set('category', String(query.category));
     if (query.q) params = params.set('q', query.q);
-
     return this.http.get<Page<Product>>(this.base, { params });
   }
 
-  get(id: number): Observable<Product> {
-    return this.http.get<Product>(`${this.base}/${id}`);
+  categories(): Observable<ProductCategory[]> {
+    return this.http.get<ProductCategory[]>('/api/v1/product-categories');
   }
 
   create(body: Partial<Product>): Observable<Product> {

@@ -11,6 +11,16 @@ export const routes: Routes = [
         path: 'products',
         loadComponent: () =>
           import('./features/products/products.component').then(m => m.ProductsComponent)
+      },
+      {
+        path: 'accounts',
+        loadComponent: () =>
+          import('./features/accounts/accounts.component').then(m => m.AccountsComponent)
+      },
+      {
+        path: 'invoicing',
+        loadComponent: () =>
+          import('./features/invoicing/invoicing.component').then(m => m.InvoicingComponent)
       }
     ]
   },

@@ -1,0 +1,87 @@
+<div class="m-fade">
+  <h1 style="font-family:'Sora',sans-serif;font-weight:800;font-size:28px;margin:0 0 6px">
+    Penjanaan Bil (Invois)
+  </h1>
+  <p style="color:var(--muted);margin:0 0 22px;font-size:15px">
+    Bil dijana tepat pada masanya dengan pengiraan yang betul.
+  </p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+    <!-- ===== Kad 1: Jana Bil Automatik ===== -->
+    <div data-card style="background:#fff;border:1px solid var(--line);border-radius:16px;padding:24px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        <span style="font-size:20px">⚡</span>
+        <h3 style="font-family:'Sora',sans-serif;font-weight:700;font-size:18px;margin:0">
+          Jana Bil Automatik
+        </h3>
+      </div>
+      <p style="color:var(--muted);font-size:14px;margin:0 0 18px">
+        Bil dijana automatik mengikut tetapan invois semasa.
+      </p>
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;justify-content:space-between;background:var(--surface-alt);border-radius:10px;padding:12px 15px;font-size:14px">
+          <span style="color:var(--muted);font-weight:600">Generation Mode</span>
+          <span style="font-weight:700">Current — bulan semasa</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;background:var(--surface-alt);border-radius:10px;padding:12px 15px;font-size:14px">
+          <span style="color:var(--muted);font-weight:600">Frequency</span>
+          <span style="font-weight:700">Monthly</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;background:var(--surface-alt);border-radius:10px;padding:12px 15px;font-size:14px">
+          <span style="color:var(--muted);font-weight:600">Day Of Month</span>
+          <span style="font-weight:700">1 haribulan</span>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:8px;margin-top:16px;background:var(--green-soft);border-radius:10px;padding:11px 14px">
+        <span style="color:var(--green-dark);font-weight:800">●</span>
+        <span style="font-size:13px;color:var(--green-dark);font-weight:700">
+          Aktif — bil seterusnya {{ nextRun }}
+        </span>
+      </div>
+    </div>
+
+    <!-- ===== Kad 2: Jana Manual ===== -->
+    <div data-card style="background:#fff;border:1px solid var(--line);border-radius:16px;padding:24px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        <span style="font-size:20px">🖐️</span>
+        <h3 style="font-family:'Sora',sans-serif;font-weight:700;font-size:18px;margin:0">
+          Jana Bil untuk Semua Akaun (Manual)
+        </h3>
+      </div>
+      <p style="color:var(--muted);font-size:14px;margin:0 0 18px">
+        Jana bil serta-merta untuk kesemua akaun pelanggan mengikut tarikh semasa.
+      </p>
+
+      <button data-cta (click)="generate()" [disabled]="busy()"
+              style="width:100%;background:var(--green);color:#fff;border:none;font-family:'Sora',sans-serif;font-weight:700;font-size:15px;padding:14px;border-radius:11px;cursor:pointer"
+              [style.opacity]="busy() ? '.6' : '1'">
+        {{ busy() ? 'Menjana…' : 'Generate' }}
+      </button>
+
+      @if (result()) {
+        <div style="display:flex;align-items:center;gap:8px;margin-top:14px;background:var(--green-soft);border-radius:10px;padding:11px 14px">
+          <span style="color:var(--green-dark);font-weight:800">✓</span>
+          <span style="font-size:13px;color:var(--green-dark);font-weight:700">
+            {{ result()!.invoicesPosted }} invois dijana untuk {{ result()!.period }}
+          </span>
+        </div>
+      }
+      @if (error()) {
+        <div class="alert" style="margin-top:14px;margin-bottom:0">{{ error() }}</div>
+      }
+
+      <div style="margin-top:18px;border-top:1px solid var(--line-soft);padding-top:16px">
+        <div style="font-size:13px;font-weight:700;color:var(--muted-3);margin-bottom:6px">
+          Jana Bil untuk satu Akaun
+        </div>
+        <p style="font-size:13px;color:var(--muted);margin:0">
+          Pergi ke <a routerLink="/accounts" style="font-weight:700">Akaun</a>
+          ▸ ikon 🧾 pada baris akaun ▸ Generate Single Invoice.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

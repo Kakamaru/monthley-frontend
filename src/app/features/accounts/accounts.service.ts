@@ -1,0 +1,33 @@
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { Observable } from 'rxjs';
+import { Account } from '../../core/models/account.model';
+import { Page } from '../../core/models/product.model';
+
+export interface AccountQuery {
+  active: boolean;
+  category?: number | null;
+  linked?: boolean | null;
+  q?: string | null;
+  page: number;
+  size: number;
+}
+
+@Injectable({ providedIn: 'root' })
+export class AccountsService {
+  private http = inject(HttpClient);
+  private base = '/api/v1/accounts';
+
+  list(query: AccountQuery): Observable<Page<Account>> {
+    let params = new HttpParams()
+      .set('active', String(query.active))
+      .set('page', String(query.page))
+      .set('size', String(query.size));
+
+    if (query.category != null) params = params.set('category', String(query.category));
+    if (query.linked != null)   params = params.set('linked', String(query.linked));
+    if (query.q)                params = params.set('q', query.q);
+
+    return this.http.get<Page<Account>>(this.base, { params });
+  }
+}
