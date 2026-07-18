@@ -68,6 +68,28 @@ export class SettingsComponent {
   lkCode = ''; lkName = ''; lkAddress = '';
   exPeriod = ''; exRemarks = '';
 
+  /**
+   * Pilihan tempoh untuk exclude: bulan semasa hingga Disember tahun HADAPAN.
+   * Contoh: Julai 2026 -> Jul 2026 ... Dis 2027 (18 pilihan).
+   * Dikira dari tarikh semasa — tiada senarai keras, tahun bertukar sendiri.
+   */
+  get excludeOptions(): { value: string; label: string }[] {
+    const now = new Date();
+    const bulan = ['Januari','Februari','Mac','April','Mei','Jun',
+                   'Julai','Ogos','September','Oktober','November','Disember'];
+    const out: { value: string; label: string }[] = [];
+    let y = now.getFullYear();
+    let m = now.getMonth();
+    const endY = now.getFullYear() + 1;
+    while (y < endY || (y === endY && m <= 11)) {
+      const mm = String(m + 1).padStart(2, '0');
+      out.push({ value: `${y}-${mm}`, label: `${bulan[m]} ${y}` });
+      m++;
+      if (m > 11) { m = 0; y++; }
+    }
+    return out;
+  }
+
   /** Susunan tepat dari design */
   readonly negeri = [
     'Perak', 'Selangor', 'Kuala Lumpur', 'Johor', 'Pulau Pinang', 'Kedah',

@@ -486,7 +486,12 @@
         </p>
 
         <div class="lk-add">
-          <input class="fld" style="flex:0 0 160px" type="month" [(ngModel)]="exPeriod" />
+          <select class="fld" style="flex:0 0 180px" [(ngModel)]="exPeriod">
+            <option value="">Pilih tempoh…</option>
+            @for (opt of excludeOptions; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
           <input class="fld" style="flex:1" [(ngModel)]="exRemarks" placeholder="Sebab (pilihan)"
                  (keyup.enter)="addExclude()" />
           <button class="btn btn-green" data-cta (click)="addExclude()">+ Kecualikan</button>
