@@ -21,7 +21,7 @@
       </select>
     </div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px">
-      <button class="btn btn-green" data-cta style="padding:10px 26px;border-radius:9px">Add</button>
+      <button class="btn btn-green" data-cta style="padding:10px 26px;border-radius:9px" (click)="openAdd()">+ Add Product</button>
       <div style="display:flex;gap:10px">
         <button class="btn btn-green" data-cta style="padding:10px 26px;border-radius:9px" (click)="search()">Search</button>
         <button class="btn btn-ghost" style="padding:10px 24px;border-radius:9px" (click)="clear()">Clear</button>
@@ -34,7 +34,7 @@
   <!-- jadual -->
   <div class="card" data-card style="overflow:hidden">
     <div class="grid-head" [style.grid-template-columns]="cols">
-      <span>Code</span><span>Subscription Code</span><span>Product Category</span>
+      <span>Code</span><span>Product Category</span>
       <span>Name</span><span class="r">Rate</span><span>Frequency</span>
       <span>Status</span><span class="r">Action</span>
     </div>
@@ -47,7 +47,6 @@
       @for (p of rows(); track p.id) {
         <div class="grid-row" data-row [style.grid-template-columns]="cols" style="padding:15px 20px">
           <span style="font-weight:700">{{ p.code }}</span>
-          <span style="color:var(--muted-2)">{{ p.subscriptionCode || '—' }}</span>
           <span style="color:var(--muted-2)">{{ categoryName(p.categoryId) }}</span>
           <span style="font-weight:700">{{ p.name }}</span>
           <span class="r" style="font-family:'Sora',sans-serif;font-weight:700">
@@ -58,9 +57,8 @@
             {{ p.active ? 'Active' : 'Inactive' }}
           </span>
           <span class="acts" style="justify-content:flex-end">
-            <button class="act" data-tip="Edit" style="font-size:14px">✎</button>
+            <button class="act" data-tip="Edit" style="font-size:14px" (click)="openEdit(p)">✎</button>
             <button class="act" data-tip="Delete" style="font-size:14px">🗑</button>
-            <button class="act" data-tip="More" style="font-size:16px;font-weight:800">⋯</button>
           </span>
         </div>
       }
@@ -76,4 +74,54 @@
       <button class="pg-nav" [disabled]="page() >= totalPages() - 1" (click)="goPage(page() + 1)">›</button>
     </div>
   </div>
+
+  <!-- Modal Add/Edit Product -->
+  @if (formOpen()) {
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:1000">
+      <div style="background:#fff;border-radius:16px;padding:24px;max-width:560px;width:92%;max-height:88vh;overflow:auto">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <h3 style="margin:0;font-family:'Sora',sans-serif;font-weight:800">{{ editingId ? 'Edit Product' : 'Add Product' }}</h3>
+          <button (click)="closeForm()" style="border:none;background:none;font-size:18px;cursor:pointer">✕</button>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1.5px solid #dbe3de;border-radius:10px;font-size:14px;font-weight:600">Main Product<input type="checkbox" [(ngModel)]="draft.mainProduct" /></label>
+          <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1.5px solid #dbe3de;border-radius:10px;font-size:14px;font-weight:600">Mandatory<input type="checkbox" [(ngModel)]="draft.mandatory" /></label>
+          <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1.5px solid #dbe3de;border-radius:10px;font-size:14px;font-weight:600">Prorated<input type="checkbox" [(ngModel)]="draft.prorated" /></label>
+          <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1.5px solid #dbe3de;border-radius:10px;font-size:14px;font-weight:600">Late Penalty<input type="checkbox" [(ngModel)]="draft.latePenalty" /></label>
+        </div>
+
+        <div style="display:grid;gap:10px;margin-top:12px">
+          <input class="fld" placeholder="* Product Code" [(ngModel)]="draft.code" />
+          <select class="fld" [(ngModel)]="draft.categoryId">
+            <option [ngValue]="null">Product Category</option>
+            @for (c of categories(); track c.id) { <option [ngValue]="c.id">{{ c.name }}</option> }
+          </select>
+          <input class="fld" placeholder="* Product Name" [(ngModel)]="draft.name" />
+          <input class="fld" placeholder="Product Description" [(ngModel)]="draft.description" />
+          <input class="fld" type="number" placeholder="* Rate Amount" [(ngModel)]="draft.rate" />
+          <select class="fld" [(ngModel)]="draft.chargeFrequency">
+            @for (f of freqOptions; track f.value) { <option [value]="f.value">{{ f.label }}</option> }
+          </select>
+
+          @if (showAnchor()) {
+            <div>
+              <label style="font-size:13px;color:var(--muted);font-weight:600">Anchor Month — bulan kitaran bermula</label>
+              <select class="fld" style="margin-top:4px;width:100%" [(ngModel)]="draft.anchorMonth">
+                <option [ngValue]="null">Januari (lalai)</option>
+                @for (b of bulanList; track b.value) { <option [ngValue]="b.value">{{ b.label }}</option> }
+              </select>
+            </div>
+          }
+        </div>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">
+          <button class="btn" (click)="closeForm()" style="padding:10px 22px">Close</button>
+          <button class="btn btn-green" (click)="saveProduct()" [disabled]="saving()" style="padding:10px 22px">
+            {{ saving() ? 'Menyimpan…' : 'Save' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
 </div>
