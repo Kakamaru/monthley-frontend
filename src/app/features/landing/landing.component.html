@@ -182,6 +182,7 @@
       <span (click)="scrollTo('ciri')">Ciri</span>
       <span (click)="scrollTo('sektor')">Sektor</span>
       <span>Harga</span>
+      <a href="https://monthley.my/app/privacy" target="_blank" rel="noopener">Privasi</a>
       <span (click)="contactOpen.set(true)">Hubungi</span>
     </div>
     <span class="copy">© 2026 Monthley.my</span>
@@ -189,8 +190,8 @@
 
   <!-- ============ MODAL: LOG MASUK ============ -->
   @if (loginOpen()) {
-    <div class="backdrop" (click)="loginOpen.set(false)">
-      <div class="modal" (click)="$event.stopPropagation()">
+    <div class="backdrop">
+      <div class="modal">
         <div class="modal-head">
           <img src="assets/monthley-badge.png" alt="" class="modal-badge" />
           <button class="close" (click)="loginOpen.set(false)">✕</button>
@@ -207,15 +208,32 @@
         <label>Kata Laluan</label>
         <input class="minput" type="password" placeholder="••••••••" [(ngModel)]="loginPassword" />
 
-        <div class="forgot"><a>Lupa kata laluan?</a></div>
+        <div class="forgot"><a (click)="openForgot()">Lupa kata laluan?</a></div>
 
-        @if (authError()) { <div class="auth-err">{{ authError() }}</div> }
+        @if (authError()) {
+          <div class="auth-err">
+            {{ authError() }}
+            @if (needVerify()) {
+              <div style="margin-top:10px">
+                <a (click)="resendVerification()" style="font-weight:700;cursor:pointer;text-decoration:underline">
+                  Hantar pautan pengesahan semula
+                </a>
+              </div>
+            }
+          </div>
+        }
+        @if (resendOk()) {
+          <div class="auth-ok">✓ Pautan baharu dihantar. Sila semak e-mel anda.</div>
+        }
 
         <button class="btn-lime full" (click)="login()" [disabled]="busy()">
           {{ busy() ? 'Sedang log masuk…' : 'Log Masuk' }}
         </button>
 
         <div class="modal-foot">Belum ada akaun? <a (click)="openRegister()">Daftar sekarang</a></div>
+        <div class="modal-legal">
+          <a href="https://monthley.my/app/privacy" target="_blank" rel="noopener">Dasar Privasi</a>
+        </div>
       </div>
     </div>
   }
@@ -223,12 +241,33 @@
 
   <!-- ============ MODAL: DAFTAR ============ -->
   @if (registerOpen()) {
-    <div class="backdrop" (click)="registerOpen.set(false)">
+    <div class="backdrop">
       <div class="modal" (click)="$event.stopPropagation()">
         <div class="modal-head">
           <img src="assets/monthley-badge.png" alt="" class="modal-badge" />
-          <button class="close" (click)="registerOpen.set(false)">✕</button>
+          <button class="close" (click)="closeRegister()">✕</button>
         </div>
+
+        @if (registered(); as em) {
+          <!-- selepas daftar: semak e-mel -->
+          <div style="text-align:center;padding:8px 0 4px">
+            <div style="font-size:44px;margin-bottom:14px">📧</div>
+            <h3 style="margin:0 0 10px">Semak e-mel anda</h3>
+            <p class="modal-sub" style="margin-bottom:18px">
+              Kami hantar pautan pengesahan ke<br>
+              <strong style="color:#16a34a">{{ em }}</strong><br><br>
+              Klik pautan tersebut untuk mengaktifkan akaun anda.
+            </p>
+            <div class="hint-box">
+              Tak nampak e-mel? Semak folder <strong>Spam</strong> atau
+              <strong>Promotions</strong>. Pautan sah selama 24 jam.
+            </div>
+            <button class="btn-lime full" style="margin-top:18px" (click)="closeRegister()">
+              Faham
+            </button>
+          </div>
+        } @else {
+
         <h3>Daftar Akaun</h3>
         <p class="modal-sub">
           Daftar sekali sahaja. Akaun anda akan dipautkan oleh organisasi,
@@ -249,18 +288,68 @@
 
         @if (authError()) { <div class="auth-err">{{ authError() }}</div> }
 
+        <p class="consent">
+          Dengan mendaftar, anda bersetuju dengan
+          <a href="https://monthley.my/app/privacy" target="_blank" rel="noopener">Dasar Privasi</a>
+          Monthley.
+        </p>
+
         <button class="btn-lime full" (click)="register()" [disabled]="busy()">
           {{ busy() ? 'Sedang daftar…' : 'Daftar' }}
         </button>
 
         <div class="modal-foot">Sudah ada akaun? <a (click)="openLogin()">Log masuk</a></div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ============ MODAL: LUPA KATA LALUAN ============ -->
+  @if (forgotOpen()) {
+    <div class="backdrop">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-head">
+          <img src="assets/monthley-badge.png" alt="" class="modal-badge" />
+          <button class="close" (click)="forgotOpen.set(false)">✕</button>
+        </div>
+
+        @if (forgotSent()) {
+          <div style="text-align:center;padding:8px 0 4px">
+            <div style="font-size:44px;margin-bottom:14px">📧</div>
+            <h3 style="margin:0 0 10px">Pautan dihantar</h3>
+            <p class="modal-sub">
+              Jika e-mel tersebut berdaftar, pautan reset kata laluan
+              telah dihantar. Sila semak e-mel anda.
+            </p>
+            <div class="hint-box">Pautan sah selama <strong>1 jam</strong>.</div>
+            <button class="btn-lime full" style="margin-top:18px" (click)="openLogin()">
+              Kembali Log Masuk
+            </button>
+          </div>
+        } @else {
+          <h3>Lupa Kata Laluan</h3>
+          <p class="modal-sub">
+            Masukkan e-mel akaun anda. Kami akan hantar pautan untuk
+            tetapkan kata laluan baharu.
+          </p>
+
+          <label>E-mel</label>
+          <input class="minput" type="email" placeholder="cth: nama@email.com"
+                 [(ngModel)]="fEmail" (keyup.enter)="forgotPassword()" />
+
+          <button class="btn-lime full" (click)="forgotPassword()" [disabled]="busy()">
+            {{ busy() ? 'Menghantar…' : 'Hantar Pautan Reset' }}
+          </button>
+
+          <div class="modal-foot">Ingat kata laluan? <a (click)="openLogin()">Log masuk</a></div>
+        }
       </div>
     </div>
   }
 
   <!-- ============ MODAL: HUBUNGI ADMIN ============ -->
   @if (contactOpen()) {
-    <div class="backdrop" (click)="contactOpen.set(false)">
+    <div class="backdrop">
       <div class="modal wide" (click)="$event.stopPropagation()">
         <div class="modal-head">
           <img src="assets/monthley-badge.png" alt="" class="modal-badge" />

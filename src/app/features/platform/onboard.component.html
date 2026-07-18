@@ -23,8 +23,17 @@
   <div class="card-filter" style="padding:24px;margin-bottom:16px">
     <h3 class="sec-t">Maklumat Service Provider</h3>
 
-    <div class="g2">
+    <div class="g3">
       <div><label>Nama SP *</label><input class="fld" [(ngModel)]="name" placeholder="cth: Perbadanan Pengurusan Seri Indah" /></div>
+      <div>
+        <label>Jenis Perniagaan</label>
+        <select class="fld" [(ngModel)]="businessType">
+          <option value="">Pilih jenis</option>
+          @for (b of bizTypes(); track b.code) {
+            <option [value]="b.code">{{ b.code }} — {{ b.name }}</option>
+          }
+        </select>
+      </div>
       <div><label>ROC / ROS / No. KP</label><input class="fld" [(ngModel)]="registrationNo" /></div>
     </div>
 

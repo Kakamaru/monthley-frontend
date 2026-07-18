@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { InvoicingService, GenerateResult } from './invoicing.service';
+import { ToastService } from '../../core/ui/toast.service';
 
 @Component({
   selector: 'app-invoicing',
@@ -11,6 +12,7 @@ import { InvoicingService, GenerateResult } from './invoicing.service';
 })
 export class InvoicingComponent {
   private api = inject(InvoicingService);
+  private toast = inject(ToastService);
 
   readonly busy = signal(false);
   readonly result = signal<GenerateResult | null>(null);
@@ -31,7 +33,16 @@ export class InvoicingComponent {
     this.error.set(null);
     this.result.set(null);
     this.api.generate({ period: this.currentPeriod, mode: 'CURRENT' }).subscribe({
-      next: r => { this.result.set(r); this.busy.set(false); },
+      next: r => {
+        this.result.set(r);
+        this.busy.set(false);
+        if (r.invoicesPosted > 0) {
+          this.toast.success(`${r.invoicesPosted} invois dijana`, `Tempoh ${r.period}`);
+        } else {
+          this.toast.info('Tiada bil baharu',
+            `Semua invois untuk ${r.period} sudah dijana — tiada pendua.`);
+        }
+      },
       error: e => {
         this.error.set('Gagal menjana bil. ' + (e?.error?.message ?? 'Semak backend.'));
         this.busy.set(false);

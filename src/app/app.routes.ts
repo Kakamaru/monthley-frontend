@@ -9,6 +9,17 @@ export const routes: Routes = [
       import('./features/landing/landing.component').then(m => m.LandingComponent)
   },
 
+  {
+    path: 'verify',
+    loadComponent: () =>
+      import('./features/auth/verify.component').then(m => m.VerifyComponent)
+  },
+  {
+    path: 'reset',
+    loadComponent: () =>
+      import('./features/auth/reset.component').then(m => m.ResetComponent)
+  },
+
   // ---------- Portal (perlu log masuk) ----------
   {
     path: 'portal',
@@ -36,6 +47,16 @@ export const routes: Routes = [
           import('./features/accounts/accounts.component').then(m => m.AccountsComponent)
       },
       {
+        path: 'manual-payment', canActivate: [spAdminGuard],
+        loadComponent: () =>
+          import('./features/payment/manual-payment.component').then(m => m.ManualPaymentComponent)
+      },
+      {
+        path: 'settings', canActivate: [spAdminGuard],
+        loadComponent: () =>
+          import('./features/settings/settings.component').then(m => m.SettingsComponent)
+      },
+      {
         path: 'invoicing', canActivate: [spAdminGuard],
         loadComponent: () =>
           import('./features/invoicing/invoicing.component').then(m => m.InvoicingComponent)
@@ -59,6 +80,11 @@ export const routes: Routes = [
         path: 'onboard',
         loadComponent: () =>
           import('./features/platform/onboard.component').then(m => m.OnboardComponent)
+      },
+      {
+        path: 'users',
+        loadComponent: () =>
+          import('./features/platform/users.component').then(m => m.PlatformUsersComponent)
       }
     ]
   },

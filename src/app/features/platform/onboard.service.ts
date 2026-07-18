@@ -7,10 +7,12 @@ export interface ServicePlan {
   accountLimit: number; priceMonthly: number; priceYearly: number;
 }
 
+export interface BusinessType { code: string; name: string; description?: string; }
+
 export interface GeneratedKey { merchantId: string; gatewayKey: string; }
 
 export interface OnboardRequest {
-  name: string; registrationNo?: string; businessDesc?: string; website?: string;
+  name: string; businessType?: string; registrationNo?: string; businessDesc?: string; website?: string;
   addrLine1?: string; addrLine2?: string; city?: string; postcode?: string;
   state?: string; country?: string; orgRegisteredDate?: string;
   servicePlanId?: number | null; billingPlan?: 'MONTHLY' | 'YEARLY';
@@ -31,6 +33,10 @@ export class OnboardService {
 
   plans(): Observable<ServicePlan[]> {
     return this.http.get<ServicePlan[]>(`${this.base}/service-plans`);
+  }
+
+  businessTypes(): Observable<BusinessType[]> {
+    return this.http.get<BusinessType[]>(`${this.base}/business-types`);
   }
 
   generateKey(): Observable<GeneratedKey> {

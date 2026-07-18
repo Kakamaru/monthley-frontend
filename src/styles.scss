@@ -348,3 +348,84 @@ select.fld { color: var(--muted); }
   span { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
   &.on { border-color: var(--green); background: var(--green-tint); }
 }
+
+/* ---------- KPI kad ---------- */
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 16px; }
+.kpi {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 14px; padding: 18px 20px;
+}
+.kpi-label { font-size: 12px; font-weight: 600; color: var(--muted); }
+.kpi-value {
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 26px; margin-top: 4px;
+}
+
+/* ---------- chip jenis perniagaan ---------- */
+.chip-biz {
+  display: inline-block; padding: 3px 9px; border-radius: 6px;
+  background: var(--surface-alt); font-size: 11px; font-weight: 700;
+  color: var(--muted-3); letter-spacing: .03em;
+}
+
+/* ---------- badge status ---------- */
+.badge-st {
+  display: inline-block; padding: 4px 10px; border-radius: 999px;
+  font-size: 11px; font-weight: 700; letter-spacing: .03em;
+}
+
+/* ---------- bar penggunaan ---------- */
+.bar {
+  height: 4px; background: var(--line-soft); border-radius: 99px;
+  overflow: hidden; margin-top: 5px; max-width: 90px;
+}
+.bar-fill { height: 100%; border-radius: 99px; transition: width .3s ease; }
+
+/* ---------- notice ---------- */
+.notice {
+  background: var(--green-soft); border: 1px solid var(--green-line); color: var(--green-dark);
+  padding: 11px 16px; border-radius: 10px; margin-top: 14px;
+  font-size: 13px; font-weight: 600; animation: m-fade .25s ease;
+}
+
+/* ---------- modal dalam portal ---------- */
+.m-backdrop {
+  position: fixed; inset: 0; z-index: 90;
+  background: rgba(9,18,23,.6); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center; padding: 40px;
+}
+.m-modal {
+  width: 460px; background: var(--surface); border: 1px solid var(--line);
+  border-radius: 18px; padding: 26px; animation: m-fade .22s ease;
+  box-shadow: 0 30px 70px rgba(0,0,0,.3);
+}
+[data-theme='dark'] .m-modal { background: #16262f; }
+.m-modal-head {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px;
+  h3 { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 19px; margin: 0; }
+}
+.m-close {
+  width: 32px; height: 32px; border-radius: 50%; border: none;
+  background: var(--surface-alt); color: var(--muted); font-size: 16px; cursor: pointer;
+}
+.m-user {
+  display: flex; align-items: center; gap: 12px; background: var(--surface-alt);
+  border-radius: 12px; padding: 12px 14px; margin-bottom: 18px;
+}
+.m-avatar {
+  width: 40px; height: 40px; border-radius: 50%; flex: none;
+  background: var(--navy); color: var(--lime); display: flex;
+  align-items: center; justify-content: center;
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 16px;
+}
+.m-label {
+  display: block; font-size: 12px; font-weight: 700;
+  color: var(--muted-3); margin-bottom: 6px;
+}
+
+/* ---------- ringkasan bayaran dalam modal ---------- */
+.pay-summary {
+  background: var(--surface-alt); border-radius: 12px; padding: 14px 16px;
+  margin-bottom: 18px; display: flex; flex-direction: column; gap: 10px;
+}
+.ps-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+.ps-value { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 14px; margin-top: 2px; }

@@ -1,0 +1,618 @@
+<div class="m-fade">
+  <h1 class="st-h1">Settings</h1>
+
+  <div class="st-card">
+    <!-- ===== TAB STRIP ===== -->
+    <div class="st-tabbar">
+      <button class="st-arrow" (click)="scrollTabs(-1)">‹</button>
+      <div id="settings-tabstrip" class="st-strip">
+        @for (t of tabs; track t.id) {
+          <button class="st-tab" [class.on]="active() === t.id" (click)="select(t.id)">
+            {{ t.label }}
+          </button>
+        }
+      </div>
+      <button class="st-arrow" (click)="scrollTabs(1)">›</button>
+    </div>
+
+    <div class="st-body">
+      @if (error())  { <div class="alert">{{ error() }}</div> }
+
+      <!-- ============ PROFILE ============ -->
+      @if (active() === 'profile') {
+        <!-- logo -->
+        <div class="logo-row">
+          <div class="logo-box">
+            <img [src]="profile().logoUrl || 'assets/monthley-badge.png'" alt="" />
+          </div>
+          <div>
+            <div class="logo-label">Logo Organisasi</div>
+            <button class="btn btn-green" style="padding:9px 16px;font-size:13px;border-radius:9px">
+              Choose File
+            </button>
+            <div class="logo-hint">Cadangan 40×40px · PNG/JPG · maks 2MB</div>
+          </div>
+        </div>
+
+        <div class="f-grid">
+          <div>
+            <label>SP Code</label>
+            <input class="fld" [ngModel]="profile().spCode" disabled />
+          </div>
+          <div>
+            <label>Business Type</label>
+            <select class="fld" [(ngModel)]="profile().businessType">
+              <option value="">Please Select</option>
+              @for (b of bizTypes(); track b.code) {
+                <option [value]="b.code">{{ b.name }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="span2">
+            <label>Business Description</label>
+            <input class="fld" [(ngModel)]="profile().businessDesc" placeholder="cth: JMB Seri Wangi" />
+          </div>
+
+          <div>
+            <label>Name</label>
+            <input class="fld" [(ngModel)]="profile().name" />
+          </div>
+          <div>
+            <label>Identification No. (ROC/ROS/NRIC etc.)</label>
+            <input class="fld" [(ngModel)]="profile().registrationNo" />
+          </div>
+
+          <div class="span2">
+            <label>Address</label>
+            <input class="fld" [(ngModel)]="profile().address" />
+          </div>
+
+          <div>
+            <label>Postcode</label>
+            <input class="fld" [(ngModel)]="profile().postcode" />
+          </div>
+          <div>
+            <label>Country</label>
+            <select class="fld" [(ngModel)]="profile().country">
+              @for (c of negara; track c) { <option [value]="c">{{ c }}</option> }
+            </select>
+          </div>
+
+          <div>
+            <label>State</label>
+            <select class="fld" [(ngModel)]="profile().state">
+              <option value="">Please Select</option>
+              @for (n of negeri; track n) { <option [value]="n">{{ n }}</option> }
+            </select>
+          </div>
+          <div>
+            <label>Website</label>
+            <input class="fld" [(ngModel)]="profile().website" />
+          </div>
+
+          <div>
+            <label>Office No</label>
+            <input class="fld" [(ngModel)]="profile().officeNo" />
+          </div>
+          <div>
+            <label>Mobile No.</label>
+            <input class="fld" [(ngModel)]="profile().mobileNo" />
+          </div>
+
+          <div>
+            <label>Helpdesk Email</label>
+            <input class="fld" type="email" [(ngModel)]="profile().helpdeskEmail" />
+          </div>
+          <div>
+            <label>Helpdesk Telephone No.</label>
+            <input class="fld" [(ngModel)]="profile().helpdeskPhone" />
+          </div>
+
+          <div>
+            <label>Contact Email</label>
+            <input class="fld" type="email" [(ngModel)]="profile().contactEmail" />
+          </div>
+          <div></div>
+        </div>
+
+        <h4 class="sub-t">Akaun Bank</h4>
+        <div class="f-grid">
+          <div><label>Nama Bank</label><input class="fld" [(ngModel)]="profile().bankCode" /></div>
+          <div><label>No. Akaun</label><input class="fld" [(ngModel)]="profile().bankAccountNo" /></div>
+          <div class="span2"><label>Nama Pemegang Akaun</label><input class="fld" [(ngModel)]="profile().bankAccountName" /></div>
+        </div>
+
+        <div class="st-actions">
+          <button class="btn btn-green" data-cta (click)="saveProfile()" [disabled]="busy()">
+            {{ busy() ? 'Menyimpan…' : 'Save' }}
+          </button>
+        </div>
+      }
+
+      <!-- ============ SALES TAX (e-Invois) ============ -->
+      @if (active() === 'salestax') {
+        <div class="einv-banner">
+          <span class="eb-ic">🧾</span>
+          <div>
+            <strong>Tax Invoice (e-Invois)</strong>
+            — Wajib untuk semua peniaga mulai <strong>1 Januari 2027</strong>.
+            Lengkapkan maklumat cukai di bawah untuk penjanaan tax invoice
+            yang mematuhi LHDN.
+          </div>
+        </div>
+
+        <h4 class="sub-t" style="margin-top:20px">Rekod Cukai</h4>
+        <div class="f-grid">
+          <div><label>Tax Name</label><input class="fld" [(ngModel)]="billing().taxName" placeholder="cth: SST" /></div>
+          <div>
+            <label>Rate</label>
+            <input class="fld" type="number" step="0.0001" [(ngModel)]="billing().taxRate"
+                   placeholder="cth: 0.06 untuk 6%" />
+          </div>
+          <div class="span2"><label>Sales Tax ID</label><input class="fld" [(ngModel)]="billing().taxId" /></div>
+        </div>
+
+        <h4 class="sub-t" style="margin-top:24px">
+          Tax Invoice (e-Invois) <span class="badge-soon">berkuatkuasa Jan 2027</span>
+        </h4>
+
+        <div style="margin-bottom:16px">
+          <label class="f-label">Enable Tax Invoice</label>
+          <app-yesno [(ngModel)]="billing().enableTaxInvoice" />
+        </div>
+
+        <div class="f-grid">
+          <div><label>TIN (Tax Identification No.)</label><input class="fld" [(ngModel)]="billing().tin" /></div>
+          <div><label>SST Registration No.</label><input class="fld" [(ngModel)]="billing().sstRegistrationNo" /></div>
+
+          <div><label>Effective Date</label><input class="fld" type="date" [(ngModel)]="billing().taxEffectiveDate" /></div>
+          <div><label>MSIC Code</label><input class="fld" [(ngModel)]="billing().msicCode" /></div>
+
+          <div>
+            <label>Jenis e-Invois</label>
+            <select class="fld" [(ngModel)]="billing().einvoiceType">
+              @for (t of einvoiceTypes; track t.code) { <option [value]="t.code">{{ t.label }}</option> }
+            </select>
+          </div>
+          <div>
+            <label>Klasifikasi</label>
+            <select class="fld" [(ngModel)]="billing().einvoiceClassification">
+              @for (c of einvoiceClasses; track c.code) { <option [value]="c.code">{{ c.label }}</option> }
+            </select>
+          </div>
+        </div>
+
+        <div class="st-actions">
+          <button class="btn btn-green" data-cta (click)="saveBilling()" [disabled]="busy()">Save</button>
+        </div>
+      }
+
+      <!-- ============ LOCALIZATION ============ -->
+      @if (active() === 'localization') {
+        <h3 class="sec-t">Tetapan Penyetempatan</h3>
+        <div class="f-grid">
+          <div>
+            <label>Currency</label>
+            <select class="fld" [(ngModel)]="billing().currency">
+              <option value="MYR">MYR — Ringgit Malaysia</option>
+              <option value="SGD">SGD — Dolar Singapura</option>
+            </select>
+          </div>
+          <div>
+            <label>Language</label>
+            <select class="fld" [(ngModel)]="billing().language">
+              <option value="ms">Bahasa Melayu</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+          <div>
+            <label>Date Format</label>
+            <select class="fld" [(ngModel)]="billing().dateFormat">
+              <option value="dd/MM/yyyy">dd/MM/yyyy</option>
+              <option value="yyyy-MM-dd">yyyy-MM-dd</option>
+              <option value="dd MMM yyyy">dd MMM yyyy</option>
+            </select>
+          </div>
+          <div>
+            <label>Time Format</label>
+            <select class="fld" [(ngModel)]="billing().timeFormat">
+              <option value="hh:mm:ss a">hh:mm:ss a (12 jam)</option>
+              <option value="HH:mm:ss">HH:mm:ss (24 jam)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="st-actions">
+          <button class="btn btn-green" data-cta (click)="saveBilling()" [disabled]="busy()">Save</button>
+        </div>
+      }
+
+      <!-- ============ INVOICE SETTING ============ -->
+      @if (active() === 'invoice') {
+        <h3 class="sec-t">Tetapan Invois</h3>
+        <div class="f-grid">
+          <div><label>Title</label><input class="fld" [(ngModel)]="doc().invoiceTitle" /></div>
+          <div><label>Payment Term (days)</label><input class="fld" type="number" [(ngModel)]="billing().paymentTermDays" /></div>
+
+          <div>
+            <label>Invoice No. Format: Prefix</label>
+            <input class="fld" [(ngModel)]="doc().invoicePrefix" />
+            <div class="f-hint">Prefix Example: P</div>
+          </div>
+          <div><label>Invoice No. Format: Size</label><input class="fld" type="number" [(ngModel)]="doc().invoiceNoSize" /></div>
+
+          <div><label>Invoice No. Format: Starts From</label><input class="fld" type="number" [(ngModel)]="doc().invoiceNoStart" /></div>
+          <div>
+            <label>Invoice Generation Mode</label>
+            <select class="fld" [(ngModel)]="doc().invoiceGenMode">
+              <option value="POSTPAID">Postpaid</option>
+              <option value="CURRENT">Current</option>
+              <option value="PREPAID">Prepaid</option>
+            </select>
+          </div>
+
+          <div>
+            <label>Invoice Generation Frequency</label>
+            <select class="fld" [(ngModel)]="doc().invoiceGenFreq">
+              <option value="MONTHLY">Monthly</option>
+              <option value="QUARTERLY">Quarterly</option>
+              <option value="HALF_YEAR">Half Year</option>
+              <option value="YEAR">Year</option>
+            </select>
+          </div>
+          <div><label>Invoice Generation Day Of Month</label><input class="fld" type="number" min="1" max="28" [(ngModel)]="doc().invoiceGenDay" /></div>
+
+          <div class="span2">
+            <label>Template</label>
+            <select class="fld" [(ngModel)]="doc().invoiceTemplateId">
+              <option value="">Please Select</option>
+              @for (t of invoiceTemplates; track t) { <option [value]="t">{{ t }}</option> }
+            </select>
+          </div>
+        </div>
+
+        <div class="yn-grid">
+          <div>
+            <label class="f-label">SMS Notification Of Invoice Generation</label>
+            <app-yesno [(ngModel)]="doc().smsOnInvoice" />
+          </div>
+          <div>
+            <label class="f-label">SMS Notification Of Invoice Reminder</label>
+            <app-yesno [(ngModel)]="doc().smsOnReminder" />
+          </div>
+          <div>
+            <label class="f-label">Whatsapp Notification Of Invoice Generation</label>
+            <app-yesno [(ngModel)]="doc().whatsappOnInvoice" />
+          </div>
+          <div>
+            <label class="f-label">Whatsapp Notification Of Invoice Reminder</label>
+            <app-yesno [(ngModel)]="doc().whatsappOnReminder" />
+          </div>
+          <div>
+            <label class="f-label">Split Invoice Transaction</label>
+            <app-yesno [(ngModel)]="doc().splitInvoiceByProduct" />
+            <div class="f-hint">Satu invois berasingan bagi setiap produk</div>
+          </div>
+        </div>
+
+        <div class="st-actions">
+          <button class="btn btn-green" data-cta (click)="saveInvoice()" [disabled]="busy()">Save</button>
+        </div>
+      }
+
+      <!-- ============ RECEIPT SETTING ============ -->
+      @if (active() === 'receipt') {
+        <h3 class="sec-t">Tetapan Resit</h3>
+        <div class="f-grid">
+          <div><label>Title</label><input class="fld" [(ngModel)]="doc().receiptTitle" /></div>
+          <div>
+            <label>Receipt No. Format: Prefix</label>
+            <input class="fld" [(ngModel)]="doc().receiptPrefix" />
+            <div class="f-hint">Prefix Example : K19</div>
+          </div>
+
+          <div><label>Receipt No. Format: Size</label><input class="fld" type="number" [(ngModel)]="doc().receiptNoSize" /></div>
+          <div><label>Receipt No. Format: Starts From</label><input class="fld" type="number" [(ngModel)]="doc().receiptNoStart" /></div>
+
+          <div class="span2">
+            <label>Template</label>
+            <select class="fld" [(ngModel)]="doc().receiptTemplateId">
+              <option value="">Please Select</option>
+              @for (t of receiptTemplates; track t) { <option [value]="t">{{ t }}</option> }
+            </select>
+          </div>
+        </div>
+
+        <div style="margin-top:4px">
+          <label class="f-label">Enable Manual Payment</label>
+          <app-yesno [(ngModel)]="doc().enableManualPayment" />
+          <div class="f-hint">Benarkan Cashier rekod bayaran tunai/cek di kaunter</div>
+        </div>
+
+        <div class="st-actions">
+          <button class="btn btn-green" data-cta (click)="saveDocument()" [disabled]="busy()">Save</button>
+        </div>
+      }
+
+      <!-- ============ STATEMENT ============ -->
+      @if (active() === 'statement') {
+        <h3 class="sec-t">Penyata</h3>
+        <div class="g2">
+          <div><label>Tajuk Penyata</label><input class="fld" [(ngModel)]="doc().statementTitle" placeholder="cth: PENYATA AKAUN" /></div>
+          <div><label>Template</label><input class="fld" [(ngModel)]="doc().statementTemplateId" /></div>
+        </div>
+        <div class="st-actions">
+          <button class="btn btn-green" data-cta (click)="saveDocument()" [disabled]="busy()">Simpan</button>
+        </div>
+      }
+
+      <!-- ============ LATE PENALTY ============ -->
+      @if (active() === 'penalty') {
+        <h3 class="sec-t">Penalti Lewat</h3>
+        <label class="tg big"><input type="checkbox" [(ngModel)]="penalty().enabled" />
+          <span><strong>Aktifkan denda lewat</strong></span></label>
+
+        @if (penalty().enabled) {
+          <div class="g3" style="margin-top:16px">
+            <div><label>Kod</label><input class="fld" [(ngModel)]="penalty().penaltyCode" placeholder="cth: LATE" /></div>
+            <div><label>Tajuk</label><input class="fld" [(ngModel)]="penalty().penaltyTitle" placeholder="cth: Denda Lewat" /></div>
+            <div>
+              <label>Jenis</label>
+              <select class="fld" [(ngModel)]="penalty().penaltyType">
+                <option value="FIXED">Amaun Tetap (RM)</option>
+                <option value="PERCENT">Peratus Baki (%)</option>
+              </select>
+            </div>
+          </div>
+          <div class="g3">
+            <div><label>Amaun / Kadar</label><input class="fld" type="number" step="0.01" [(ngModel)]="penalty().penaltyAmount" /></div>
+            <div><label>Selepas (hari)</label><input class="fld" type="number" [(ngModel)]="penalty().penaltyAfterDay" /></div>
+            <div><label>Keterangan</label><input class="fld" [(ngModel)]="penalty().penaltyDesc" /></div>
+          </div>
+          <div class="toggle-row">
+            <label class="tg"><input type="checkbox" [(ngModel)]="penalty().taxable" />
+              <span>Denda dikenakan cukai</span></label>
+            <label class="tg"><input type="checkbox" [(ngModel)]="penalty().compounded" />
+              <span>Berkompaun setiap tempoh</span></label>
+          </div>
+        }
+
+        <div class="st-actions">
+          <button class="btn btn-green" data-cta (click)="savePenalty()" [disabled]="busy()">Simpan</button>
+        </div>
+      }
+
+      <!-- ============ MANAGE PLAN ============ -->
+      @if (active() === 'plan') {
+        <h3 class="sec-t">Pelan Perkhidmatan</h3>
+        @if (plan(); as p) {
+          <div class="plan-grid">
+            <div class="plan-box" data-card>
+              <div class="pb-label">Pelan Semasa</div>
+              <div class="pb-value">{{ p.planName || 'Tiada pelan' }}</div>
+              @if (p.price) {
+                <div class="pb-sub">RM{{ p.price | number:'1.2-2' }} / {{ p.billingPlan === 'YEARLY' ? 'tahun' : 'bulan' }}</div>
+              }
+            </div>
+            <div class="plan-box" data-card>
+              <div class="pb-label">Penggunaan Akaun</div>
+              <div class="pb-value">{{ p.accountUsed }}<span class="pb-dim"> / {{ p.accountLimit || '∞' }}</span></div>
+              @if (p.accountLimit) {
+                <div class="bar" style="max-width:none;margin-top:8px">
+                  <div class="bar-fill" [style.width.%]="planUsage() < 100 ? planUsage() : 100"
+                       [style.background]="planUsage() >= 90 ? 'var(--red)' : planUsage() >= 75 ? 'var(--orange)' : 'var(--green)'"></div>
+                </div>
+              }
+            </div>
+            <div class="plan-box" data-card>
+              <div class="pb-label">Anggaran Invois / Bulan</div>
+              <div class="pb-value">{{ p.estInvoicesMonth || '—' }}</div>
+            </div>
+          </div>
+          <div class="hint" style="margin-top:18px">
+            ℹ️ Pelan ditetapkan oleh <strong>Monthley</strong> semasa onboarding.
+            Untuk menaik taraf, hubungi admin Monthley.
+          </div>
+        }
+      }
+
+      <!-- ============ LOOKUP: acctcat / prodcat / branch ============ -->
+      @if (active() === 'acctcat' || active() === 'prodcat' || active() === 'branch') {
+        <h3 class="sec-t">{{ tabLabel(active()) }}</h3>
+
+        <div class="lk-add">
+          <input class="fld" style="flex:0 0 150px" [(ngModel)]="lkCode" placeholder="Code" />
+          <input class="fld" style="flex:1" [(ngModel)]="lkName" placeholder="Name"
+                 (keyup.enter)="addLookup($any(active()))" />
+          @if (active() === 'branch') {
+            <input class="fld" style="flex:1.4" [(ngModel)]="lkAddress" placeholder="Alamat"
+                   (keyup.enter)="addLookup($any(active()))" />
+          }
+          <button class="btn btn-green" data-cta (click)="addLookup($any(active()))">+ Tambah</button>
+        </div>
+
+        @let cols = active() === 'branch' ? '0.7fr 1.4fr 2fr 80px' : '0.8fr 2fr 80px';
+
+        <div class="card" style="overflow:hidden;margin-top:14px">
+          <div class="grid-head" [style.grid-template-columns]="cols">
+            <span>Code</span><span>Name</span>
+            @if (active() === 'branch') { <span>Alamat</span> }
+            <span class="c">Action</span>
+          </div>
+
+          @if (active() === 'branch') {
+            @if (branches().length === 0) {
+              <div class="empty">Tiada cawangan lagi.</div>
+            } @else {
+              @for (b of branches(); track b.id) {
+                <div class="grid-row" data-row [style.grid-template-columns]="cols">
+                  <span style="font-weight:700">{{ b.code }}</span>
+                  <span>{{ b.name }}</span>
+                  <span style="color:var(--muted-2);font-size:13px">{{ b.address || '—' }}</span>
+                  <span class="acts" style="justify-content:center">
+                    <button class="act" data-tip="Buang" style="background:var(--red)"
+                            (click)="delLookup('branch', b.id)">🗑</button>
+                  </span>
+                </div>
+              }
+            }
+          } @else {
+            @let list = active() === 'acctcat' ? acctCats() : prodCats();
+            @if (list.length === 0) {
+              <div class="empty">Tiada rekod lagi.</div>
+            } @else {
+              @for (x of list; track x.id) {
+                <div class="grid-row" data-row [style.grid-template-columns]="cols">
+                  <span style="font-weight:700">{{ x.code }}</span>
+                  <span>{{ x.name }}</span>
+                  <span class="acts" style="justify-content:center">
+                    <button class="act" data-tip="Buang" style="background:var(--red)"
+                            (click)="delLookup($any(active()), x.id)">🗑</button>
+                  </span>
+                </div>
+              }
+            }
+          }
+        </div>
+      }
+
+      <!-- ============ INVOICE PERIOD EXCLUDE ============ -->
+      @if (active() === 'exclude') {
+        <h3 class="sec-t">Pengecualian Tempoh Invois</h3>
+        <p class="tab-hint">
+          Tempoh yang disenaraikan di sini <strong>tidak akan dijana</strong> invois.
+          Berguna untuk bulan cuti, penangguhan, atau tempoh percuma.
+        </p>
+
+        <div class="lk-add">
+          <input class="fld" style="flex:0 0 160px" type="month" [(ngModel)]="exPeriod" />
+          <input class="fld" style="flex:1" [(ngModel)]="exRemarks" placeholder="Sebab (pilihan)"
+                 (keyup.enter)="addExclude()" />
+          <button class="btn btn-green" data-cta (click)="addExclude()">+ Kecualikan</button>
+        </div>
+
+        <div class="card" style="overflow:hidden;margin-top:14px">
+          <div class="grid-head" style="grid-template-columns:0.8fr 2fr 80px">
+            <span>Tempoh</span><span>Sebab</span><span class="c">Action</span>
+          </div>
+          @if (excludes().length === 0) {
+            <div class="empty">Tiada tempoh dikecualikan.</div>
+          } @else {
+            @for (e of excludes(); track e.id) {
+              <div class="grid-row" data-row style="grid-template-columns:0.8fr 2fr 80px">
+                <span style="font-weight:700;font-family:'Sora',sans-serif">{{ e.period }}</span>
+                <span style="color:var(--muted-2)">{{ e.remarks || '—' }}</span>
+                <span class="acts" style="justify-content:center">
+                  <button class="act" data-tip="Buang" style="background:var(--red)"
+                          (click)="delExclude(e.id)">🗑</button>
+                </span>
+              </div>
+            }
+          }
+        </div>
+      }
+
+      <!-- ============ ROLES SETTING ============ -->
+      @if (active() === 'roles') {
+        <div class="st-head">
+          <div>
+            <h3>Roles Setting</h3>
+            <p>Urus siapa boleh akses SP ini dan apa yang mereka boleh buat.</p>
+          </div>
+          <button class="btn btn-green" data-cta (click)="addOpen.set(true)">+ Tambah Ahli</button>
+        </div>
+
+        <div class="role-cards">
+          @for (r of roles(); track r.code) {
+            <div class="role-card" data-card>
+              <div class="role-dot" [style.background]="roleColor(r.code)"></div>
+              <div>
+                <div class="role-name">{{ r.name }}</div>
+                <div class="role-desc">{{ r.description }}</div>
+              </div>
+            </div>
+          }
+        </div>
+
+        <h4 class="sub-t" style="margin-top:26px">Ahli SP</h4>
+        <div class="card" style="overflow:hidden">
+          <div class="grid-head" style="grid-template-columns:1.6fr 1.6fr 1.2fr 0.9fr 90px">
+            <span>Nama</span><span>E-mel</span><span>Peranan</span><span>Sertai</span><span class="c">Action</span>
+          </div>
+          @if (members().length === 0) {
+            <div class="empty">Tiada ahli lagi.</div>
+          } @else {
+            @for (m of members(); track m.id) {
+              <div class="grid-row" data-row style="grid-template-columns:1.6fr 1.6fr 1.2fr 0.9fr 90px">
+                <span style="display:flex;align-items:center;gap:10px">
+                  <span class="m-ini">{{ m.fullName.charAt(0).toUpperCase() }}</span>
+                  <span style="font-weight:700">{{ m.fullName }}</span>
+                </span>
+                <span style="color:var(--muted-2);font-size:13px">{{ m.email }}</span>
+                <span>
+                  <select class="role-sel" [ngModel]="m.role" (ngModelChange)="changeRole(m, $event)"
+                          [style.color]="roleColor(m.role)" [style.background]="roleBg(m.role)">
+                    @for (r of roles(); track r.code) { <option [value]="r.code">{{ r.name }}</option> }
+                  </select>
+                </span>
+                <span style="color:var(--muted);font-size:13px">{{ m.joinedAt || '—' }}</span>
+                <span class="acts" style="justify-content:center">
+                  <button class="act" data-tip="Buang" style="background:var(--red)" (click)="removeMember(m)">🗑</button>
+                </span>
+              </div>
+            }
+          }
+        </div>
+
+        <div class="hint" style="margin-top:16px">
+          💡 <strong>Pengasingan tugas:</strong> Admin urus sistem tetapi <strong>tidak</strong>
+          boleh terima bayaran. Jika seseorang perlu dua-dua, tambah e-mel yang sama
+          <strong>dua kali</strong> — sekali Admin, sekali Cashier.<br><br>
+          ⚠️ Ahli mesti sudah berdaftar dengan Monthley. Admin terakhir tidak boleh dibuang.
+        </div>
+      }
+
+      <!-- ============ BELUM DIBINA ============ -->
+      @if (active() === 'license' || active() === 'application' || active() === 'accesscard') {
+        <div class="st-soon">
+          <div class="soon-ic">🚧</div>
+          <h3>{{ tabLabel(active()) }}</h3>
+          <p>Tab ini akan dibina seterusnya.</p>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: TAMBAH AHLI ===== -->
+@if (addOpen()) {
+  <div class="m-backdrop" (click)="addOpen.set(false)">
+    <div class="m-modal" (click)="$event.stopPropagation()">
+      <div class="m-modal-head">
+        <h3>Tambah Ahli</h3>
+        <button class="m-close" (click)="addOpen.set(false)">✕</button>
+      </div>
+
+      <label class="m-label">E-mel Pengguna</label>
+      <input class="fld" [(ngModel)]="newEmail" placeholder="mesti berdaftar dgn Monthley"
+             (keyup.enter)="addMember()" />
+
+      <label class="m-label" style="margin-top:14px">Peranan</label>
+      <select class="fld" [(ngModel)]="newRole">
+        @for (r of roles(); track r.code) {
+          <option [value]="r.code">{{ r.name }} — {{ r.description }}</option>
+        }
+      </select>
+
+      @if (error()) { <div class="alert" style="margin:14px 0 0">{{ error() }}</div> }
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px">
+        <button class="btn btn-ghost" (click)="addOpen.set(false)">Batal</button>
+        <button class="btn btn-green" data-cta (click)="addMember()" [disabled]="busy()">
+          {{ busy() ? 'Menambah…' : 'Tambah' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

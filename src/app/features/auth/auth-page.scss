@@ -1,0 +1,91 @@
+/* Halaman auth — gaya "1a DARK FINTECH" (sama dgn landing) */
+:host { display: block; }
+
+.auth-page {
+  position: relative; min-height: 100vh; background: #122029; color: #eaf1ee;
+  display: flex; align-items: center; justify-content: center; padding: 40px 24px;
+  overflow: hidden;
+}
+.glow { position: absolute; pointer-events: none; z-index: 0; }
+.g1 {
+  top: -160px; right: -120px; width: 620px; height: 620px;
+  background: radial-gradient(circle, rgba(107,182,63,.35), transparent 62%);
+}
+.g2 {
+  bottom: -180px; left: -180px; width: 520px; height: 520px;
+  background: radial-gradient(circle, rgba(188,214,52,.18), transparent 62%);
+}
+
+.auth-card {
+  position: relative; z-index: 10; width: 100%; max-width: 440px;
+  background: #fbfdfb; border-radius: 24px; padding: 44px 40px;
+  color: #122029; text-align: center;
+  box-shadow: 0 40px 90px rgba(0,0,0,.5);
+  animation: m-fade .3s ease;
+}
+.auth-badge { height: 52px; width: 52px; border-radius: 50%; margin-bottom: 20px; }
+
+h1 {
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 26px;
+  margin: 0 0 8px; letter-spacing: -.4px;
+}
+p { font-size: 14.5px; line-height: 1.6; color: #6b7f86; margin: 0 0 22px; }
+
+label {
+  display: block; text-align: left; font-size: 13px; font-weight: 700;
+  color: #3a4c53; margin-bottom: 6px;
+}
+.ainput {
+  width: 100%; padding: 14px 16px; margin-bottom: 16px;
+  border: 1.5px solid #dbe3de; border-radius: 12px;
+  font-size: 15px; font-family: 'Manrope', sans-serif; background: #fff; color: #122029;
+  &:focus { outline: none; border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,.12); }
+}
+.pwd-row { display: flex; gap: 8px; margin-bottom: 16px;
+  .ainput { margin-bottom: 0; flex: 1; } }
+.eye {
+  width: 48px; border: 1.5px solid #dbe3de; border-radius: 12px;
+  background: #fff; font-size: 16px; cursor: pointer;
+}
+
+.btn-lime {
+  font-family: 'Sora', sans-serif; font-weight: 700; font-size: 15px; color: #122029;
+  background: linear-gradient(120deg, #bcd634, #3fae52); border: none;
+  padding: 15px; border-radius: 12px; cursor: pointer;
+  &:hover { filter: brightness(1.06); }
+  &:disabled { opacity: .6; cursor: default; }
+  &.full { width: 100%; display: block; }
+}
+.btn-soft {
+  display: block; width: 100%; text-align: center; text-decoration: none;
+  font-family: 'Sora', sans-serif; font-weight: 600; font-size: 15px; color: #3a4c53;
+  background: #eef2ef; border: 1.5px solid #dbe3de;
+  padding: 14px; border-radius: 12px; cursor: pointer;
+  &:hover { background: #e7ece8; }
+}
+
+.mark {
+  width: 62px; height: 62px; border-radius: 50%; margin: 0 auto 18px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; font-weight: 800;
+  &.ok  { background: #e7f6ec; color: #16a34a; }
+  &.bad { background: #fdecec; color: #d64545; }
+}
+
+.note {
+  border-radius: 10px; padding: 11px 14px; margin-bottom: 16px;
+  font-size: 13px; font-weight: 600; text-align: left;
+  &.ok  { background: #e7f6ec; border: 1px solid #cfe3d5; color: #128a41; }
+  &.bad { background: #fdecec; border: 1px solid #f5c6c6; color: #d64545; }
+}
+
+.fine { font-size: 12px; color: #6b7f86; margin: 16px 0 0; }
+
+/* spinner */
+.spin {
+  width: 44px; height: 44px; margin: 0 auto 20px;
+  border: 3px solid #e7ece8; border-top-color: #16a34a;
+  border-radius: 50%; animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes m-fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }

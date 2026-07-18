@@ -1,0 +1,38 @@
+<div class="auth-page">
+  <div class="glow g1"></div>
+  <div class="glow g2"></div>
+
+  <div class="auth-card">
+    <img src="assets/monthley-badge.png" alt="" class="auth-badge" />
+
+    @switch (state()) {
+      @case ('checking') {
+        <div class="spin"></div>
+        <h1>Mengesahkan e-mel…</h1>
+        <p>Sekejap ya, kami sedang sahkan pautan anda.</p>
+      }
+
+      @case ('ok') {
+        <div class="mark ok">✓</div>
+        <h1>E-mel disahkan!</h1>
+        <p>Akaun anda kini aktif. Kami sedang bawa anda ke portal…</p>
+        <button class="btn-lime full" (click)="goPortal()">Buka Portal Sekarang</button>
+      }
+
+      @case ('fail') {
+        <div class="mark bad">✕</div>
+        <h1>Pautan tidak sah</h1>
+        <p>{{ message() }}</p>
+
+        @if (resent()) {
+          <div class="note ok">✓ Pautan baharu telah dihantar. Sila semak e-mel anda.</div>
+        }
+
+        <a class="btn-soft full" routerLink="/">Kembali ke Laman Utama</a>
+        <p class="fine">
+          Pautan luput? Log masuk semula untuk minta pautan baharu.
+        </p>
+      }
+    }
+  </div>
+</div>

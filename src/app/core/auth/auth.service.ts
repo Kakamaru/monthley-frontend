@@ -26,8 +26,28 @@ export class AuthService {
       .pipe(tap(r => this.persist(r)));
   }
 
-  register(body: RegisterRequest): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>('/api/v1/auth/register', body)
+  /** Daftar — TIDAK log masuk. E-mel mesti disahkan dahulu. */
+  register(body: RegisterRequest): Observable<{ message: string; email: string }> {
+    return this.http.post<{ message: string; email: string }>('/api/v1/auth/register', body);
+  }
+
+  /** Sahkan e-mel dengan token dari pautan → terus log masuk. */
+  verify(token: string): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>('/api/v1/auth/verify', { token })
+      .pipe(tap(r => this.persist(r)));
+  }
+
+  resendVerification(email: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>('/api/v1/auth/resend-verification', { email });
+  }
+
+  forgotPassword(email: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>('/api/v1/auth/forgot-password', { email });
+  }
+
+  /** Reset kata laluan dengan token → terus log masuk. */
+  resetPassword(token: string, password: string): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>('/api/v1/auth/reset-password', { token, password })
       .pipe(tap(r => this.persist(r)));
   }
 

@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { OnboardService, ServicePlan, OnboardResult } from './onboard.service';
+import { OnboardService, ServicePlan, OnboardResult, BusinessType } from './onboard.service';
 
 @Component({
   selector: 'app-onboard',
@@ -13,13 +13,14 @@ export class OnboardComponent {
   private api = inject(OnboardService);
 
   readonly plans = signal<ServicePlan[]>([]);
+  readonly bizTypes = signal<BusinessType[]>([]);
   readonly busy = signal(false);
   readonly keyBusy = signal(false);
   readonly result = signal<OnboardResult | null>(null);
   readonly error = signal<string | null>(null);
 
   // maklumat SP
-  name = ''; registrationNo = ''; businessDesc = ''; website = '';
+  name = ''; businessType = ''; registrationNo = ''; businessDesc = ''; website = '';
   addrLine1 = ''; addrLine2 = ''; city = ''; postcode = '';
   state = ''; country = 'Malaysia'; orgRegisteredDate = '';
   servicePlanId: number | null = null;
@@ -56,6 +57,10 @@ export class OnboardComponent {
       next: p => this.plans.set(p),
       error: () => this.plans.set([])
     });
+    this.api.businessTypes().subscribe({
+      next: b => this.bizTypes.set(b),
+      error: () => this.bizTypes.set([])
+    });
   }
 
   generateKey() {
@@ -75,7 +80,8 @@ export class OnboardComponent {
     this.error.set(null);
     this.result.set(null);
     this.api.onboard({
-      name: this.name, registrationNo: this.registrationNo,
+      name: this.name, businessType: this.businessType || undefined,
+      registrationNo: this.registrationNo,
       businessDesc: this.businessDesc, website: this.website,
       addrLine1: this.addrLine1, addrLine2: this.addrLine2, city: this.city,
       postcode: this.postcode, state: this.state, country: this.country,

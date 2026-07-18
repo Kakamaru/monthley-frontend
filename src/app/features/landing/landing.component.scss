@@ -289,3 +289,35 @@
   font-size: 13px; font-weight: 600;
 }
 .btn-lime:disabled { opacity: .6; cursor: default; }
+
+/* pautan privasi dalam modal */
+.modal-legal {
+  text-align: center; margin-top: 14px; padding-top: 14px;
+  border-top: 1px solid #eef2ef;
+  a { font-size: 12px; color: #6b7f86; text-decoration: none;
+      &:hover { color: #16a34a; text-decoration: underline; } }
+}
+
+/* persetujuan dalam modal daftar */
+.consent {
+  font-size: 12.5px; line-height: 1.55; color: #6b7f86;
+  margin: 2px 0 16px; text-align: center;
+  a { color: #16a34a; font-weight: 600; text-decoration: none;
+      &:hover { text-decoration: underline; } }
+}
+
+/* footer: pautan <a> sama gaya dgn <span> */
+.foot-links a {
+  font-size: 14px; color: #9fb2ba; cursor: pointer; text-decoration: none;
+  &:hover { color: #cfe25c; }
+}
+
+.auth-ok {
+  background: #e7f6ec; border: 1px solid #cfe3d5; color: #128a41;
+  padding: 11px 14px; border-radius: 10px; margin: 4px 0 14px;
+  font-size: 13px; font-weight: 600;
+}
+.hint-box {
+  background: #f4f7f4; border: 1px solid #e6ebe7; border-radius: 10px;
+  padding: 12px 14px; font-size: 12.5px; color: #6b7f86; line-height: 1.55;
+}

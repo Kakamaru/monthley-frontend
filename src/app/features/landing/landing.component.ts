@@ -26,6 +26,11 @@ export class LandingComponent {
   readonly contactOpen = signal(false);
   readonly busy = signal(false);
   readonly authError = signal<string | null>(null);
+  readonly forgotOpen = signal(false);
+  readonly registered = signal<string | null>(null);   // e-mel yang baru daftar
+  readonly forgotSent = signal(false);
+  readonly needVerify = signal(false);
+  readonly resendOk = signal(false);
 
   /** Masalah cara manual — 3 kad */
   readonly problems: Card[] = [
@@ -73,6 +78,9 @@ export class LandingComponent {
   loginId = '';
   loginPassword = '';
 
+  // borang lupa kata laluan
+  fEmail = '';
+
   // borang daftar
   rName = ''; rEmail = ''; rMobile = ''; rPassword = '';
 
@@ -91,9 +99,34 @@ export class LandingComponent {
       },
       error: e => {
         this.busy.set(false);
+        this.needVerify.set(e?.status === 403);
         this.authError.set(e?.error?.message ?? 'Log masuk gagal. Cuba lagi.');
       }
     });
+  }
+
+  resendVerification() {
+    this.auth.resendVerification(this.loginId).subscribe({
+      next: () => { this.resendOk.set(true); this.needVerify.set(false); },
+      error: () => this.resendOk.set(true)
+    });
+  }
+
+  forgotPassword() {
+    this.busy.set(true);
+    this.authError.set(null);
+    this.auth.forgotPassword(this.fEmail).subscribe({
+      next: () => { this.busy.set(false); this.forgotSent.set(true); },
+      error: () => { this.busy.set(false); this.forgotSent.set(true); }
+    });
+  }
+
+  openForgot() {
+    this.loginOpen.set(false);
+    this.forgotSent.set(false);
+    this.authError.set(null);
+    this.fEmail = this.loginId;
+    this.forgotOpen.set(true);
   }
 
   register() {
@@ -103,10 +136,9 @@ export class LandingComponent {
       fullName: this.rName, email: this.rEmail,
       mobile: this.rMobile, password: this.rPassword
     }).subscribe({
-      next: () => {
+      next: r => {
         this.busy.set(false);
-        this.registerOpen.set(false);
-        this.router.navigateByUrl(this.auth.landingRoute());
+        this.registered.set(r.email);   // papar skrin "semak e-mel"
       },
       error: e => {
         this.busy.set(false);
@@ -115,15 +147,25 @@ export class LandingComponent {
     });
   }
 
+  closeRegister() {
+    this.registerOpen.set(false);
+    this.registered.set(null);
+    this.rName = ''; this.rEmail = ''; this.rMobile = ''; this.rPassword = '';
+  }
+
   openRegister() {
     this.loginOpen.set(false);
     this.authError.set(null);
+    this.registered.set(null);
     this.registerOpen.set(true);
   }
 
   openLogin() {
     this.registerOpen.set(false);
+    this.forgotOpen.set(false);
     this.authError.set(null);
+    this.needVerify.set(false);
+    this.resendOk.set(false);
     this.loginOpen.set(true);
   }
 

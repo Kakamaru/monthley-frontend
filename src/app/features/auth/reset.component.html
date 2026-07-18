@@ -1,0 +1,41 @@
+<div class="auth-page">
+  <div class="glow g1"></div>
+  <div class="glow g2"></div>
+
+  <div class="auth-card">
+    <img src="assets/monthley-badge.png" alt="" class="auth-badge" />
+
+    @if (done()) {
+      <div class="mark ok">✓</div>
+      <h1>Kata laluan ditukar</h1>
+      <p>Anda kini log masuk. Membawa anda ke portal…</p>
+    } @else if (!token()) {
+      <div class="mark bad">✕</div>
+      <h1>Pautan tidak sah</h1>
+      <p>Pautan tidak lengkap. Sila guna pautan penuh dari e-mel anda.</p>
+      <a class="btn-soft full" routerLink="/">Kembali ke Laman Utama</a>
+    } @else {
+      <h1>Kata laluan baharu</h1>
+      <p>Tetapkan kata laluan baharu untuk akaun Monthley anda.</p>
+
+      <label>Kata Laluan Baharu</label>
+      <div class="pwd-row">
+        <input class="ainput" [type]="show ? 'text' : 'password'"
+               [(ngModel)]="password" placeholder="minimum 6 aksara" />
+        <button class="eye" (click)="show = !show">{{ show ? '🙈' : '👁' }}</button>
+      </div>
+
+      <label>Sahkan Kata Laluan</label>
+      <input class="ainput" [type]="show ? 'text' : 'password'"
+             [(ngModel)]="confirm" placeholder="taip semula" (keyup.enter)="submit()" />
+
+      @if (error()) { <div class="note bad">{{ error() }}</div> }
+
+      <button class="btn-lime full" (click)="submit()" [disabled]="busy()">
+        {{ busy() ? 'Menyimpan…' : 'Tukar Kata Laluan' }}
+      </button>
+
+      <p class="fine">Pautan ini sah selama 1 jam dari masa dihantar.</p>
+    }
+  </div>
+</div>

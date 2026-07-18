@@ -13,9 +13,20 @@ export class SpContextService {
 
   private readonly selected = signal<string | null>(this.restore());
 
+  /** SP unik — pengguna boleh ada beberapa peranan dalam SP yang sama. */
+  readonly uniqueSps = computed(() => {
+    const seen = new Map<string, { spCode: string; spName: string; roles: string[] }>();
+    for (const a of this.auth.spAccess()) {
+      const cur = seen.get(a.spCode);
+      if (cur) { cur.roles.push(a.role); }
+      else { seen.set(a.spCode, { spCode: a.spCode, spName: a.spName, roles: [a.role] }); }
+    }
+    return [...seen.values()];
+  });
+
   /** SP semasa — pilihan pengguna, atau SP pertama yang dia ada akses. */
   readonly currentSp = computed<string>(() => {
-    const list = this.auth.spAccess();
+    const list = this.uniqueSps();
     const sel = this.selected();
     if (sel && list.some(a => a.spCode === sel)) return sel;
     return list[0]?.spCode ?? '';
@@ -23,10 +34,16 @@ export class SpContextService {
 
   readonly spName = computed<string>(() => {
     const code = this.currentSp();
-    return this.auth.spAccess().find(a => a.spCode === code)?.spName ?? '—';
+    return this.uniqueSps().find(a => a.spCode === code)?.spName ?? '—';
   });
 
-  readonly hasMultipleSp = computed(() => this.auth.spAccess().length > 1);
+  /** Peranan pengguna dalam SP semasa (boleh lebih dari satu). */
+  readonly currentRoles = computed<string[]>(() => {
+    const code = this.currentSp();
+    return this.uniqueSps().find(a => a.spCode === code)?.roles ?? [];
+  });
+
+  readonly hasMultipleSp = computed(() => this.uniqueSps().length > 1);
 
   constructor() {
     effect(() => {
