@@ -14,6 +14,8 @@ export interface Product {
   prorated: boolean;
   latePenalty: boolean;
   mandatory: boolean;
+  mainProduct: boolean;
+  description?: string;
   active: boolean;
 }
 

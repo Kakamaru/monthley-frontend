@@ -155,14 +155,14 @@ export class ProductsComponent {
   openEdit(p: Product) {
     this.editingId = p.id;
     this.draft = {
-      mainProduct: false,   // tiada dalam Product view; kekal false
+      mainProduct: p.mainProduct,
       mandatory: p.mandatory,
       prorated: p.prorated,
       latePenalty: p.latePenalty,
       code: p.code,
       categoryId: p.categoryId ?? null,
       name: p.name,
-      description: '',      // tiada dalam list view
+      description: p.description ?? '',
       rate: p.rate,
       chargeFrequency: p.chargeFrequency,
       anchorMonth: p.anchorMonth ?? null
@@ -186,7 +186,9 @@ export class ProductsComponent {
       categoryId: this.draft.categoryId ?? undefined,
       prorated: this.draft.prorated,
       latePenalty: this.draft.latePenalty,
-      mandatory: this.draft.mainProduct ? true : this.draft.mandatory
+      mandatory: this.draft.mandatory,
+      mainProduct: this.draft.mainProduct,
+      description: this.draft.description || undefined
     };
     const done = () => { this.saving.set(false); this.formOpen.set(false); this.page.set(0); this.load(); };
     const fail = (e: any) => { this.saving.set(false); this.error.set('Gagal menyimpan produk.'); console.error(e); };
