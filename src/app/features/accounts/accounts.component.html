@@ -19,10 +19,9 @@
       <input class="fld" placeholder="Name" [(ngModel)]="fName" (keyup.enter)="search()" />
       <select class="fld" [(ngModel)]="fCategory">
         <option [ngValue]="null">Please Select Category</option>
-        <option [ngValue]="1">Pemilik</option>
-        <option [ngValue]="2">Penyewa</option>
-        <option [ngValue]="3">Komersial</option>
-        <option [ngValue]="4">Persatuan</option>
+        @for (c of categories(); track c.id) {
+          <option [ngValue]="c.id">{{ c.name }}</option>
+        }
       </select>
     </div>
 
@@ -35,23 +34,12 @@
           <option value="true">Linked</option>
           <option value="false">Not Linked</option>
         </select>
-        <select class="fld" [(ngModel)]="fProdCategory">
-          <option [ngValue]="null">Please Select Product Category</option>
-          @for (c of categories(); track c.id) {
-            <option [ngValue]="c.id">{{ c.name }}</option>
-          }
-        </select>
-        <select class="fld" style="grid-column:span 2" [(ngModel)]="fProduct">
-          <option [ngValue]="null">Please Select Product</option>
-          @for (p of products(); track p.id) {
-            <option [ngValue]="p.id">{{ p.name }}</option>
-          }
-        </select>
+
       </div>
     }
 
     <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px">
-      <button class="btn btn-green" data-cta>Add</button>
+      <button class="btn btn-green" data-cta (click)="openAdd()">+ Add Account</button>
       <div style="display:flex;gap:10px;align-items:center">
         <button class="btn btn-navy" (click)="search()">Search</button>
         <button class="btn btn-ghost" (click)="clear()">Clear</button>
@@ -79,11 +67,11 @@
       @for (a of rows(); track a.id) {
         <div class="grid-row" data-row [style.grid-template-columns]="cols">
           <span style="font-weight:700;color:var(--green);cursor:pointer">{{ a.no }}</span>
-          <span style="display:flex;align-items:center;gap:6px">
+          <span style="display:flex;align-items:center;gap:6px;color:var(--green);font-weight:600">
             {{ a.name }}
             @if (a.linked) { <span style="color:var(--green);font-size:12px">🔗</span> }
           </span>
-          <span style="color:var(--muted-2)">{{ a.billTo || '—' }}</span>
+          <span style="color:var(--green);font-weight:600">{{ a.billTo || '—' }}</span>
           <span class="r" [style.color]="balColor(a.balance)"
                 style="font-family:'Sora',sans-serif;font-weight:700">
             {{ fmtBal(a.balance) }}
@@ -107,4 +95,159 @@
       <span class="per-page">{{ size() }} / page</span>
     </div>
   </div>
+
+  <!-- Modal Add Account -->
+  @if (formOpen()) {
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:1000">
+      <div class="modal-card" style="border-radius:16px;padding:26px;max-width:1200px;width:96%;max-height:92vh;overflow:auto">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <h3 style="margin:0;font-family:'Sora',sans-serif;font-weight:800;font-size:24px">Add Account</h3>
+          <button (click)="closeForm()" style="border:none;background:none;font-size:22px;cursor:pointer;color:#e23b3b;font-weight:700">✕</button>
+        </div>
+
+        @if (error()) {
+          <div style="background:#fee;color:#c33;padding:9px 13px;border-radius:8px;font-size:13px;margin-bottom:10px">{{ error() }}</div>
+        }
+
+        <!-- Akaun -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div><label style="font-size:13px;font-weight:600;color:var(--ink);display:block;margin-bottom:5px">Account <span style="color:#e23;font-weight:700">*</span></label>
+            <input style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" placeholder="Account" [(ngModel)]="draft.accountNo" (input)="upper('accountNo')" /></div>
+          <div><label style="font-size:13px;font-weight:600;color:var(--ink);display:block;margin-bottom:5px">Account Name <span style="color:#e23;font-weight:700">*</span></label>
+            <input style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" placeholder="Account Name" [(ngModel)]="draft.accountName" (input)="upper('accountName')" /></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px">
+          <!-- Deposit Amount: DISEMBUNYIKAN (fasa 2 pengurusan deposit) -->
+          <div><label style="font-size:13px;font-weight:600;color:var(--ink);display:block;margin-bottom:5px">Category</label>
+            <select style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" [(ngModel)]="draft.categoryId">
+              <option [ngValue]="null">Please Select</option>
+              @for (c of categories(); track c.id) { <option [ngValue]="c.id">{{ c.name }}</option> }
+            </select></div>
+          <div><label style="font-size:13px;font-weight:600;color:var(--ink);display:block;margin-bottom:5px">Charge Frequency <span style="color:#e23;font-weight:700">*</span></label>
+            <select style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" [(ngModel)]="draft.chargeFrequency">
+              @for (f of freqOptions; track f.value) { <option [value]="f.value">{{ f.label }}</option> }
+            </select></div>
+        </div>
+
+        <!-- Alamat Akaun -->
+        <div style="font-family:'Sora',sans-serif;font-weight:800;font-size:15px;margin:20px 0 12px;color:var(--ink);text-align:center">Alamat Akaun</div>
+        <div style="display:grid;gap:12px">
+          <input style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" placeholder="Address 1" [(ngModel)]="draft.addrLine1" (input)="upper('addrLine1')" />
+          <input style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" placeholder="Address 2" [(ngModel)]="draft.addrLine2" (input)="upper('addrLine2')" />
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <input style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" placeholder="Postcode" [(ngModel)]="draft.addrPostcode" (blur)="onAddrPostcode()" />
+            <input style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;background:var(--surface-alt)" placeholder="State (auto)" [(ngModel)]="draft.addrState" readonly />
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <input style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" placeholder="Address 3 (Bandar)" [(ngModel)]="draft.addrLine3" (input)="upper('addrLine3')" />
+            <input style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" placeholder="Address 4" [(ngModel)]="draft.addrLine4" (input)="upper('addrLine4')" />
+          </div>
+        </div>
+
+        <!-- Billing Information -->
+        <div style="font-family:'Sora',sans-serif;font-weight:800;font-size:15px;margin:20px 0 12px;color:var(--ink);text-align:center">Billing Information</div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;margin-bottom:12px;cursor:pointer">
+          <input type="checkbox" [(ngModel)]="sameAsAccount" (change)="onSameAsAccount()" />
+          Alamat billing sama dengan alamat akaun
+        </label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div><label style="font-size:13px;font-weight:600;color:var(--ink);display:block;margin-bottom:5px">Bill To Name <span style="color:#e23;font-weight:700">*</span></label>
+            <input style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" placeholder="Bill To Name" [(ngModel)]="draft.billtoName" (input)="upper('billtoName')" /></div>
+          <div><label style="font-size:13px;font-weight:600;color:var(--ink);display:block;margin-bottom:5px">Email</label>
+            <input style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" type="email" placeholder="Email" [(ngModel)]="draft.billtoEmail" /></div>
+        </div>
+        @if (emailErr()) {
+          <div style="color:#c33;font-size:12px;margin-top:4px">{{ emailErr() }}</div>
+        }
+        <div style="margin-top:14px"><label style="font-size:13px;font-weight:600;color:var(--ink);display:block;margin-bottom:5px">Secondary Email</label>
+          <input style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" type="email" placeholder="Secondary Email" [(ngModel)]="draft.billtoEmailSecondary" /></div>
+
+        @if (!sameAsAccount) {
+          <div style="display:grid;gap:12px;margin-top:14px">
+            <input style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" placeholder="Address 1" [(ngModel)]="draft.billtoAddrLine1" (input)="upper('billtoAddrLine1')" />
+            <input style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" placeholder="Address 2" [(ngModel)]="draft.billtoAddrLine2" (input)="upper('billtoAddrLine2')" />
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+              <input style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" placeholder="Postcode" [(ngModel)]="draft.billtoPostcode" (blur)="onBilltoPostcode()" />
+              <input style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;background:var(--surface-alt)" placeholder="State (auto)" [(ngModel)]="draft.billtoState" readonly />
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+              <input style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" placeholder="Address 3 (Bandar)" [(ngModel)]="draft.billtoAddrLine3" (input)="upper('billtoAddrLine3')" />
+              <input style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" placeholder="Address 4" [(ngModel)]="draft.billtoAddrLine4" (input)="upper('billtoAddrLine4')" />
+            </div>
+          </div>
+        }
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px">
+          <div><label style="font-size:13px;font-weight:600;color:var(--ink);display:block;margin-bottom:5px">Identification No.</label>
+            <input style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" placeholder="Identification No." [(ngModel)]="draft.memberIdNo" (input)="upper('memberIdNo')" /></div>
+          <div><label style="font-size:13px;font-weight:600;color:var(--ink);display:block;margin-bottom:5px">Mobile No.</label>
+            <div style="display:flex;gap:8px">
+              <span style="padding:11px 12px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;background:var(--surface-alt)">+60</span>
+              <input style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" placeholder="123456789" [(ngModel)]="draft.billtoMobile" (input)="onlyDigits('billtoMobile')" />
+            </div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px">
+          <div><label style="font-size:13px;font-weight:600;color:var(--ink);display:block;margin-bottom:5px">Start Charging</label>
+            <input style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" type="date" [(ngModel)]="draft.startDate" /></div>
+          <!-- Opening Amount: DISEMBUNYIKAN (migrasi J00) -->
+          <div><label style="font-size:13px;font-weight:600;color:var(--ink);display:block;margin-bottom:5px">Country</label>
+            <select style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" [(ngModel)]="draft.billtoCountry">
+              <option value="MY">Malaysia</option>
+            </select></div>
+        </div>
+        <div style="margin-top:14px"><label style="font-size:13px;font-weight:600;color:var(--ink);display:block;margin-bottom:5px">Remarks</label>
+          <input style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" placeholder="Remarks" [(ngModel)]="draft.remarks" (input)="upper('remarks')" /></div>
+
+        <!-- Jadual Langgan Produk -->
+        <div style="font-family:'Sora',sans-serif;font-weight:800;font-size:15px;margin:22px 0 12px;color:var(--ink);text-align:center">Langgan Produk</div>
+        <div style="border:1px solid var(--line-soft);border-radius:12px;overflow-x:auto">
+          <div style="display:grid;grid-template-columns:{{ allowPriceOverride() ? '30px 1.4fr 80px 50px 110px 110px 80px 75px 90px 80px 34px' : '30px 1.4fr 80px 50px 110px 110px 80px 90px 90px 34px' }};gap:6px;padding:10px 12px;background:var(--surface-alt);font-size:10.5px;font-weight:700;color:var(--muted);min-width:760px">
+            <span></span><span>PRODUCT</span><span>CODE</span><span>QTY</span><span>START DATE</span><span>EXPIRY DATE</span><span>FREQUENCY</span>
+            <span style="text-align:right">UNIT PRICE</span>
+            @if (allowPriceOverride()) { <span style="text-align:right">EFF. PRICE</span> }
+            <span style="text-align:right">AMOUNT</span><span></span>
+          </div>
+          @for (prod of products(); track prod.id) {
+            <div style="display:grid;grid-template-columns:{{ allowPriceOverride() ? '30px 1.4fr 80px 50px 110px 110px 80px 75px 90px 80px 34px' : '30px 1.4fr 80px 50px 110px 110px 80px 90px 90px 34px' }};gap:6px;padding:9px 12px;border-top:1px solid var(--line-soft);align-items:center;min-width:760px">
+              <input type="checkbox" [checked]="isChecked(prod.id)" (change)="toggleProduct(prod)" />
+              <span style="font-size:12px;font-weight:600;color:var(--ink)">{{ prod.name }}</span>
+              <span style="font-size:11px;color:var(--muted)">{{ prod.code }}</span>
+              @if (isChecked(prod.id)) {
+                <input type="number" style="width:100%;padding:6px 8px;border:1.5px solid var(--line-input);border-radius:7px;font-size:12px;box-sizing:border-box" [(ngModel)]="subLines[prod.id].quantity" />
+                <input type="date" style="width:100%;padding:6px 8px;border:1.5px solid var(--line-input);border-radius:7px;font-size:12px;box-sizing:border-box" [(ngModel)]="subLines[prod.id].startDate" />
+                <input type="date" style="width:100%;padding:6px 8px;border:1.5px solid var(--line-input);border-radius:7px;font-size:12px;box-sizing:border-box" [(ngModel)]="subLines[prod.id].endDate" />
+                <span style="font-size:11px;color:var(--muted)">{{ freqLabelFor(prod.chargeFrequency) }}</span>
+                <span style="font-size:12px;text-align:right;color:var(--muted)">{{ prod.rate | number:'1.2-2' }}</span>
+                @if (allowPriceOverride()) {
+                  <input type="number" style="width:100%;padding:6px 8px;border:1.5px solid var(--line-input);border-radius:7px;font-size:12px;box-sizing:border-box;text-align:right;border-color:#5a8" [(ngModel)]="subLines[prod.id].unitPrice" />
+                }
+                <span style="font-size:12px;font-weight:700;text-align:right">{{ amountFor(prod.id) | number:'1.2-2' }}</span>
+                <button (click)="toggleProduct(prod)" style="border:none;background:none;cursor:pointer;font-size:14px">🗑️</button>
+              } @else {
+                <span style="color:var(--muted);font-size:11px">—</span>
+                <span style="color:var(--muted);font-size:11px">—</span>
+                <span style="color:var(--muted);font-size:11px">—</span>
+                <span style="font-size:11px;color:var(--muted)">{{ freqLabelFor(prod.chargeFrequency) }}</span>
+                <span style="font-size:12px;text-align:right;color:var(--muted)">{{ prod.rate | number:'1.2-2' }}</span>
+                @if (allowPriceOverride()) { <span style="color:var(--muted);text-align:right">—</span> }
+                <span style="color:var(--muted);font-size:11px;text-align:right">—</span>
+                <span></span>
+              }
+            </div>
+          }
+        </div>
+
+        @if (error()) {
+          <div style="background:#fee;color:#c33;padding:9px 13px;border-radius:8px;font-size:13px;margin-top:16px;text-align:center;font-weight:600">{{ error() }}</div>
+        }
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+          <button class="btn" (click)="closeForm()" style="padding:10px 24px">Close</button>
+          <button class="btn btn-green" (click)="saveAccount()" [disabled]="saving()" style="padding:10px 24px">
+            {{ saving() ? 'Menyimpan…' : 'Save' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
 </div>

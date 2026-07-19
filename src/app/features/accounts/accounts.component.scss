@@ -1,1 +1,11 @@
 :host { display: block; }
+
+
+/* Modal Add Account — background pekat (var(--surface) terlalu telus dark mode) */
+.acc-modal {
+  background: #ffffff;
+  box-shadow: 0 20px 60px rgba(0,0,0,.3);
+}
+:host-context([data-theme='dark']) .acc-modal {
+  background: #16242c;
+}

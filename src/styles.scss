@@ -152,7 +152,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--g
 }
 
 [data-row] { transition: background .14s ease; }
-[data-row]:hover { background: #f4f9f4; }
+[data-row]:hover { background: var(--surface-alt); }
 
 button { transition: transform .12s ease, filter .16s ease, box-shadow .18s ease; }
 button:active { transform: scale(.975); }
@@ -429,3 +429,13 @@ select.fld { color: var(--muted); }
 }
 .ps-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
 .ps-value { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 14px; margin-top: 2px; }
+
+
+/* Modal card — background pekat ikut tema (elak --surface telus dark mode) */
+.modal-card {
+  background: #ffffff;
+  box-shadow: 0 20px 60px rgba(0,0,0,.3);
+}
+[data-theme='dark'] .modal-card {
+  background: #16242c;
+}

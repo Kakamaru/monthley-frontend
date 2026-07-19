@@ -39,7 +39,7 @@ export interface DocumentSetting {
   invoiceTitle?: string; invoicePrefix?: string;
   invoiceNoSize?: number; invoiceNoStart?: number;
   invoiceGenMode?: string; invoiceGenFreq?: string; invoiceGenDay?: number;
-  invoiceTemplateId?: string; splitInvoiceByProduct?: boolean;
+  invoiceTemplateId?: string; splitInvoiceByProduct?: boolean; allowPriceOverride?: boolean;
   // Notifikasi — dipapar dalam tab Invoice
   smsOnInvoice?: boolean; smsOnReminder?: boolean;
   whatsappOnInvoice?: boolean; whatsappOnReminder?: boolean;
