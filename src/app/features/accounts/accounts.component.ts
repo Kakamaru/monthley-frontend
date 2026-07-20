@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Account } from '../../core/models/account.model';
 import { AccountsService } from './accounts.service';
+import { InvoicingService } from '../invoicing/invoicing.service';
 import { ProductsService, ProductCategory } from '../products/products.service';
 import { Product } from '../../core/models/product.model';
 
@@ -15,6 +16,7 @@ import { Product } from '../../core/models/product.model';
 })
 export class AccountsComponent {
   private api = inject(AccountsService);
+  private invoicing = inject(InvoicingService);
   private catalog = inject(ProductsService);
 
   /** grid columns — sama dengan prototaip */
@@ -179,6 +181,14 @@ export class AccountsComponent {
 
   // ── Add Subscription (More menu) ──
   readonly subModalOpen = signal(false);
+  // Generate Single Invoice
+  readonly genModalOpen = signal(false);
+  readonly genAccountId = signal<number | null>(null);
+  readonly genAccountNo = signal('');
+  genPeriod = '';
+  readonly genRunning = signal(false);
+  readonly genResult = signal<string | null>(null);
+  readonly toast = signal<string | null>(null);
   readonly subAccountId = signal<number | null>(null);
   readonly subAccountNo = signal('');
   readonly subSaving = signal(false);
@@ -252,7 +262,40 @@ export class AccountsComponent {
     });
   }
   onViewReportPayment(a: any) { this.closeMore(); alert('View Report Payment — akan datang (akaun ' + a.no + ')'); }
-  onGenerateInvoice(a: any) { this.closeMore(); alert('Generate Single Invoice — akan datang (akaun ' + a.no + ')'); }
+  onGenerateInvoice(a: any) {
+    this.closeMore();
+    this.genAccountId.set(a.id);
+    this.genAccountNo.set(a.no);
+    this.genPeriod = '';   // kosong = bulan semasa
+    this.genResult.set(null);
+    this.genModalOpen.set(true);
+  }
+  closeGenModal() { this.genModalOpen.set(false); this.genAccountId.set(null); }
+
+  runGenerate() {
+    this.genRunning.set(true);
+    this.genResult.set(null);
+    this.invoicing.generateSingle({
+      accountId: this.genAccountId()!,
+      period: null   // sistem tentukan ikut Invoice Generation Mode
+    }).subscribe({
+      next: r => {
+        this.genRunning.set(false);
+        this.load();
+        if (r.invoicesPosted > 0) {
+          // Berjaya jana -> tutup modal + maklum
+          this.genModalOpen.set(false);
+          this.genAccountId.set(null);
+          this.toast.set(`${r.invoicesPosted} invois dijana untuk akaun ${this.genAccountNo()} (period ${r.period}).`);
+          setTimeout(() => this.toast.set(null), 4000);
+        } else {
+          // Idempotent / tiada caj -> kekal modal, maklum
+          this.genResult.set(`Tiada invois baru — period ${r.period} sudah dijana atau tiada caj untuk period ini.`);
+        }
+      },
+      error: e => { this.genRunning.set(false); this.genResult.set(e?.error?.message || 'Gagal menjana invois.'); }
+    });
+  }
   isEdit(): boolean { return this.editingId() !== null; }
 
   openLinkPanel() {
@@ -333,6 +376,7 @@ export class AccountsComponent {
   onEscape() {
     if (this.linkPanelOpen()) { this.closeLinkPanel(); return; }
     if (this.subModalOpen()) { this.closeSubModal(); return; }
+    if (this.genModalOpen()) { this.closeGenModal(); return; }
     if (this.formOpen()) this.closeForm();
   }
 

@@ -23,4 +23,15 @@ export class InvoicingService {
   generate(body: GenerateRequest): Observable<GenerateResult> {
     return this.http.post<GenerateResult>('/api/v1/tools/generate-invoices', body);
   }
+
+  generateSingle(body: { accountId: number; period?: string | null; mode?: string | null }): Observable<GenerateSingleResult> {
+    return this.http.post<GenerateSingleResult>('/api/v1/tools/generate-single', body);
+  }
+}
+
+export interface GenerateSingleResult {
+  accountId: number;
+  period: string;
+  mode: string;
+  invoicesPosted: number;
 }
