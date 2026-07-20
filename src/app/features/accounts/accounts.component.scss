@@ -9,3 +9,18 @@
 :host-context([data-theme='dark']) .acc-modal {
   background: #16242c;
 }
+
+
+.more-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 11px 16px;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font-size: 13.5px;
+  cursor: pointer;
+  &:hover { background: var(--surface-alt); }
+  & + .more-item { border-top: 1px solid var(--line-soft); }
+}

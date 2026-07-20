@@ -79,10 +79,72 @@
           <span class="acts" style="justify-content:center">
             <button class="act" data-tip="View Statement">🧾</button>
             <button class="act" data-tip="Print Statement">🖨</button>
-            <button class="act" data-tip="More" style="font-size:16px;font-weight:800">⋯</button>
+            <span style="position:relative;display:inline-block">
+              <button class="act" data-tip="More" style="font-size:16px;font-weight:800" (click)="toggleMore(a.id, $event)">⋯</button>
+              @if (moreMenuFor() === a.id) {
+                <div style="position:absolute;top:calc(100% + 4px);right:0;z-index:60;background:var(--surface);border:1px solid var(--line-soft);border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.2);min-width:200px;overflow:hidden" (click)="$event.stopPropagation()">
+                  <button (click)="onAdjustment(a)" class="more-item">Adjust Account</button>
+                  <button (click)="onAddSubscription(a)" class="more-item">Add Subscription</button>
+                  <button (click)="onViewReportPayment(a)" class="more-item">View Report Payment</button>
+                  <button (click)="onGenerateInvoice(a)" class="more-item">Generate Single Invoice</button>
+                </div>
+              }
+            </span>
           </span>
         </div>
       }
+    }
+
+    <!-- Modal Add Subscription (More menu) -->
+    @if (subModalOpen()) {
+      <div style="position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:flex-start;justify-content:center;padding:40px 20px;z-index:100;overflow:auto" (click)="closeSubModal()">
+        <div class="modal-card" style="border-radius:16px;padding:26px;max-width:1100px;width:96%;max-height:92vh;overflow:auto" (click)="$event.stopPropagation()">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+            <h3 style="margin:0;font-family:'Sora',sans-serif;font-weight:800;font-size:22px;color:var(--ink)">Add Subscription: {{ subAccountNo() }}</h3>
+            <button (click)="closeSubModal()" style="border:none;background:none;font-size:22px;cursor:pointer;color:#e23b3b;font-weight:700">✕</button>
+          </div>
+
+          @if (subAvailable().length === 0) {
+            <p style="color:var(--muted);text-align:center;padding:30px">Semua produk sudah dilanggan untuk akaun ini.</p>
+          } @else {
+            <div style="border:1px solid var(--line-soft);border-radius:12px;overflow-x:auto">
+              <div style="display:grid;grid-template-columns:30px 1.4fr 80px 55px 110px 110px 90px 80px 90px;gap:6px;padding:10px 12px;background:var(--surface-alt);font-size:10.5px;font-weight:700;color:var(--muted);min-width:700px">
+                <span></span><span>PRODUCT</span><span>CODE</span><span>QTY</span><span>START DATE</span><span>EXPIRY DATE</span><span>FREQUENCY</span>
+                <span style="text-align:right">RATE</span><span style="text-align:right">AMOUNT</span>
+              </div>
+              @for (prod of subAvailable(); track prod.id) {
+                <div style="display:grid;grid-template-columns:30px 1.4fr 80px 55px 110px 110px 90px 80px 90px;gap:6px;padding:9px 12px;border-top:1px solid var(--line-soft);align-items:center;min-width:700px">
+                  <input type="checkbox" [checked]="subIsChecked(prod.id)" (change)="subToggle(prod)" />
+                  <span style="font-size:12px;font-weight:600;color:var(--ink)">{{ prod.name }}</span>
+                  <span style="font-size:11px;color:var(--muted)">{{ prod.code }}</span>
+                  @if (subIsChecked(prod.id)) {
+                    <input type="number" style="width:100%;padding:6px 8px;border:1.5px solid var(--line-input);border-radius:7px;font-size:12px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" [(ngModel)]="subPick[prod.id].quantity" />
+                    <input type="date" style="width:100%;padding:6px 8px;border:1.5px solid var(--line-input);border-radius:7px;font-size:12px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" [(ngModel)]="subPick[prod.id].startDate" />
+                    <input type="date" style="width:100%;padding:6px 8px;border:1.5px solid var(--line-input);border-radius:7px;font-size:12px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" [(ngModel)]="subPick[prod.id].endDate" />
+                    <span style="font-size:11px;color:var(--muted)">{{ freqLabelFor(prod.chargeFrequency) }}</span>
+                    <span style="font-size:12px;text-align:right;color:var(--muted)">{{ prod.rate | number:'1.2-2' }}</span>
+                    <span style="font-size:12px;font-weight:700;text-align:right;color:var(--ink)">{{ subAmount(prod) | number:'1.2-2' }}</span>
+                  } @else {
+                    <span style="color:var(--muted);font-size:11px">—</span>
+                    <span style="color:var(--muted);font-size:11px">—</span>
+                    <span style="color:var(--muted);font-size:11px">—</span>
+                    <span style="font-size:11px;color:var(--muted)">{{ freqLabelFor(prod.chargeFrequency) }}</span>
+                    <span style="font-size:12px;text-align:right;color:var(--muted)">{{ prod.rate | number:'1.2-2' }}</span>
+                    <span style="color:var(--muted);text-align:right">—</span>
+                  }
+                </div>
+              }
+            </div>
+          }
+
+          @if (subError()) { <div style="color:#c33;font-size:13px;margin-top:12px">{{ subError() }}</div> }
+
+          <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px">
+            <button (click)="closeSubModal()" style="background:var(--surface-alt);border:1px solid var(--line-soft);border-radius:9px;padding:11px 24px;cursor:pointer;color:var(--ink);font-weight:600">Close</button>
+            <button (click)="saveAddSub()" [disabled]="subSaving()" style="background:var(--green);border:none;border-radius:9px;padding:11px 26px;cursor:pointer;color:#fff;font-weight:700">{{ subSaving() ? 'Menyimpan…' : 'Save' }}</button>
+          </div>
+        </div>
+      </div>
     }
 
     <div class="pager">

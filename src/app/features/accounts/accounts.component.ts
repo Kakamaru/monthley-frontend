@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, HostListener} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Account } from '../../core/models/account.model';
@@ -173,6 +173,86 @@ export class AccountsComponent {
   readonly linkFoundName = signal<string | null>(null);
   readonly linkNotFound = signal(false);
   readonly linkMsg = signal<string | null>(null);
+
+  // ── More menu (dropdown per akaun) ──
+  readonly moreMenuFor = signal<number | null>(null);
+
+  // ── Add Subscription (More menu) ──
+  readonly subModalOpen = signal(false);
+  readonly subAccountId = signal<number | null>(null);
+  readonly subAccountNo = signal('');
+  readonly subSaving = signal(false);
+  readonly subError = signal<string | null>(null);
+  // produk belum dilanggan (untuk pilih)
+  readonly subAvailable = signal<any[]>([]);
+  // pilihan: productId -> { checked, quantity, startDate, endDate, unitPrice }
+  subPick: Record<number, { checked: boolean; quantity: number; startDate: string; endDate: string; unitPrice: number | null }> = {};
+  toggleMore(id: number, ev: Event) {
+    ev.stopPropagation();
+    this.moreMenuFor.set(this.moreMenuFor() === id ? null : id);
+  }
+  closeMore() { this.moreMenuFor.set(null); }
+
+  // Placeholder — fungsi sebenar dibina kemudian
+  onAdjustment(a: any)   { this.closeMore(); alert('Adjust Account — akan datang (akaun ' + a.no + ')'); }
+  onAddSubscription(a: any) {
+    this.closeMore();
+    this.subAccountId.set(a.id);
+    this.subAccountNo.set(a.no);
+    this.subError.set(null);
+    this.subPick = {};
+    this.subAvailable.set([]);
+    // Load config (override) + subscription sedia ada + produk
+    this.api.config().subscribe({ next: c => this.allowPriceOverride.set(c.allowPriceOverride), error: () => {} });
+    this.api.getOne(a.id).subscribe({
+      next: d => {
+        const subscribed = new Set((d.subscriptions || []).map((s: any) => s.productId));
+        // products() dah dimuat (dari openAdd/global). Tapis belum dilanggan.
+        const avail = this.products().filter(p => !subscribed.has(p.id));
+        this.subAvailable.set(avail);
+        this.subModalOpen.set(true);
+      },
+      error: () => this.subError.set('Gagal memuatkan langganan.')
+    });
+  }
+
+  closeSubModal() { this.subModalOpen.set(false); this.subAccountId.set(null); }
+
+  subToggle(prod: any) {
+    const cur = this.subPick[prod.id];
+    if (cur?.checked) {
+      this.subPick[prod.id] = { ...cur, checked: false };
+    } else {
+      this.subPick[prod.id] = { checked: true, quantity: 1, startDate: '', endDate: '', unitPrice: prod.rate };
+    }
+  }
+  subIsChecked(id: number): boolean { return !!this.subPick[id]?.checked; }
+  subAmount(prod: any): number {
+    const p = this.subPick[prod.id];
+    if (!p?.checked) return 0;
+    const price = this.allowPriceOverride() ? (p.unitPrice ?? prod.rate) : prod.rate;
+    return (p.quantity || 0) * price;
+  }
+
+  saveAddSub() {
+    const lines = Object.entries(this.subPick)
+      .filter(([, v]) => v.checked)
+      .map(([pid, v]) => ({
+        productId: Number(pid),
+        quantity: v.quantity || 1,
+        startDate: v.startDate || null,
+        endDate: v.endDate || null,
+        unitPrice: v.unitPrice
+      }));
+    if (lines.length === 0) { this.subError.set('Pilih sekurang-kurangnya satu produk.'); return; }
+    this.subSaving.set(true);
+    this.api.addSubscriptions(this.subAccountId()!, lines).subscribe({
+      next: () => { this.subSaving.set(false); this.subModalOpen.set(false); this.load(); },
+      error: e => { this.subSaving.set(false); this.subError.set(e?.error?.message || 'Gagal menambah langganan.'); }
+    });
+  }
+  onViewReportPayment(a: any) { this.closeMore(); alert('View Report Payment — akan datang (akaun ' + a.no + ')'); }
+  onGenerateInvoice(a: any) { this.closeMore(); alert('Generate Single Invoice — akan datang (akaun ' + a.no + ')'); }
   isEdit(): boolean { return this.editingId() !== null; }
 
   openLinkPanel() {
@@ -248,6 +328,16 @@ export class AccountsComponent {
   }
 
   closeForm() { this.formOpen.set(false); this.editingId.set(null); }
+
+  @HostListener('document:keydown.escape')
+  onEscape() {
+    if (this.linkPanelOpen()) { this.closeLinkPanel(); return; }
+    if (this.subModalOpen()) { this.closeSubModal(); return; }
+    if (this.formOpen()) this.closeForm();
+  }
+
+  @HostListener('document:click')
+  onDocClick() { if (this.moreMenuFor() !== null) this.closeMore(); }
 
   // Poskod akaun -> auto-isi negeri, cadang bandar
   onAddrPostcode() {

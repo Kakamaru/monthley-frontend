@@ -56,6 +56,10 @@ export class AccountsService {
     return this.http.delete<any>(`${this.base}/${id}/link`);
   }
 
+  addSubscriptions(id: number, subscriptions: any[]): Observable<{ added: number; message: string }> {
+    return this.http.post<{ added: number; message: string }>(`${this.base}/${id}/subscriptions`, { subscriptions });
+  }
+
   categories(): Observable<{ id: number; code: string; name: string }[]> {
     return this.http.get<{ id: number; code: string; name: string }[]>('/api/v1/settings/account-categories');
   }
