@@ -66,8 +66,8 @@
     } @else {
       @for (a of rows(); track a.id) {
         <div class="grid-row" data-row [style.grid-template-columns]="cols">
-          <span style="font-weight:700;color:var(--green);cursor:pointer">{{ a.no }}</span>
-          <span style="display:flex;align-items:center;gap:6px;color:var(--green);font-weight:600">
+          <span style="font-weight:700;color:var(--green);cursor:pointer" (click)="openEdit(a)">{{ a.no }}</span>
+          <span style="display:flex;align-items:center;gap:6px;color:var(--green);font-weight:600;cursor:pointer" (click)="openEdit(a)">
             {{ a.name }}
             @if (a.linked) { <span style="color:var(--green);font-size:12px">🔗</span> }
           </span>
@@ -101,7 +101,7 @@
     <div style="position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:1000">
       <div class="modal-card" style="border-radius:16px;padding:26px;max-width:1200px;width:96%;max-height:92vh;overflow:auto">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-          <h3 style="margin:0;font-family:'Sora',sans-serif;font-weight:800;font-size:24px">Add Account</h3>
+          <h3 style="margin:0;font-family:'Sora',sans-serif;font-weight:800;font-size:24px">{{ isEdit() ? 'Edit Account: ' + editAccountNo() : 'Add Account' }}</h3>
           <button (click)="closeForm()" style="border:none;background:none;font-size:22px;cursor:pointer;color:#e23b3b;font-weight:700">✕</button>
         </div>
 
@@ -112,7 +112,7 @@
         <!-- Akaun -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
           <div><label style="font-size:13px;font-weight:600;color:var(--ink);display:block;margin-bottom:5px">Account <span style="color:#e23;font-weight:700">*</span></label>
-            <input style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" placeholder="Account" [(ngModel)]="draft.accountNo" (input)="upper('accountNo')" /></div>
+            <input style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" placeholder="Account" [(ngModel)]="draft.accountNo" (input)="upper('accountNo')" [readonly]="isEdit()" [style.opacity]="isEdit() ? 0.6 : 1" /></div>
           <div><label style="font-size:13px;font-weight:600;color:var(--ink);display:block;margin-bottom:5px">Account Name <span style="color:#e23;font-weight:700">*</span></label>
             <input style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" placeholder="Account Name" [(ngModel)]="draft.accountName" (input)="upper('accountName')" /></div>
         </div>
@@ -198,30 +198,109 @@
         <div style="margin-top:14px"><label style="font-size:13px;font-weight:600;color:var(--ink);display:block;margin-bottom:5px">Remarks</label>
           <input style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" placeholder="Remarks" [(ngModel)]="draft.remarks" (input)="upper('remarks')" /></div>
 
+        <!-- Link/Invite User (Edit sahaja) -->
+        @if (isEdit()) {
+          <div style="margin-top:22px">
+            <label style="font-size:13px;font-weight:600;color:var(--ink);display:block;margin-bottom:5px">User ID (akaun ini dipaut ke pengguna)</label>
+
+            @if (linkedEmail()) {
+              <div style="display:flex;align-items:center;gap:10px;margin-top:6px">
+                <span style="font-size:14px;color:var(--ink)">({{ linkedEmail() }})</span>
+                <button (click)="unlink()" title="Batalkan pautan"
+                        style="background:var(--green);border:none;border-radius:8px;padding:8px 12px;cursor:pointer;color:#fff;font-size:14px">🔗</button>
+              </div>
+            } @else {
+              <div style="margin-top:6px;position:relative;display:inline-block">
+                <button (click)="linkPanelOpen() ? closeLinkPanel() : openLinkPanel()"
+                        style="background:var(--green);border:none;border-radius:9px;padding:10px 18px;cursor:pointer;color:#fff;font-weight:700;font-size:14px">Link/Invite User</button>
+
+                @if (linkPanelOpen()) {
+                  <div style="position:absolute;top:calc(100% + 8px);left:0;z-index:50;background:var(--surface);border:1px solid var(--line-soft);border-radius:12px;padding:18px;width:360px;box-shadow:0 12px 40px rgba(0,0,0,.25)">
+                    <div style="font-family:'Sora',sans-serif;font-weight:800;font-size:15px;margin-bottom:12px;color:var(--ink)">Invitation</div>
+                    <label style="font-size:13px;font-weight:600;color:var(--ink);display:block;margin-bottom:5px">Email</label>
+                    <div style="display:flex;gap:8px">
+                      <input style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" type="email" placeholder="Email"
+                             [(ngModel)]="linkEmail" (ngModelChange)="linkFoundName.set(null);linkNotFound.set(false)" />
+                      <button (click)="checkLinkEmail()" [disabled]="linkChecking()"
+                              style="background:var(--green);border:none;border-radius:9px;padding:0 14px;cursor:pointer;color:#fff;font-size:16px">✓</button>
+                    </div>
+
+                    @if (linkMsg()) { <div style="color:#c33;font-size:12px;margin-top:6px">{{ linkMsg() }}</div> }
+
+                    @if (linkFoundName()) {
+                      <div style="background:#eef6ff;border-radius:8px;padding:10px 12px;margin-top:10px;font-size:13px;color:var(--ink)">
+                        ℹ️ Sahkan jika anda mahu memaut kepada <b>{{ linkFoundName() }}</b>
+                      </div>
+                    }
+                    @if (linkNotFound()) {
+                      <div style="background:#fff7e6;border-radius:8px;padding:10px 12px;margin-top:10px;font-size:13px;color:var(--ink)">
+                        Email belum berdaftar — jemputan akan dihantar untuk daftar.
+                      </div>
+                    }
+
+                    @if (linkFoundName() || linkNotFound()) {
+                      <div style="display:flex;gap:8px;margin-top:12px">
+                        <button (click)="confirmLink()"
+                                style="background:var(--green);border:none;border-radius:8px;padding:9px 20px;cursor:pointer;color:#fff;font-weight:700">{{ linkNotFound() ? 'Invite' : 'Link' }}</button>
+                        <button (click)="closeLinkPanel()"
+                                style="background:var(--surface-alt);border:1px solid var(--line-soft);border-radius:8px;padding:9px 20px;cursor:pointer;color:var(--ink)">Cancel</button>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+
         <!-- Jadual Langgan Produk -->
         <div style="font-family:'Sora',sans-serif;font-weight:800;font-size:15px;margin:22px 0 12px;color:var(--ink);text-align:center">Langgan Produk</div>
         <div style="border:1px solid var(--line-soft);border-radius:12px;overflow-x:auto">
-          <div style="display:grid;grid-template-columns:{{ allowPriceOverride() ? '30px 1.4fr 80px 50px 110px 110px 80px 75px 90px 80px 34px' : '30px 1.4fr 80px 50px 110px 110px 80px 90px 90px 34px' }};gap:6px;padding:10px 12px;background:var(--surface-alt);font-size:10.5px;font-weight:700;color:var(--muted);min-width:760px">
+          <div style="display:grid;grid-template-columns:{{ allowPriceOverride() ? '30px 1.4fr 80px 55px 110px 110px 80px 75px 90px 80px 40px' : '30px 1.4fr 80px 55px 110px 110px 80px 90px 90px 40px' }};gap:6px;padding:10px 12px;background:var(--surface-alt);font-size:10.5px;font-weight:700;color:var(--muted);min-width:760px">
             <span></span><span>PRODUCT</span><span>CODE</span><span>QTY</span><span>START DATE</span><span>EXPIRY DATE</span><span>FREQUENCY</span>
             <span style="text-align:right">UNIT PRICE</span>
             @if (allowPriceOverride()) { <span style="text-align:right">EFF. PRICE</span> }
             <span style="text-align:right">AMOUNT</span><span></span>
           </div>
+
+          <!-- Mod EDIT: subscription sedia ada (editSubs) -->
+          @if (isEdit()) {
+            @for (sub of editSubs; track sub.id) {
+              <div style="display:grid;grid-template-columns:{{ allowPriceOverride() ? '30px 1.4fr 80px 55px 110px 110px 80px 75px 90px 80px 40px' : '30px 1.4fr 80px 55px 110px 110px 80px 90px 90px 40px' }};gap:6px;padding:9px 12px;border-top:1px solid var(--line-soft);align-items:center;min-width:760px" [style.opacity]="sub.deleted ? 0.4 : 1">
+                <input type="checkbox" [checked]="!sub.deleted" (change)="toggleEditSub(sub)" />
+                <span style="font-size:12px;font-weight:600;color:var(--ink)" [style.text-decoration]="sub.deleted ? 'line-through' : 'none'">{{ sub.name }}</span>
+                <span style="font-size:11px;color:var(--muted)">{{ sub.code }}</span>
+                <input type="number" style="width:100%;padding:6px 8px;border:1.5px solid var(--line-input);border-radius:7px;font-size:12px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" [(ngModel)]="sub.quantity" [disabled]="sub.deleted" />
+                <input type="date" style="width:100%;padding:6px 8px;border:1.5px solid var(--line-input);border-radius:7px;font-size:12px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" [(ngModel)]="sub.startDate" [disabled]="sub.deleted" />
+                <input type="date" style="width:100%;padding:6px 8px;border:1.5px solid var(--line-input);border-radius:7px;font-size:12px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" [(ngModel)]="sub.endDate" [disabled]="sub.deleted" />
+                <span style="font-size:11px;color:var(--muted)">{{ freqLabelFor(sub.frequency) }}</span>
+                <span style="font-size:12px;text-align:right;color:var(--muted)">{{ sub.rate | number:'1.2-2' }}</span>
+                @if (allowPriceOverride()) {
+                  <input type="number" style="width:100%;padding:6px 8px;border:1.5px solid var(--line-input);border-radius:7px;font-size:12px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt);text-align:right;border-color:#5a8" [(ngModel)]="sub.unitPrice" [disabled]="sub.deleted" />
+                }
+                <span style="font-size:12px;font-weight:700;text-align:right;color:var(--ink)">{{ editSubAmount(sub) | number:'1.2-2' }}</span>
+                <button (click)="toggleEditSub(sub)" style="border:none;background:none;cursor:pointer;font-size:15px" [title]="sub.deleted ? 'Batal padam' : 'Padam'">{{ sub.deleted ? '↺' : '🗑️' }}</button>
+              </div>
+            }
+          }
+
+          <!-- Produk untuk TAMBAH (Add mod sahaja; Edit guna More > Add Subscription) -->
+          @if (!isEdit()) {
           @for (prod of products(); track prod.id) {
-            <div style="display:grid;grid-template-columns:{{ allowPriceOverride() ? '30px 1.4fr 80px 50px 110px 110px 80px 75px 90px 80px 34px' : '30px 1.4fr 80px 50px 110px 110px 80px 90px 90px 34px' }};gap:6px;padding:9px 12px;border-top:1px solid var(--line-soft);align-items:center;min-width:760px">
+            <div style="display:grid;grid-template-columns:{{ allowPriceOverride() ? '30px 1.4fr 80px 55px 110px 110px 80px 75px 90px 80px 40px' : '30px 1.4fr 80px 55px 110px 110px 80px 90px 90px 40px' }};gap:6px;padding:9px 12px;border-top:1px solid var(--line-soft);align-items:center;min-width:760px">
               <input type="checkbox" [checked]="isChecked(prod.id)" (change)="toggleProduct(prod)" />
               <span style="font-size:12px;font-weight:600;color:var(--ink)">{{ prod.name }}</span>
               <span style="font-size:11px;color:var(--muted)">{{ prod.code }}</span>
               @if (isChecked(prod.id)) {
-                <input type="number" style="width:100%;padding:6px 8px;border:1.5px solid var(--line-input);border-radius:7px;font-size:12px;box-sizing:border-box" [(ngModel)]="subLines[prod.id].quantity" />
-                <input type="date" style="width:100%;padding:6px 8px;border:1.5px solid var(--line-input);border-radius:7px;font-size:12px;box-sizing:border-box" [(ngModel)]="subLines[prod.id].startDate" />
-                <input type="date" style="width:100%;padding:6px 8px;border:1.5px solid var(--line-input);border-radius:7px;font-size:12px;box-sizing:border-box" [(ngModel)]="subLines[prod.id].endDate" />
+                <input type="number" style="width:100%;padding:6px 8px;border:1.5px solid var(--line-input);border-radius:7px;font-size:12px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" [(ngModel)]="subLines[prod.id].quantity" />
+                <input type="date" style="width:100%;padding:6px 8px;border:1.5px solid var(--line-input);border-radius:7px;font-size:12px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" [(ngModel)]="subLines[prod.id].startDate" />
+                <input type="date" style="width:100%;padding:6px 8px;border:1.5px solid var(--line-input);border-radius:7px;font-size:12px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt)" [(ngModel)]="subLines[prod.id].endDate" />
                 <span style="font-size:11px;color:var(--muted)">{{ freqLabelFor(prod.chargeFrequency) }}</span>
                 <span style="font-size:12px;text-align:right;color:var(--muted)">{{ prod.rate | number:'1.2-2' }}</span>
                 @if (allowPriceOverride()) {
-                  <input type="number" style="width:100%;padding:6px 8px;border:1.5px solid var(--line-input);border-radius:7px;font-size:12px;box-sizing:border-box;text-align:right;border-color:#5a8" [(ngModel)]="subLines[prod.id].unitPrice" />
+                  <input type="number" style="width:100%;padding:6px 8px;border:1.5px solid var(--line-input);border-radius:7px;font-size:12px;box-sizing:border-box;color:var(--ink);background:var(--surface-alt);text-align:right;border-color:#5a8" [(ngModel)]="subLines[prod.id].unitPrice" />
                 }
-                <span style="font-size:12px;font-weight:700;text-align:right">{{ amountFor(prod.id) | number:'1.2-2' }}</span>
+                <span style="font-size:12px;font-weight:700;text-align:right;color:var(--ink)">{{ amountFor(prod.id) | number:'1.2-2' }}</span>
                 <button (click)="toggleProduct(prod)" style="border:none;background:none;cursor:pointer;font-size:14px">🗑️</button>
               } @else {
                 <span style="color:var(--muted);font-size:11px">—</span>
@@ -234,6 +313,7 @@
                 <span></span>
               }
             </div>
+          }
           }
         </div>
 

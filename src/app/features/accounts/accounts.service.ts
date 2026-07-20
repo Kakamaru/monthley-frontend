@@ -35,6 +35,27 @@ export class AccountsService {
     return this.http.post<{ id: number; message: string }>(this.base, body);
   }
 
+  getOne(id: number): Observable<any> {
+    return this.http.get<any>(`${this.base}/${id}`);
+  }
+
+  update(id: number, body: Record<string, unknown>): Observable<{ id: number; message: string }> {
+    return this.http.put<{ id: number; message: string }>(`${this.base}/${id}`, body);
+  }
+
+  searchUser(email: string): Observable<{ found: boolean; userId?: number; fullName?: string }> {
+    return this.http.get<{ found: boolean; userId?: number; fullName?: string }>(
+      `${this.base}/search-user`, { params: { email } });
+  }
+
+  linkUser(id: number, email: string): Observable<any> {
+    return this.http.post<any>(`${this.base}/${id}/link`, { email });
+  }
+
+  unlinkUser(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.base}/${id}/link`);
+  }
+
   categories(): Observable<{ id: number; code: string; name: string }[]> {
     return this.http.get<{ id: number; code: string; name: string }[]>('/api/v1/settings/account-categories');
   }

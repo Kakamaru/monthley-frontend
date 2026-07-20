@@ -51,6 +51,11 @@ export class AccountsComponent {
 
   // ── Borang Add Account ──
   readonly formOpen = signal(false);
+  readonly editingId = signal<number | null>(null);
+  readonly editAccountNo = signal('');
+  readonly editBalance = signal(0);
+  // Subscription sedia ada semasa edit: id -> { productId, code, name, quantity, startDate, endDate, unitPrice, frequency, rate, deleted }
+  editSubs: any[] = [];
   readonly saving = signal(false);
   readonly cityHints = signal<string[]>([]);
   readonly billtoCityHints = signal<string[]>([]);
@@ -107,7 +112,142 @@ export class AccountsComponent {
     this.formOpen.set(true);
   }
 
-  closeForm() { this.formOpen.set(false); }
+  openEdit(row: any) {
+    this.editingId.set(row.id);
+    this.editAccountNo.set(row.no);
+    this.editBalance.set(row.balance ?? 0);
+    this.error.set(null);
+    this.emailErr.set(null);
+    this.sameAsAccount = false;
+    this.subLines = {};
+    this.editSubs = [];
+    // Muat config (allowPriceOverride) + data akaun
+    this.api.config().subscribe({
+      next: c => this.allowPriceOverride.set(c.allowPriceOverride),
+      error: () => this.allowPriceOverride.set(true)
+    });
+    this.api.getOne(row.id).subscribe({
+      next: d => {
+        this.draft = {
+          accountNo: d.accountNo, accountName: d.accountName,
+          categoryId: d.categoryId, depositAmount: d.depositAmount ?? 0,
+          chargeFrequency: d.chargeFrequency || 'MONTHLY', startDate: d.startDate || '',
+          accountType: d.accountType || '',
+          addrLine1: d.addrLine1 || '', addrLine2: d.addrLine2 || '',
+          addrLine3: d.addrLine3 || '', addrLine4: d.addrLine4 || '',
+          addrPostcode: d.addrPostcode || '', addrState: d.addrState || '', addrCountry: d.addrCountry || 'MY',
+          billtoName: d.billtoName || '', billtoEmail: d.billtoEmail || '',
+          billtoEmailSecondary: d.billtoEmailSecondary || '', billtoMobile: d.billtoMobile || '',
+          billtoAddrLine1: d.billtoAddrLine1 || '', billtoAddrLine2: d.billtoAddrLine2 || '',
+          billtoAddrLine3: d.billtoAddrLine3 || '', billtoAddrLine4: d.billtoAddrLine4 || '',
+          billtoPostcode: d.billtoPostcode || '', billtoState: d.billtoState || '', billtoCountry: d.billtoCountry || 'MY',
+          memberIdNo: d.memberIdNo || '', openingAmount: d.openingAmount ?? 0, remarks: d.remarks || ''
+        };
+        this.editStatus.set(d.status || 'ACTIVE');
+        this.linkedEmail.set(d.linkedEmail || null);
+        this.linkPanelOpen.set(false);
+        this.linkEmail = '';
+        this.linkFoundName.set(null);
+        this.linkNotFound.set(false);
+        this.linkMsg.set(null);
+        // subscription sedia ada
+        this.editSubs = (d.subscriptions || []).map((s: any) => ({
+          id: s.id, productId: s.productId, code: s.code, name: s.name,
+          quantity: Number(s.quantity) || 1,
+          startDate: s.startDate || '', endDate: s.endDate || '',
+          unitPrice: s.unitPrice != null ? Number(s.unitPrice) : Number(s.rate),
+          frequency: s.frequency, rate: Number(s.rate), deleted: false
+        }));
+        this.formOpen.set(true);
+      },
+      error: () => this.error.set('Gagal memuatkan akaun.')
+    });
+  }
+
+  readonly editStatus = signal<'ACTIVE' | 'INACTIVE'>('ACTIVE');
+  // ── Link/Invite User ──
+  readonly linkedEmail = signal<string | null>(null);
+  readonly linkPanelOpen = signal(false);
+  linkEmail = '';
+  readonly linkChecking = signal(false);
+  readonly linkFoundName = signal<string | null>(null);
+  readonly linkNotFound = signal(false);
+  readonly linkMsg = signal<string | null>(null);
+  isEdit(): boolean { return this.editingId() !== null; }
+
+  openLinkPanel() {
+    this.linkPanelOpen.set(true);
+    this.linkEmail = '';
+    this.linkFoundName.set(null);
+    this.linkNotFound.set(false);
+    this.linkMsg.set(null);
+  }
+  closeLinkPanel() { this.linkPanelOpen.set(false); }
+
+  // Cari email berdaftar -> tunjuk nama untuk confirm
+  checkLinkEmail() {
+    const e = (this.linkEmail || '').trim();
+    if (!e || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) {
+      this.linkMsg.set('Email tidak sah.');
+      return;
+    }
+    this.linkChecking.set(true);
+    this.linkFoundName.set(null);
+    this.linkNotFound.set(false);
+    this.linkMsg.set(null);
+    this.api.searchUser(e).subscribe({
+      next: r => {
+        this.linkChecking.set(false);
+        if (r.found) {
+          this.linkFoundName.set(r.fullName || e);
+        } else {
+          this.linkNotFound.set(true);   // belum berdaftar -> akan invite
+        }
+      },
+      error: () => { this.linkChecking.set(false); this.linkMsg.set('Gagal menyemak email.'); }
+    });
+  }
+
+  // Confirm link/invite
+  confirmLink() {
+    const e = (this.linkEmail || '').trim();
+    if (!e) return;
+    this.api.linkUser(this.editingId()!, e).subscribe({
+      next: r => {
+        this.linkPanelOpen.set(false);
+        if (r.linked) {
+          this.linkedEmail.set(e);
+          this.linkMsg.set(null);
+        } else {
+          this.linkMsg.set(r.message || 'Jemputan dihantar.');
+        }
+      },
+      error: err => this.linkMsg.set(err?.error?.message || 'Gagal memaut akaun.')
+    });
+  }
+
+  unlink() {
+    this.api.unlinkUser(this.editingId()!).subscribe({
+      next: () => { this.linkedEmail.set(null); this.linkMsg.set(null); },
+      error: () => this.linkMsg.set('Gagal membatalkan pautan.')
+    });
+  }
+
+  // Produk untuk tambah: Add mod = semua; Edit mod = yang belum dilanggan (bukan editSubs aktif)
+  availableProducts() {
+    if (!this.isEdit()) return this.products();
+    const subscribed = new Set(this.editSubs.filter(s => !s.deleted).map(s => s.productId));
+    return this.products().filter(p => !subscribed.has(p.id));
+  }
+
+  // Delete subscription sedia ada (tandai deleted, bukan buang)
+  toggleEditSub(sub: any) { sub.deleted = !sub.deleted; }
+  editSubAmount(sub: any): number {
+    const price = this.allowPriceOverride() ? (sub.unitPrice ?? sub.rate) : sub.rate;
+    return (sub.quantity || 0) * price;
+  }
+
+  closeForm() { this.formOpen.set(false); this.editingId.set(null); }
 
   // Poskod akaun -> auto-isi negeri, cadang bandar
   onAddrPostcode() {
@@ -265,10 +405,34 @@ export class AccountsComponent {
       subscriptions: subs
     };
 
-    this.api.create(b).subscribe({
-      next: () => { this.saving.set(false); this.formOpen.set(false); this.page.set(0); this.load(); },
-      error: e => { this.saving.set(false); this.error.set(e?.error?.message || 'Gagal menyimpan akaun.'); }
-    });
+    if (this.isEdit()) {
+      // Edit: subscription = editSubs (sedia ada, dengan id + deleted) + subLines baru (id null)
+      const editLines = this.editSubs.map(s => ({
+        id: s.id, productId: s.productId,
+        quantity: s.quantity || 1,
+        startDate: s.startDate || null, endDate: s.endDate || null,
+        unitPrice: s.unitPrice, deleted: !!s.deleted
+      }));
+      const newLines = Object.entries(this.subLines)
+        .filter(([, v]) => v.checked)
+        .map(([pid, v]) => ({
+          id: null, productId: Number(pid),
+          quantity: v.quantity || 1,
+          startDate: v.startDate || null, endDate: v.endDate || null,
+          unitPrice: v.unitPrice, deleted: false
+        }));
+      const editBody: Record<string, unknown> = { ...b, status: this.editStatus(), subscriptions: [...editLines, ...newLines] };
+      delete editBody['accountNo'];  // readonly
+      this.api.update(this.editingId()!, editBody).subscribe({
+        next: () => { this.saving.set(false); this.formOpen.set(false); this.editingId.set(null); this.load(); },
+        error: e => { this.saving.set(false); this.error.set(e?.error?.message || 'Gagal mengemas kini akaun.'); }
+      });
+    } else {
+      this.api.create(b).subscribe({
+        next: () => { this.saving.set(false); this.formOpen.set(false); this.page.set(0); this.load(); },
+        error: e => { this.saving.set(false); this.error.set(e?.error?.message || 'Gagal menyimpan akaun.'); }
+      });
+    }
   }
 
   constructor() {
