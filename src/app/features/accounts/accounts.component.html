@@ -525,3 +525,76 @@
     </div>
   </div>
 }
+
+<!-- ===== MODAL ACCOUNT ADJUSTMENT ===== -->
+@if (adjOpen()) {
+  <div style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px" (click)="closeAdjustment()">
+    <div style="background:var(--surface);border-radius:14px;max-width:620px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)" (click)="$event.stopPropagation()">
+      <div style="padding:22px 26px 0;display:flex;align-items:center;justify-content:space-between">
+        <h3 style="font-family:'Sora',sans-serif;font-weight:800;font-size:21px;margin:0;color:var(--ink)">Account Adjustment</h3>
+        <button style="width:34px;height:34px;border-radius:9px;border:1.5px solid #dbe3de;background:#fff;color:#5b6f76;font-size:16px;cursor:pointer" (click)="closeAdjustment()">✕</button>
+      </div>
+      <div style="padding:16px 26px 26px">
+        <div style="background:#fdf6e3;border:1px solid #f0e2b6;border-radius:10px;padding:12px 16px;font-size:14px;color:#8a6d1f;margin-bottom:20px;display:flex;align-items:center;gap:10px">
+          <span>⚠️</span> Adakah anda pasti untuk membuat pelarasan bagi akaun ini?
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div>
+            <label style="font-size:13px;font-weight:700;color:#3a4c53">Account</label>
+            <input [value]="adjAccount()?.no" disabled style="width:100%;margin-top:6px;padding:11px 14px;border:1.5px solid #ecefec;border-radius:10px;font-size:14px;background:#f4f7f4;color:#6b7f86;box-sizing:border-box">
+          </div>
+          <div>
+            <label style="font-size:13px;font-weight:700;color:#3a4c53">Account Name</label>
+            <input [value]="adjAccount()?.name" disabled style="width:100%;margin-top:6px;padding:11px 14px;border:1.5px solid #ecefec;border-radius:10px;font-size:14px;background:#f4f7f4;color:#6b7f86;box-sizing:border-box">
+          </div>
+          <div style="grid-column:1/3;max-width:calc(50% - 7px)">
+            <label style="font-size:13px;font-weight:700;color:#3a4c53">Baki Semasa</label>
+            <input [value]="'MYR ' + (adjAccount()?.balance | number:'1.2-2')" disabled style="width:100%;margin-top:6px;padding:11px 14px;border:1.5px solid #ecefec;border-radius:10px;font-size:14px;background:#f4f7f4;color:#6b7f86;text-align:right;box-sizing:border-box">
+          </div>
+
+          <div>
+            <label style="font-size:13px;font-weight:700;color:#3a4c53">Jenis Pelarasan <span style="color:#d64545">*</span></label>
+            <select [(ngModel)]="adjType" style="width:100%;margin-top:6px;padding:11px 14px;border:1.5px solid #dbe3de;border-radius:10px;font-size:14px;background:#fff;color:#3a4c53;box-sizing:border-box">
+              <option value="">Sila Pilih</option>
+              <option value="ADDITIONAL">Additional (Debit Nota)</option>
+              <option value="REDUCTION">Reduction (Kredit Nota)</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:13px;font-weight:700;color:#3a4c53">Amaun (MYR) <span style="color:#d64545">*</span></label>
+            <input type="number" step="0.01" min="0" [(ngModel)]="adjAmount" placeholder="0.00" style="width:100%;margin-top:6px;padding:11px 14px;border:1.5px solid #dbe3de;border-radius:10px;font-size:14px;box-sizing:border-box">
+          </div>
+
+          @if (adjType === 'REDUCTION') {
+            <div style="grid-column:1/3">
+              <label style="font-size:13px;font-weight:700;color:#3a4c53">Invois <span style="color:#d64545">*</span></label>
+              <select [(ngModel)]="adjInvoiceId" style="width:100%;margin-top:6px;padding:11px 14px;border:1.5px solid #dbe3de;border-radius:10px;font-size:14px;background:#fff;color:#3a4c53;box-sizing:border-box">
+                <option [ngValue]="null">Sila Pilih Invois</option>
+                @for (iv of adjInvoices(); track iv.id) {
+                  <option [ngValue]="iv.id">{{ iv.docNo }} — baki MYR {{ iv.outstanding | number:'1.2-2' }}</option>
+                }
+              </select>
+              <p style="font-size:12px;color:#6b7f86;margin:6px 0 0">Pelarasan dikenakan ke atas invois yang dipilih.</p>
+            </div>
+          }
+
+          <div style="grid-column:1/3">
+            <label style="font-size:13px;font-weight:700;color:#3a4c53">Remarks <span style="color:#d64545">*</span></label>
+            <textarea [(ngModel)]="adjRemarks" maxlength="100" rows="3" placeholder="Sebab pelarasan…" style="width:100%;margin-top:6px;padding:11px 14px;border:1.5px solid #dbe3de;border-radius:10px;font-size:14px;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea>
+            <div style="text-align:right;font-size:12px;color:#6b7f86;margin-top:4px"><b style="color:#16a34a">{{ adjRemarks.length }}</b> / 100 aksara</div>
+          </div>
+        </div>
+
+        @if (adjError()) {
+          <div style="background:#fdecec;color:#c0392b;border-radius:9px;padding:10px 14px;font-size:13px;margin-top:14px">{{ adjError() }}</div>
+        }
+
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:22px">
+          <button class="btn btn-ghost" (click)="closeAdjustment()" [disabled]="adjSaving()">Tutup</button>
+          <button class="btn btn-navy" (click)="submitAdjustment()" [disabled]="adjSaving()">{{ adjSaving() ? 'Menyimpan…' : 'Simpan Pelarasan' }}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

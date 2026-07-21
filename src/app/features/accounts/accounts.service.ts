@@ -48,6 +48,19 @@ export class AccountsService {
     return this.http.get<MyAccountRow[]>(`${this.base}/my`);
   }
 
+  adjustmentInvoices(accountId: number): Observable<AdjInvoiceOption[]> {
+    return this.http.get<AdjInvoiceOption[]>('/api/v1/payments/adjustment/invoices',
+      { params: new HttpParams().set('accountId', String(accountId)) });
+  }
+
+  createAdjustment(body: {
+    accountId: number; kind: 'ADDITIONAL' | 'REDUCTION'; amount: number;
+    targetInvoiceId?: number | null; remarks: string; sourceRef: string;
+  }): Observable<{ documentId: number; docType: string; message: string }> {
+    return this.http.post<{ documentId: number; docType: string; message: string }>(
+      '/api/v1/payments/adjustment', body);
+  }
+
   myHistory(opts: { type: string; from?: string; to?: string; q?: string; page: number; size: number }): Observable<HistoryResponse> {
     let params = new HttpParams()
       .set('type', opts.type).set('page', String(opts.page)).set('size', String(opts.size));
@@ -124,4 +137,8 @@ export interface HistoryRow {
 }
 export interface HistoryResponse {
   items: HistoryRow[]; total: number; page: number; pageSize: number;
+}
+
+export interface AdjInvoiceOption {
+  id: number; docNo: string; outstanding: number;
 }

@@ -2,7 +2,7 @@ import { Component, computed, inject, signal, HostListener} from '@angular/core'
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Account } from '../../core/models/account.model';
-import { AccountsService, StatementLine, StatementResponse, PaymentReportRow, PaymentReportResponse } from './accounts.service';
+import { AccountsService, StatementLine, StatementResponse, PaymentReportRow, PaymentReportResponse, AdjInvoiceOption } from './accounts.service';
 import { InvoicingService } from '../invoicing/invoicing.service';
 import { ProductsService, ProductCategory } from '../products/products.service';
 import { Product } from '../../core/models/product.model';
@@ -252,7 +252,62 @@ export class AccountsComponent {
   closeMore() { this.moreMenuFor.set(null); }
 
   // Placeholder — fungsi sebenar dibina kemudian
-  onAdjustment(a: any)   { this.closeMore(); alert('Adjust Account — akan datang (akaun ' + a.no + ')'); }
+  // ── Account Adjustment (modal) ──
+  readonly adjOpen = signal(false);
+  readonly adjAccount = signal<any>(null);
+  readonly adjInvoices = signal<AdjInvoiceOption[]>([]);
+  readonly adjSaving = signal(false);
+  readonly adjError = signal<string | null>(null);
+  adjType: '' | 'ADDITIONAL' | 'REDUCTION' = '';
+  adjAmount: number | null = null;
+  adjInvoiceId: number | null = null;
+  adjRemarks = '';
+
+  onAdjustment(a: any) {
+    this.closeMore();
+    this.adjAccount.set(a);
+    this.adjType = ''; this.adjAmount = null; this.adjInvoiceId = null; this.adjRemarks = '';
+    this.adjError.set(null);
+    this.adjInvoices.set([]);
+    this.adjOpen.set(true);
+    // Muat invois untuk dropdown Reduction.
+    this.api.adjustmentInvoices(a.id).subscribe({
+      next: rows => this.adjInvoices.set(rows),
+      error: () => this.adjInvoices.set([])
+    });
+  }
+  closeAdjustment() { this.adjOpen.set(false); }
+
+  submitAdjustment() {
+    const acc = this.adjAccount();
+    if (!acc) return;
+    // Validasi.
+    if (!this.adjType) { this.adjError.set('Sila pilih jenis pelarasan.'); return; }
+    if (!this.adjAmount || this.adjAmount <= 0) { this.adjError.set('Amaun mesti lebih 0.'); return; }
+    if (this.adjType === 'REDUCTION' && !this.adjInvoiceId) { this.adjError.set('Sila pilih invois untuk reduction.'); return; }
+    if (!this.adjRemarks.trim()) { this.adjError.set('Sila isi remarks.'); return; }
+
+    this.adjSaving.set(true);
+    this.adjError.set(null);
+    this.api.createAdjustment({
+      accountId: acc.id, kind: this.adjType, amount: this.adjAmount,
+      targetInvoiceId: this.adjType === 'REDUCTION' ? this.adjInvoiceId : null,
+      remarks: this.adjRemarks.trim(),
+      sourceRef: crypto.randomUUID()
+    }).subscribe({
+      next: r => {
+        this.adjSaving.set(false);
+        this.adjOpen.set(false);
+        this.load();
+        this.toast.set(r.message);
+        setTimeout(() => this.toast.set(null), 4000);
+      },
+      error: (e) => {
+        this.adjSaving.set(false);
+        this.adjError.set(e?.error?.message || 'Gagal membuat pelarasan.');
+      }
+    });
+  }
   onAddSubscription(a: any) {
     this.closeMore();
     this.subAccountId.set(a.id);
