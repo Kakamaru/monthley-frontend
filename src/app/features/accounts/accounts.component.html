@@ -77,12 +77,12 @@
             {{ fmtBal(a.balance) }}
           </span>
           <span class="acts" style="justify-content:center">
-            <button class="act" data-tip="View Statement">🧾</button>
-            <button class="act" data-tip="Print Statement">🖨</button>
+            <button class="act" data-tip="View Statement" (click)="openStatement(a)">🧾</button>
+            <button class="act" data-tip="Print Statement" (click)="openStatement(a)">🖨</button>
             <span style="position:relative;display:inline-block">
               <button class="act" data-tip="More" style="font-size:16px;font-weight:800" (click)="toggleMore(a.id, $event)">⋯</button>
               @if (moreMenuFor() === a.id) {
-                <div style="position:absolute;top:calc(100% + 4px);right:0;z-index:60;background:var(--surface);border:1px solid var(--line-soft);border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.2);min-width:200px;overflow:hidden" (click)="$event.stopPropagation()">
+                <div style="position:absolute;bottom:calc(100% + 4px);right:0;z-index:60;background:var(--surface);border:1px solid var(--line-soft);border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.2);min-width:200px;overflow:hidden" (click)="$event.stopPropagation()">
                   <button (click)="onAdjustment(a)" class="more-item">Adjust Account</button>
                   <button (click)="onAddSubscription(a)" class="more-item">Add Subscription</button>
                   <button (click)="onViewReportPayment(a)" class="more-item">View Report Payment</button>
@@ -423,3 +423,105 @@
   }
 
 </div>
+<!-- ===== MODAL PENYATA AKAUN ===== -->
+@if (stmtOpen()) {
+  <div style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px" (click)="closeStatement()">
+    <div style="background:var(--surface);border-radius:14px;max-width:820px;width:100%;max-height:88vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)" (click)="$event.stopPropagation()">
+      @if (stmtLoading()) {
+        <div style="padding:60px;text-align:center;color:var(--muted)">Memuatkan penyata…</div>
+      } @else if (stmt(); as st) {
+        <div style="padding:24px 28px;border-bottom:1.5px solid var(--line-soft);display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div style="font-family:'Sora',sans-serif;font-weight:800;font-size:20px;color:var(--ink)">PENYATA AKAUN</div>
+            <div style="font-size:14px;color:var(--muted);margin-top:6px">{{ st.accountNo }} — {{ st.accountName }}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:12px;color:var(--muted)">Baki Semasa</div>
+            <div style="font-family:'Sora',sans-serif;font-weight:800;font-size:22px;color:#c0392b">MYR {{ st.closingBalance | number:'1.2-2' }}</div>
+          </div>
+        </div>
+
+        <div style="padding:0 28px">
+          <div style="display:grid;grid-template-columns:150px 90px 120px 1.4fr 110px 1fr 1fr;gap:8px;padding:14px 0;border-bottom:1.5px solid var(--line-soft);font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">
+            <span>Transaction Date</span><span>Document</span><span>Document No.</span>
+            <span>Item</span><span>Period</span>
+            <span style="text-align:right">Amount</span>
+            <span style="text-align:right">Balance</span>
+          </div>
+          @for (l of stmtLinesDesc(); track l.docNo) {
+            <div style="display:grid;grid-template-columns:150px 90px 120px 1.4fr 110px 1fr 1fr;gap:8px;padding:12px 0;border-bottom:1px solid var(--line-soft);font-size:12.5px;align-items:center">
+              <span style="color:var(--muted)">{{ l.date | date:'dd/MM/yyyy hh:mm a' }}</span>
+              <span style="color:var(--ink)">{{ l.docType }}</span>
+              <span style="color:var(--green);font-weight:600">{{ l.docNo }}</span>
+              <span style="color:var(--ink)">{{ l.item }}</span>
+              <span style="color:var(--muted)">{{ l.period || '—' }}</span>
+              <span style="text-align:right;color:var(--ink);white-space:nowrap">
+                @if (l.credit > 0) {
+                  <span style="color:#2e7d32">(MYR {{ l.credit | number:'1.2-2' }})</span>
+                } @else {
+                  MYR {{ l.debit | number:'1.2-2' }}
+                }
+              </span>
+              <span style="text-align:right;font-weight:700;white-space:nowrap" [style.color]="l.balance < 0 ? '#2e7d32' : 'var(--ink)'">
+                @if (l.balance < 0) {
+                  (MYR {{ (-l.balance) | number:'1.2-2' }})
+                } @else {
+                  MYR {{ l.balance | number:'1.2-2' }}
+                }
+              </span>
+            </div>
+          }
+          @if (st.lines.length === 0) {
+            <div style="padding:30px;text-align:center;color:var(--muted)">Tiada transaksi.</div>
+          }
+        </div>
+
+        <div style="padding:20px 28px;display:flex;justify-content:flex-end;gap:10px;border-top:1.5px solid var(--line-soft)">
+          <button class="btn btn-ghost" (click)="closeStatement()">Tutup</button>
+          <button class="btn btn-navy" (click)="printStatement()">🖨 Cetak</button>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- ===== MODAL INVOICE VS RECEIPT ===== -->
+@if (repOpen()) {
+  <div style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px" (click)="closePaymentReport()">
+    <div style="background:var(--surface);border-radius:14px;max-width:820px;width:100%;max-height:88vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)" (click)="$event.stopPropagation()">
+      <div style="padding:24px 28px;border-bottom:1.5px solid var(--line-soft);display:flex;justify-content:space-between;align-items:center;gap:16px">
+        <div style="font-family:'Sora',sans-serif;font-weight:800;font-size:20px;color:var(--ink)">Invoice Vs Receipt</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select class="fld" style="min-width:120px" [ngModel]="repYear()" (ngModelChange)="onRepYearChange($event)">
+            @for (y of repYears; track y) { <option [value]="y">{{ y }}</option> }
+          </select>
+        </div>
+      </div>
+
+      @if (repLoading()) {
+        <div style="padding:60px;text-align:center;color:var(--muted)">Memuatkan laporan…</div>
+      } @else if (rep(); as r) {
+        <div style="padding:0 28px">
+          <div style="display:grid;grid-template-columns:1fr 1.6fr 1.6fr;gap:8px;padding:14px 0;border-bottom:1.5px solid var(--line-soft);font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">
+            <span>Period</span><span>Invoice</span><span>Receipt</span>
+          </div>
+          @for (row of r.items; track row.invoice) {
+            <div style="display:grid;grid-template-columns:1fr 1.6fr 1.6fr;gap:8px;padding:12px 0;border-bottom:1px solid var(--line-soft);font-size:12.5px;align-items:start">
+              <span style="color:var(--muted)">{{ row.period }}</span>
+              <span style="color:var(--ink)">{{ row.invoice }} : {{ row.invAmount | number:'1.2-2' }}</span>
+              <span style="color:var(--ink);white-space:pre-line">{{ (row.receipts || '—').split(' / ').join('\n') }}</span>
+            </div>
+          }
+          @if (r.items.length === 0) {
+            <div style="padding:30px;text-align:center;color:var(--muted)">Tiada invois untuk tahun ini.</div>
+          }
+        </div>
+
+        <div style="padding:20px 28px;display:flex;justify-content:flex-end;gap:10px;border-top:1.5px solid var(--line-soft)">
+          <button class="btn btn-ghost" (click)="closePaymentReport()">Tutup</button>
+          <button class="btn btn-navy" (click)="printPaymentReport()">🖨 Cetak</button>
+        </div>
+      }
+    </div>
+  </div>
+}

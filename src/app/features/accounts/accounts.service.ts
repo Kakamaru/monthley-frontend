@@ -35,6 +35,15 @@ export class AccountsService {
     return this.http.post<{ id: number; message: string }>(this.base, body);
   }
 
+  statement(id: number): Observable<StatementResponse> {
+    return this.http.get<StatementResponse>(`${this.base}/${id}/statement`);
+  }
+
+  paymentReport(accountId: number, year: string): Observable<PaymentReportResponse> {
+    return this.http.get<PaymentReportResponse>('/api/v1/payments/payment-report',
+      { params: new HttpParams().set('accountId', String(accountId)).set('year', year).set('page', '0').set('size', '200') });
+  }
+
   getOne(id: number): Observable<any> {
     return this.http.get<any>(`${this.base}/${id}`);
   }
@@ -72,4 +81,20 @@ export class AccountsService {
   config(): Observable<{ allowPriceOverride: boolean }> {
     return this.http.get<{ allowPriceOverride: boolean }>('/api/v1/accounts/config');
   }
+}
+
+export interface StatementLine {
+  date: string; docNo: string; docType: string; item: string;
+  period: string | null; debit: number; credit: number; balance: number;
+}
+export interface StatementResponse {
+  accountId: number; accountNo: string; accountName: string;
+  openingBalance: number; closingBalance: number; lines: StatementLine[];
+}
+
+export interface PaymentReportRow {
+  period: string; invoice: string; invAmount: number; receipts: string | null;
+}
+export interface PaymentReportResponse {
+  items: PaymentReportRow[]; total: number; page: number; pageSize: number;
 }

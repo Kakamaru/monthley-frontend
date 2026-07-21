@@ -2,7 +2,7 @@ import { Component, computed, inject, signal, HostListener} from '@angular/core'
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Account } from '../../core/models/account.model';
-import { AccountsService } from './accounts.service';
+import { AccountsService, StatementLine, StatementResponse, PaymentReportRow, PaymentReportResponse } from './accounts.service';
 import { InvoicingService } from '../invoicing/invoicing.service';
 import { ProductsService, ProductCategory } from '../products/products.service';
 import { Product } from '../../core/models/product.model';
@@ -16,6 +16,54 @@ import { Product } from '../../core/models/product.model';
 })
 export class AccountsComponent {
   private api = inject(AccountsService);
+
+  // Penyata akaun (modal)
+  readonly stmtOpen = signal(false);
+  readonly stmt = signal<StatementResponse | null>(null);
+  readonly stmtLoading = signal(false);
+
+  openStatement(a: { id: number }) {
+    this.stmtOpen.set(true);
+    this.stmt.set(null);
+    this.stmtLoading.set(true);
+    this.api.statement(a.id).subscribe({
+      next: r => { this.stmt.set(r); this.stmtLoading.set(false); },
+      error: () => this.stmtLoading.set(false)
+    });
+  }
+  // Backend sudah pulangkan lines DESCENDING (terbaru atas) + baki berjalan
+  // tepat. Papar terus tanpa reverse.
+  stmtLinesDesc(): StatementLine[] {
+    const st = this.stmt();
+    return st ? st.lines : [];
+  }
+  closeStatement() { this.stmtOpen.set(false); }
+  printStatement() { window.print(); }
+
+  // Invoice Vs Receipt (report payment)
+  readonly repOpen = signal(false);
+  readonly rep = signal<PaymentReportResponse | null>(null);
+  readonly repLoading = signal(false);
+  readonly repYear = signal(String(new Date().getFullYear()));
+  private repAccountId = 0;
+  readonly repYears = Array.from({ length: 10 }, (_, i) => String(new Date().getFullYear() - i));
+
+  openPaymentReport(a: { id: number }) {
+    this.repAccountId = a.id;
+    this.repOpen.set(true);
+    this.loadPaymentReport();
+  }
+  loadPaymentReport() {
+    this.rep.set(null);
+    this.repLoading.set(true);
+    this.api.paymentReport(this.repAccountId, this.repYear()).subscribe({
+      next: r => { this.rep.set(r); this.repLoading.set(false); },
+      error: () => this.repLoading.set(false)
+    });
+  }
+  onRepYearChange(y: string) { this.repYear.set(y); this.loadPaymentReport(); }
+  closePaymentReport() { this.repOpen.set(false); }
+  printPaymentReport() { window.print(); }
   private invoicing = inject(InvoicingService);
   private catalog = inject(ProductsService);
 
@@ -261,7 +309,7 @@ export class AccountsComponent {
       error: e => { this.subSaving.set(false); this.subError.set(e?.error?.message || 'Gagal menambah langganan.'); }
     });
   }
-  onViewReportPayment(a: any) { this.closeMore(); alert('View Report Payment — akan datang (akaun ' + a.no + ')'); }
+  onViewReportPayment(a: any) { this.closeMore(); this.openPaymentReport(a); }
   onGenerateInvoice(a: any) {
     this.closeMore();
     this.genAccountId.set(a.id);
