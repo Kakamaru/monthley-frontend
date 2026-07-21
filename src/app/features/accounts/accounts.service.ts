@@ -48,6 +48,15 @@ export class AccountsService {
     return this.http.get<MyAccountRow[]>(`${this.base}/my`);
   }
 
+  myHistory(opts: { type: string; from?: string; to?: string; q?: string; page: number; size: number }): Observable<HistoryResponse> {
+    let params = new HttpParams()
+      .set('type', opts.type).set('page', String(opts.page)).set('size', String(opts.size));
+    if (opts.from) params = params.set('from', opts.from);
+    if (opts.to)   params = params.set('to', opts.to);
+    if (opts.q)    params = params.set('q', opts.q);
+    return this.http.get<HistoryResponse>(`${this.base}/my/history`, { params });
+  }
+
   getOne(id: number): Observable<any> {
     return this.http.get<any>(`${this.base}/${id}`);
   }
@@ -107,4 +116,12 @@ export interface MyAccountRow {
   id: number; spCode: string; spName: string;
   accountNo: string; accountName: string; balance: number;
   latestInvoiceAmount: number | null; dueDate: string | null;
+}
+
+export interface HistoryRow {
+  date: string; docType: string; spName: string;
+  accountNo: string; docNo: string; amount: number;
+}
+export interface HistoryResponse {
+  items: HistoryRow[]; total: number; page: number; pageSize: number;
 }

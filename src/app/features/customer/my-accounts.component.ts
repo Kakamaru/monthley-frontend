@@ -1,12 +1,13 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth/auth.service';
-import { AccountsService, MyAccountRow } from '../accounts/accounts.service';
+import { AccountsService, MyAccountRow, HistoryRow, HistoryResponse } from '../accounts/accounts.service';
 
 @Component({
   selector: 'app-my-accounts',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="m-fade">
       @if (!auth.hasAccounts()) {
@@ -79,6 +80,52 @@ import { AccountsService, MyAccountRow } from '../accounts/accounts.service';
             <button class="nav-btn" (click)="scroll(1)">›</button>
           </div>
         }
+
+        <!-- Sejarah -->
+        <div class="hist-card" data-card>
+          <div class="hist-head">
+            <h3>Sejarah</h3>
+            <button class="tab" [class.active]="histType() === 'RECEIPT'" (click)="setType('RECEIPT')">Resit</button>
+            <button class="tab" [class.active]="histType() === 'INVOICE'" (click)="setType('INVOICE')">Invois</button>
+          </div>
+          <div class="hist-filter">
+            <span class="fl-lbl">Dari</span>
+            <input type="date" [(ngModel)]="fFrom" class="fl-date">
+            <span class="fl-lbl">Hingga</span>
+            <input type="date" [(ngModel)]="fTo" class="fl-date">
+            <input placeholder="Cari pengeluar / no. dokumen..." [(ngModel)]="fQ" class="fl-search">
+            <button class="fl-btn" (click)="searchHist()">Cari</button>
+          </div>
+          <div class="hist-grid hist-hd">
+            <span>Tarikh</span><span>Jenis</span><span>Pengeluar</span><span>Akaun</span>
+            <span>No. {{ histType() === 'RECEIPT' ? 'Resit' : 'Invois' }}</span><span>Amaun</span><span></span>
+          </div>
+          @if (histLoading()) {
+            <div class="hist-empty">Memuatkan…</div>
+          } @else {
+            @for (h of hist()?.items ?? []; track h.docNo) {
+              <div class="hist-grid hist-row">
+                <span class="c-mut">{{ h.date | date:'dd/MM/yyyy' }}</span>
+                <span>{{ h.docType === 'RECEIPT' ? 'Resit' : 'Invois' }}</span>
+                <span class="c-mut">{{ h.spName }}</span>
+                <span class="c-mut">{{ h.accountNo }}</span>
+                <span class="c-doc">{{ h.docNo }}</span>
+                <span class="c-amt">MYR {{ h.amount | number:'1.2-2' }}</span>
+                <span><button class="dl-btn" title="Muat turun">⬇</button></span>
+              </div>
+            }
+            @if ((hist()?.items?.length ?? 0) === 0) {
+              <div class="hist-empty">Tiada rekod.</div>
+            }
+            <div class="hist-pager">
+              <span class="c-mut">{{ pagerLabel() }}</span>
+              <div class="pager-btns">
+                <button class="pg" [disabled]="histPage() === 0" (click)="goPage(histPage() - 1)">‹</button>
+                <button class="pg" [disabled]="!hasNext()" (click)="goPage(histPage() + 1)">›</button>
+              </div>
+            </div>
+          }
+        </div>
       }
     </div>
   `,
@@ -137,6 +184,28 @@ import { AccountsService, MyAccountRow } from '../accounts/accounts.service';
     .foot-soft { flex: 1; background: #fff; border: none; border-right: 1px solid #f0f3f0; font-family: 'Sora', sans-serif;
       font-weight: 700; font-size: 13px; color: #3a4c53; padding: 14px; cursor: pointer; }
     .foot-pay { flex: 1; background: #16a34a; border: none; color: #fff; font-family: 'Sora', sans-serif; font-weight: 700; font-size: 13px; padding: 14px; cursor: pointer; }
+    .hist-card { background: #fff; border: 1px solid #e6ebe7; border-radius: 18px; padding: 22px; margin-top: 20px; }
+    .hist-head { display: flex; align-items: center; gap: 20px; border-bottom: 1px solid #f0f3f0; padding-bottom: 12px; margin-bottom: 12px; }
+    .hist-head h3 { font-size: 18px; margin: 0; }
+    .tab { background: #fff; border: 1.5px solid #e6ebe7; color: #6b7f86; font-family: 'Sora', sans-serif; font-weight: 700; font-size: 13px; padding: 8px 18px; border-radius: 9px; cursor: pointer; }
+    .tab.active { background: #122029; color: #fff; border-color: #122029; }
+    .hist-filter { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+    .fl-lbl { font-size: 12px; font-weight: 700; color: #6b7f86; }
+    .fl-date { padding: 9px 11px; border: 1.5px solid #dbe3de; border-radius: 9px; font-size: 13px; color: #3a4c53; }
+    .fl-search { flex: 1; min-width: 200px; padding: 9px 13px; border: 1.5px solid #dbe3de; border-radius: 9px; font-size: 13px; }
+    .fl-btn { background: #16a34a; color: #fff; border: none; font-family: 'Sora', sans-serif; font-weight: 700; font-size: 13px; padding: 9px 20px; border-radius: 9px; cursor: pointer; }
+    .hist-grid { display: grid; grid-template-columns: 1fr 0.8fr 1.4fr 0.8fr 1.2fr 1fr 50px; gap: 8px; align-items: center; }
+    .hist-hd { padding: 11px 4px; font-size: 12px; font-weight: 700; color: #6b7f86; text-transform: uppercase; letter-spacing: .03em; }
+    .hist-row { padding: 13px 4px; font-size: 14px; border-top: 1px solid #f0f3f0; }
+    .c-mut { color: #4a5d64; }
+    .c-doc { font-weight: 700; color: #16a34a; }
+    .c-amt { font-family: 'Sora', sans-serif; font-weight: 700; white-space: nowrap; }
+    .dl-btn { width: 32px; height: 32px; border-radius: 8px; border: none; background: #16a34a; color: #fff; cursor: pointer; }
+    .hist-empty { padding: 30px; text-align: center; color: #6b7f86; }
+    .hist-pager { display: flex; align-items: center; justify-content: space-between; padding: 14px 4px 2px; border-top: 1px solid #f0f3f0; margin-top: 6px; font-size: 13px; }
+    .pager-btns { display: flex; gap: 6px; }
+    .pg { width: 34px; height: 34px; border-radius: 8px; border: 1.5px solid #e6ebe7; background: #fff; color: #3a4c53; font-size: 15px; cursor: pointer; }
+    .pg:disabled { opacity: .4; cursor: not-allowed; }
   `]
 })
 export class MyAccountsComponent implements OnInit {
@@ -151,6 +220,26 @@ export class MyAccountsComponent implements OnInit {
     this.rows().reduce((s, r) => s + Math.max(0, r.balance), 0));
   readonly outstandingCount = computed(() => this.rows().filter(r => r.balance > 0).length);
 
+  // Sejarah state
+  readonly histType = signal<'RECEIPT' | 'INVOICE'>('RECEIPT');
+  readonly hist = signal<HistoryResponse | null>(null);
+  readonly histLoading = signal(false);
+  readonly histPage = signal(0);
+  readonly histSize = 10;
+  fFrom = ''; fTo = ''; fQ = '';
+
+  readonly hasNext = computed(() => {
+    const h = this.hist();
+    return h ? (h.page + 1) * this.histSize < h.total : false;
+  });
+  readonly pagerLabel = computed(() => {
+    const h = this.hist();
+    if (!h || h.total === 0) return '0 rekod';
+    const from = h.page * this.histSize + 1;
+    const to = Math.min((h.page + 1) * this.histSize, h.total);
+    return `${from}–${to} daripada ${h.total}`;
+  });
+
   ngOnInit() {
     if (!this.auth.hasAccounts()) return;
     this.loading.set(true);
@@ -158,7 +247,22 @@ export class MyAccountsComponent implements OnInit {
       next: r => { this.rows.set(r); this.loading.set(false); },
       error: () => this.loading.set(false)
     });
+    this.loadHist();
   }
+
+  loadHist() {
+    this.histLoading.set(true);
+    this.api.myHistory({
+      type: this.histType(), from: this.fFrom || undefined, to: this.fTo || undefined,
+      q: this.fQ || undefined, page: this.histPage(), size: this.histSize
+    }).subscribe({
+      next: r => { this.hist.set(r); this.histLoading.set(false); },
+      error: () => this.histLoading.set(false)
+    });
+  }
+  setType(t: 'RECEIPT' | 'INVOICE') { this.histType.set(t); this.histPage.set(0); this.loadHist(); }
+  searchHist() { this.histPage.set(0); this.loadHist(); }
+  goPage(p: number) { this.histPage.set(p); this.loadHist(); }
 
   private readonly palette = ['#16a34a','#dc2626','#2563eb','#d97706','#7c3aed','#0891b2'];
   logoBg(a: MyAccountRow): string {
