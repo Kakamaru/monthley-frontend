@@ -44,6 +44,10 @@ export class AccountsService {
       { params: new HttpParams().set('accountId', String(accountId)).set('year', year).set('page', '0').set('size', '200') });
   }
 
+  myAccounts(): Observable<MyAccountRow[]> {
+    return this.http.get<MyAccountRow[]>(`${this.base}/my`);
+  }
+
   getOne(id: number): Observable<any> {
     return this.http.get<any>(`${this.base}/${id}`);
   }
@@ -97,4 +101,10 @@ export interface PaymentReportRow {
 }
 export interface PaymentReportResponse {
   items: PaymentReportRow[]; total: number; page: number; pageSize: number;
+}
+
+export interface MyAccountRow {
+  id: number; spCode: string; spName: string;
+  accountNo: string; accountName: string; balance: number;
+  latestInvoiceAmount: number | null; dueDate: string | null;
 }
