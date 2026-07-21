@@ -9,10 +9,19 @@ export interface OutstandingRow {
   total: number; paid: number; outstanding: number;
 }
 
+export interface OutstandingAccountRow {
+  accountId: number; accountNo: string; accountName: string; balance: number;
+}
+
+export interface DocumentLineRow {
+  lineId: number; description: string; amount: number;
+  periodStart?: string; periodEnd?: string;
+}
+
 export interface PaymentType { code: string; label: string; }
 
 export interface ManualPaymentRequest {
-  documentId: number; accountId: number; paymentType: string;
+  documentIds: number[]; accountId: number; paymentType: string;
   paymentRefNo?: string; paymentDate?: string; amount: number; remarks?: string;
 }
 
@@ -35,6 +44,13 @@ export class PaymentService {
     return this.http.get<PaymentType[]>(`${this.base}/payment-types`);
   }
 
+  outstandingAccounts(q: { account?: string | null; name?: string | null; page: number; size: number }): Observable<Page<OutstandingAccountRow>> {
+    let params = new HttpParams().set('page', q.page).set('size', q.size);
+    if (q.account) params = params.set('account', q.account);
+    if (q.name) params = params.set('name', q.name);
+    return this.http.get<Page<OutstandingAccountRow>>(`${this.base}/outstanding-accounts`, { params });
+  }
+
   outstanding(q: OutstandingQuery): Observable<Page<OutstandingRow>> {
     let params = new HttpParams()
       .set('page', String(q.page))
@@ -44,6 +60,10 @@ export class PaymentService {
     if (q.category) params = params.set('category', String(q.category));
     if (q.product)  params = params.set('product', String(q.product));
     return this.http.get<Page<OutstandingRow>>(`${this.base}/outstanding`, { params });
+  }
+
+  documentLines(documentId: number): Observable<DocumentLineRow[]> {
+    return this.http.get<DocumentLineRow[]>(`${this.base}/documents/${documentId}/lines`);
   }
 
   record(body: ManualPaymentRequest): Observable<PaymentResult> {

@@ -1,7 +1,61 @@
+@if (!payMode()) {
 <div class="m-fade">
   <h1 class="h1">Manual Payment</h1>
   <p class="sub">Rekod bayaran tunai, cek atau pindahan yang diterima di luar talian.</p>
 
+  <!-- ===== TAB STRIP ===== -->
+  <div style="display:flex;gap:24px;border-bottom:1.5px solid var(--line-soft);margin-top:18px">
+    <button (click)="switchTab('account')" [style.color]="tab() === 'account' ? 'var(--green)' : 'var(--muted)'" [style.border-bottom]="tab() === 'account' ? '2.5px solid var(--green)' : '2.5px solid transparent'" style="background:none;border:none;padding:10px 2px;cursor:pointer;font-weight:700;font-size:15px;margin-bottom:-1.5px">Search Account</button>
+    <button (click)="switchTab('invoice')" [style.color]="tab() === 'invoice' ? 'var(--green)' : 'var(--muted)'" [style.border-bottom]="tab() === 'invoice' ? '2.5px solid var(--green)' : '2.5px solid transparent'" style="background:none;border:none;padding:10px 2px;cursor:pointer;font-weight:700;font-size:15px;margin-bottom:-1.5px">Search Invoice</button>
+  </div>
+
+  <!-- ===== TAB ACCOUNT ===== -->
+  @if (tab() === 'account') {
+    <div class="card-filter" style="margin-top:18px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <input class="fld" placeholder="Account" [(ngModel)]="fAccount" (keyup.enter)="loadAccounts()" />
+        <input class="fld" placeholder="Name" [(ngModel)]="fAccName" (keyup.enter)="loadAccounts()" />
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:14px">
+        <button class="btn btn-navy" (click)="accountPage.set(0);loadAccounts()">Search</button>
+        <button class="btn btn-ghost" (click)="fAccount='';fAccName='';accountPage.set(0);loadAccounts()">Clear</button>
+      </div>
+    </div>
+
+    <div class="card" data-card style="overflow:hidden;margin-top:16px">
+      <div class="grid-head" style="grid-template-columns:1.2fr 2fr 1fr 140px">
+        <span>Account</span><span>Name</span><span class="r">Amount</span><span class="c">Action</span>
+      </div>
+      @if (loading()) {
+        <div class="empty">Memuatkan…</div>
+      } @else if (accountRows().length === 0) {
+        <div class="empty">Tiada akaun bertunggak.</div>
+      } @else {
+        @for (a of accountRows(); track a.accountId) {
+          <div class="grid-row" data-row style="grid-template-columns:1.2fr 2fr 1fr 140px">
+            <span style="font-weight:700;color:var(--green)">{{ a.accountNo }}</span>
+            <span>{{ a.accountName }}</span>
+            <span class="r" style="color:#c0392b;font-weight:700">MYR {{ a.balance | number:'1.2-2' }}</span>
+            <span class="c">
+              <button class="btn btn-navy" style="padding:8px 16px;font-size:13px" (click)="openPayAccount(a)">Make Payment</button>
+            </span>
+          </div>
+        }
+        @if (accountTotalPages() > 1) {
+          <div class="pager" style="display:flex;justify-content:center;align-items:center;gap:6px;padding:14px">
+            <button class="pg" (click)="accountGoPage(accountPage() - 1)" [disabled]="accountPage() === 0">‹</button>
+            @for (n of accountPageNumbers(); track n) {
+              <button class="pg" [class.active]="n === accountPage()" (click)="accountGoPage(n)">{{ n + 1 }}</button>
+            }
+            <button class="pg" (click)="accountGoPage(accountPage() + 1)" [disabled]="accountPage() >= accountTotalPages() - 1">›</button>
+          </div>
+        }
+      }
+    </div>
+  }
+
+  <!-- ===== TAB INVOICE (sedia ada) ===== -->
+  @if (tab() === 'invoice') {
   <!-- ===== FILTER ===== -->
   <div class="card-filter" style="margin-top:18px">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -83,73 +137,146 @@
       </div>
     }
   </div>
+  }
 </div>
+}
 
-<!-- ===== MODAL: MANUAL PAYMENT ===== -->
-@if (payTarget(); as r) {
-  <div class="m-backdrop" (click)="payTarget.set(null)">
-    <div class="m-modal" style="width:520px" (click)="$event.stopPropagation()">
-      <div class="m-modal-head">
-        <h3>Manual Payment</h3>
-        <button class="m-close" (click)="payTarget.set(null)">✕</button>
+<!-- ===== PAGE BAYARAN (att 1) + CONFIRM (att 2) + SUCCESS (att 3) ===== -->
+@if (payMode()) {
+
+  <!-- att 3: SUCCESS -->
+  @if (result(); as res) {
+    <div class="m-fade" style="text-align:center;padding:60px 20px">
+      <div style="width:110px;height:110px;border:4px solid var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;font-size:52px;color:var(--green)">✓</div>
+      <h2 style="font-family:'Sora',sans-serif;font-weight:800;font-size:26px;color:var(--ink);margin:0 0 6px">Payment Success!</h2>
+      <p style="font-family:'Sora',sans-serif;font-size:20px;color:var(--ink);margin:0 0 8px">Receipt No : <b>{{ res.receiptNo }}</b></p>
+      @if (res.deposit > 0) {
+        <p style="color:var(--muted);font-size:14px;margin:0 0 4px">Lebihan {{ fmt(res.deposit) }} menjadi deposit.</p>
+      }
+      <p style="color:var(--muted);font-size:14px;margin:0 0 20px">Resit telah dihantar ke e-mel pengguna. Anda juga boleh cetak dengan klik butang Print.</p>
+      <div style="display:flex;gap:16px;justify-content:center">
+        <a style="color:var(--green);font-weight:700;cursor:pointer;text-decoration:none" (click)="backToCounter()">Print</a>
+        <span style="color:var(--muted)">|</span>
+        <a style="color:var(--green);font-weight:700;cursor:pointer;text-decoration:none" (click)="backToCounter()">Back to counter</a>
       </div>
+    </div>
+  } @else {
 
-      <div class="pay-summary">
-        <div>
-          <div class="ps-label">Account</div>
-          <div class="ps-value">{{ r.accountNo }} — {{ r.accountName }}</div>
-        </div>
-        <div>
-          <div class="ps-label">Invoice No</div>
-          <div class="ps-value">{{ r.invoiceNo }}</div>
-        </div>
-        <div>
-          <div class="ps-label">Baki Tertunggak</div>
-          <div class="ps-value" style="color:var(--red)">{{ fmt(r.outstanding) }}</div>
-        </div>
+  <!-- att 1: PAGE BAYARAN -->
+  <div class="m-fade">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h1 class="h1" style="margin:0">Manual Payment</h1>
+      <button class="btn btn-ghost" (click)="closePay()">← Kembali</button>
+    </div>
+
+    <!-- Account Info -->
+    <div style="padding:20px;border-radius:14px;margin-bottom:16px;border:1.5px solid var(--line-input);background:var(--surface)">
+      <div style="font-family:'Sora',sans-serif;font-weight:800;font-size:18px;color:var(--ink);margin-bottom:18px;letter-spacing:.5px">ACCOUNT INFO</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;text-align:center">
+        <div><div style="color:var(--muted);font-size:14px;margin-bottom:6px">Account</div><div style="color:var(--green);font-weight:700;font-size:22px">{{ payAccount()?.no }}</div></div>
+        <div><div style="color:var(--muted);font-size:14px;margin-bottom:6px">Name</div><div style="color:var(--ink);font-weight:600;font-size:22px">{{ payAccount()?.name }}</div></div>
+        <div><div style="color:var(--muted);font-size:14px;margin-bottom:6px">Balance Amount</div><div style="color:var(--ink);font-weight:700;font-size:22px">{{ fmt(payAccount()?.balance ?? 0) }}</div></div>
       </div>
+    </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div>
-          <label class="m-label">Payment Type</label>
-          <select class="fld" [(ngModel)]="mType">
-            @for (t of types(); track t.code) {
-              <option [value]="t.code">{{ t.label }}</option>
+    <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:16px">
+      <!-- KIRI: senarai invois (checkbox) -->
+      <div style="padding:0;border-radius:14px;overflow:hidden;border:1.5px solid var(--line-input);background:var(--surface)">
+        <div style="display:grid;grid-template-columns:34px 1.4fr 2fr 1fr;gap:8px;padding:14px 16px;background:var(--surface-alt);font-size:11px;font-weight:700;color:var(--muted)">
+          <input type="checkbox" [checked]="allOnPageSelected()" (change)="toggleSelectAll()" title="Pilih semua" />
+          <span>INVOICE NO.</span><span>DESCRIPTION</span><span style="text-align:right">TOTAL AMOUNT</span>
+        </div>
+        @for (inv of pagedInvoices(); track inv.documentId) {
+          <div style="display:grid;grid-template-columns:34px 1.4fr 2fr 1fr;gap:8px;padding:13px 16px;border-top:1px solid var(--line-soft);align-items:center">
+            <input type="checkbox" [checked]="invSelected(inv.documentId)" (click)="$event.stopPropagation();toggleInvoice(inv.documentId)" />
+            <span style="font-size:13px;color:var(--green);font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px" (click)="toggleExpand(inv)">
+              <span style="font-size:11px;color:var(--muted);transition:transform .2s" [style.transform]="expandedDoc() === inv.documentId ? 'rotate(90deg)' : 'none'">▸</span>
+              {{ inv.invoiceNo }}
+            </span>
+            <span style="font-size:13px;color:var(--ink)">{{ inv.period || '—' }}</span>
+            <span style="font-size:13px;text-align:right;color:var(--ink);font-weight:600">{{ fmt(inv.outstanding) }}</span>
+          </div>
+          @if (expandedDoc() === inv.documentId) {
+            @for (line of linesFor(inv.documentId); track line.lineId) {
+              <div style="display:grid;grid-template-columns:34px 1.4fr 2fr 1fr;gap:8px;padding:8px 16px 8px 32px;border-top:1px solid var(--line-soft);align-items:center;background:var(--surface-alt)">
+                <input type="checkbox" [checked]="txnChecked(inv.documentId, line.lineId)" (change)="toggleTxn(inv, line)" />
+                <span style="font-size:12px;color:var(--muted)">{{ line.description }}</span>
+                <span style="font-size:11px;color:var(--muted)">{{ line.periodStart }} → {{ line.periodEnd }}</span>
+                <span style="font-size:12px;text-align:right;color:var(--muted)">{{ fmt(line.amount) }}</span>
+              </div>
             }
-          </select>
-        </div>
-        <div>
-          <label class="m-label">Payment Ref No.</label>
-          <input class="fld" [(ngModel)]="mRefNo" placeholder="cth: no. cek / rujukan" />
-        </div>
-        <div>
-          <label class="m-label">Payment Date</label>
-          <input class="fld" type="date" [(ngModel)]="mDate" />
-        </div>
-        <div>
-          <label class="m-label">Amount</label>
-          <input class="fld" type="number" step="0.01" [(ngModel)]="mAmount"
-                 style="font-family:'Sora',sans-serif;font-weight:700" />
-        </div>
+            @if (linesFor(inv.documentId).length === 0) {
+              <div style="padding:8px 32px;font-size:12px;color:var(--muted);background:var(--surface-alt)">Memuatkan pecahan…</div>
+            }
+          }
+        }
+        @if (payInvoices().length === 0) {
+          <div style="padding:30px;text-align:center;color:var(--muted)">Tiada invois tertunggak.</div>
+        }
+        @if (payTotalPages() > 1) {
+          <div style="display:flex;justify-content:center;align-items:center;gap:6px;padding:12px;border-top:1px solid var(--line-soft)">
+            <button (click)="payGoPage(payPage() - 1)" [disabled]="payPage() === 0" style="border:1px solid var(--line-soft);background:var(--surface);border-radius:7px;padding:6px 10px;cursor:pointer;color:var(--ink)">‹</button>
+            @for (n of payPageNumbers(); track n) {
+              <button (click)="payGoPage(n)" [style.background]="n === payPage() ? 'var(--green)' : 'var(--surface)'" [style.color]="n === payPage() ? '#fff' : 'var(--ink)'" style="border:1px solid var(--line-soft);border-radius:7px;padding:6px 11px;cursor:pointer;font-weight:600">{{ n + 1 }}</button>
+            }
+            <button (click)="payGoPage(payPage() + 1)" [disabled]="payPage() >= payTotalPages() - 1" style="border:1px solid var(--line-soft);background:var(--surface);border-radius:7px;padding:6px 10px;cursor:pointer;color:var(--ink)">›</button>
+          </div>
+        }
       </div>
 
-      <label class="m-label" style="margin-top:12px">Remarks</label>
-      <textarea class="fld" [(ngModel)]="mRemarks" rows="2"
-                placeholder="Nota (pilihan)" style="resize:vertical"></textarea>
+      <!-- KANAN: borang bayaran -->
+      <div style="padding:20px;border-radius:14px;border:1.5px solid var(--line-input);background:var(--surface)">
+        <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:10px">Payment Method</div>
+        <div style="display:flex;flex-wrap:wrap;gap:12px 18px;margin-bottom:16px">
+          @for (pm of methodOptions; track pm.code) {
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13.5px;color:var(--ink)">
+              <input type="radio" name="pmethod" [value]="pm.code" [(ngModel)]="mMethod" /> {{ pm.label }}
+            </label>
+          }
+        </div>
 
-      @if (payError()) { <div class="alert" style="margin:14px 0 0">{{ payError() }}</div> }
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+          <div><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Date</label><input type="date" style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;color:var(--ink);background:var(--surface)" [(ngModel)]="mDate" /></div>
+          <div><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Ref No.</label><input style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;color:var(--ink);background:var(--surface)" placeholder="Ref No." [(ngModel)]="mRefNo" /></div>
+        </div>
 
-      <div class="hint" style="margin-top:14px">
-        💡 Bayaran akan diperuntukkan kepada invois ini. Lebihan (jika ada) menjadi
-        <strong>deposit pelanggan</strong>. Resit dijana automatik.
-      </div>
+        <div style="margin-bottom:12px">
+          <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Notes</label>
+          <textarea style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;color:var(--ink);background:var(--surface);min-height:70px;resize:vertical" [(ngModel)]="mNotes"></textarea>
+        </div>
 
-      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px">
-        <button class="btn btn-ghost" (click)="payTarget.set(null)">Cancel</button>
-        <button class="btn btn-green" data-cta (click)="save()" [disabled]="payBusy()">
-          {{ payBusy() ? 'Menyimpan…' : 'Save' }}
-        </button>
+        <div style="margin-bottom:16px">
+          <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">* Amount</label>
+          <input type="number" style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;color:var(--ink);background:var(--surface);text-align:right;font-weight:700;font-size:16px" [(ngModel)]="mAmount" />
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Dipilih: {{ fmt(mAmount) }} ({{ pickedCount() }} item)</div>
+        </div>
+
+        @if (payError()) { <div style="color:#c33;font-size:13px;margin-bottom:12px">{{ payError() }}</div> }
+
+        <button (click)="askConfirm()" [disabled]="payBusy()" style="width:100%;background:var(--green);border:none;border-radius:10px;padding:14px;cursor:pointer;color:#fff;font-weight:700;font-size:15px">Accept Payment</button>
       </div>
     </div>
   </div>
+
+  <!-- att 2: CONFIRM POPUP -->
+  @if (showConfirm()) {
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px" (click)="cancelConfirm()">
+      <div class="modal-card" style="border-radius:16px;padding:26px;max-width:460px;width:96%" (click)="$event.stopPropagation()">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h3 style="margin:0;font-family:'Sora',sans-serif;font-weight:800;font-size:20px;color:var(--ink)">Payment Information</h3>
+          <button (click)="cancelConfirm()" style="border:none;background:none;font-size:22px;cursor:pointer;color:var(--ink)">✕</button>
+        </div>
+        <p style="color:var(--ink);font-size:14px;margin:0 0 8px">Account : <b>{{ payAccount()?.no }}</b></p>
+        <p style="color:var(--ink);font-size:14px;margin:0 0 8px">Account Name : <b>{{ payAccount()?.name }}</b></p>
+        <p style="color:var(--ink);font-size:14px;margin:0 0 16px">Total Amount : <b>{{ fmt(mAmount) }}</b></p>
+        <p style="color:var(--muted);font-size:14px;margin:0 0 20px">Anda pasti untuk keluarkan resit?</p>
+        <div style="display:flex;justify-content:flex-end;gap:10px">
+          <button (click)="cancelConfirm()" style="background:var(--surface-alt);border:1px solid var(--line-soft);border-radius:9px;padding:11px 24px;cursor:pointer;color:var(--ink);font-weight:600">Close</button>
+          <button (click)="save()" [disabled]="payBusy()" style="background:var(--green);border:none;border-radius:9px;padding:11px 26px;cursor:pointer;color:#fff;font-weight:700">{{ payBusy() ? 'Menyimpan…' : 'Save' }}</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  }
 }
