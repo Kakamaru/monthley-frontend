@@ -52,6 +52,7 @@ export class ManualPaymentComponent {
   txnPick: Record<number, Set<number>> = {};
   readonly payPageSize = 10;
   readonly payBusy = signal(false);
+  mIdempotencyKey = '';   // token elak double-entry (ADR 0004)
   readonly payError = signal<string | null>(null);
   readonly result = signal<PaymentResult | null>(null);   // success screen bila set
   readonly showConfirm = signal(false);          // popup confirm (att 2)
@@ -146,6 +147,7 @@ export class ManualPaymentComponent {
     this.mMethod = 'CASH';
     this.mDate = new Date().toISOString().slice(0, 10);
     this.mBank = ''; this.mBankBranch = ''; this.mRefNo = ''; this.mNotes = ''; this.mAmount = 0;
+    this.mIdempotencyKey = crypto.randomUUID();   // sesi bayar baru = key baru
     this.api.outstanding({ account: a.accountNo, invoice: null, category: null, product: null, page: 0, size: 200 })
       .subscribe({
         next: res => {
@@ -188,6 +190,7 @@ export class ManualPaymentComponent {
     this.mMethod = 'CASH';
     this.mDate = new Date().toISOString().slice(0, 10);
     this.mBank = ''; this.mBankBranch = ''; this.mRefNo = ''; this.mNotes = ''; this.mAmount = 0;
+    this.mIdempotencyKey = crypto.randomUUID();   // sesi bayar baru = key baru
     // Muat semua invois outstanding akaun ini
     this.api.outstanding({ account: r.accountNo, invoice: null, category: null, product: null, page: 0, size: 200 })
       .subscribe({
@@ -345,7 +348,8 @@ export class ManualPaymentComponent {
       paymentRefNo: this.mRefNo || undefined,
       paymentDate: this.mDate,
       amount: this.mAmount,
-      remarks: this.mNotes || undefined
+      remarks: this.mNotes || undefined,
+      idempotencyKey: this.mIdempotencyKey
     }).subscribe({
       next: res => {
         this.payBusy.set(false);

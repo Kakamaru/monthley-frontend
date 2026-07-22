@@ -161,13 +161,13 @@ import { AccountsService, MyAccountRow, HistoryRow, HistoryResponse } from '../a
     .btn-sub { background: #122029; color: #fff; border: none; font-family: 'Sora', sans-serif; font-weight: 700;
       font-size: 13px; padding: 10px 18px; border-radius: 10px; cursor: pointer; margin-left: 4px; }
 
-    .scroller { flex: 1; min-width: 0; display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; }
-    .card { flex: 0 0 330px; scroll-snap-align: start; background: #fff; border: 1px solid #e6ebe7; border-radius: 18px; overflow: hidden; }
+    .scroller { flex: 1 1 auto; min-width: 0; display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; }
+    .card { flex: 1 1 0; min-width: 300px; max-width: 460px; scroll-snap-align: start; background: #fff; border: 1px solid #e6ebe7; border-radius: 18px; overflow: hidden; }
     .card-top { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid #f0f3f0; }
     .card-org { display: flex; align-items: center; gap: 11px; }
     .logo { width: 42px; height: 42px; border-radius: 11px; color: #fff; display: flex; align-items: center; justify-content: center;
       font-family: 'Sora', sans-serif; font-weight: 800; font-size: 14px; }
-    .org-name { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 14px; }
+    .org-name { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 14px; color: #16262f; }
     .org-no { font-size: 11px; color: #6b7f86; }
     .org-holder { font-size: 12px; color: #e0863b; font-weight: 700; margin-top: 1px; }
     .card-body { padding: 18px; }

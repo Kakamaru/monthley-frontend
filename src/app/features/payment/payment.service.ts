@@ -23,6 +23,7 @@ export interface PaymentType { code: string; label: string; }
 export interface ManualPaymentRequest {
   documentIds: number[]; accountId: number; paymentType: string;
   paymentRefNo?: string; paymentDate?: string; amount: number; remarks?: string;
+  idempotencyKey?: string;
 }
 
 export interface PaymentResult {
