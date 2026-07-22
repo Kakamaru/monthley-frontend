@@ -439,3 +439,7 @@ select.fld { color: var(--muted); }
 [data-theme='dark'] .modal-card {
   background: #16242c;
 }
+
+/* Dropdown/popover — solid pekat (elak telus dark mode) */
+.pop-card { background: #ffffff; }
+[data-theme='dark'] .pop-card { background: #16242c; }

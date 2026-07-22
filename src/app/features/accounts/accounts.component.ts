@@ -477,6 +477,9 @@ export class AccountsComponent {
 
   @HostListener('document:keydown.escape')
   onEscape() {
+    if (this.adjOpen()) { this.closeAdjustment(); return; }
+    if (this.repOpen()) { this.closePaymentReport(); return; }
+    if (this.stmtOpen()) { this.closeStatement(); return; }
     if (this.linkPanelOpen()) { this.closeLinkPanel(); return; }
     if (this.subModalOpen()) { this.closeSubModal(); return; }
     if (this.genModalOpen()) { this.closeGenModal(); return; }
