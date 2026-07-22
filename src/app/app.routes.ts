@@ -37,6 +37,11 @@ export const routes: Routes = [
 
       // SP — perlu sp_membership
       {
+        path: 'dashboard', canActivate: [spAdminGuard],
+        loadComponent: () =>
+          import('./features/dashboard/sp-dashboard.component').then(m => m.SpDashboardComponent)
+      },
+      {
         path: 'products', canActivate: [spAdminGuard],
         loadComponent: () =>
           import('./features/products/products.component').then(m => m.ProductsComponent)

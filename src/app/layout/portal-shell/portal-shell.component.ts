@@ -44,7 +44,7 @@ export class PortalShellComponent {
 
   /** Service Provider — navMain + navSP dari prototaip */
   readonly navSP: NavItem[] = [
-    { id: 'dashboard',    icon: '📊',  label: 'Panel Utama' },
+    { id: 'dashboard',    icon: '📊',  label: 'Panel Utama', route: '/portal/dashboard' },
     { id: 'settings',     icon: '⚙️', label: 'Tetapan', route: '/portal/settings', roles: ['SP_ADMIN'] },
     { id: 'products',     icon: '📦',  label: 'Produk', route: '/portal/products', roles: ['SP_ADMIN'] },
     { id: 'accounts',     icon: '👥',  label: 'Akaun', route: '/portal/accounts' },
