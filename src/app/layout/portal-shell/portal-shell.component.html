@@ -1,7 +1,10 @@
 <div class="shell">
 
+  <!-- overlay drawer mobile -->
+  <div class="nav-overlay" [class.open]="mobileNav()" (click)="closeMobileNav()"></div>
+
   <!-- ============ SIDEBAR ============ -->
-  <aside class="side">
+  <aside class="side" [class.mob-open]="mobileNav()">
     <div class="brand">
       <img src="assets/monthley-badge.png" alt="" class="badge-img" />
       <img src="assets/monthley-wordmark-white.png" alt="Monthley" class="wm-img" />
@@ -72,6 +75,7 @@
   <!-- ============ MAIN ============ -->
   <div class="main">
     <header class="top">
+      <button class="hamburger" (click)="toggleMobileNav()" aria-label="Menu">☰</button>
       <!-- SP switcher — hanya jika ada SP -->
       @if (auth.isSpAdmin()) {
         <div class="sp-wrap">

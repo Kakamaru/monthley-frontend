@@ -200,3 +200,26 @@
 .fld:disabled {
   background: var(--surface-alt); color: var(--muted); cursor: default;
 }
+
+/* Responsive mobile — baris tambah (Pilih tempoh + sebab + butang) stack menegak */
+@media (max-width: 640px) {
+  .lk-add { flex-direction: column; align-items: stretch; }
+  .lk-add > .fld,
+  .lk-add > .btn { flex: 1 1 auto !important; width: 100%; }
+}
+
+/* ============ RESPONSIVE MOBILE ============ */
+@media (max-width: 640px) {
+  /* Kad peranan (Admin/Cashier/Account Viewer) — stack 1 kolum */
+  .role-cards { grid-template-columns: 1fr !important; }
+
+  /* Jadual (Ahli SP + lookup) — header sembunyi, baris stack menegak */
+  .grid-head { display: none !important; }
+  .grid-row {
+    display: flex !important; flex-direction: column; gap: 4px;
+    grid-template-columns: none !important;
+    padding: 14px 6px;
+  }
+  .grid-row [data-row-actions],
+  .grid-row .row-actions { margin-top: 6px; }
+}

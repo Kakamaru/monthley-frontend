@@ -156,7 +156,12 @@ import { AccountsService, MyAccountRow, HistoryRow, HistoryResponse } from '../a
       font-family: 'Sora', sans-serif; font-weight: 700; font-size: 15px; padding: 14px 26px; border-radius: 12px; cursor: pointer; }
 
     .carousel { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
-    .nav-btn { flex: 0 0 44px; width: 44px; height: 44px; border-radius: 11px; border: 1.5px solid #e6ebe7; background: #fff;
+        @media (max-width: 640px) {
+      .card { flex: 0 0 85%; min-width: 85%; max-width: 85%; }
+      .nav-btn { flex: 0 0 34px; width: 34px; height: 34px; font-size: 18px; }
+      .carousel { gap: 6px; }
+    }
+.nav-btn { flex: 0 0 44px; width: 44px; height: 44px; border-radius: 11px; border: 1.5px solid #e6ebe7; background: #fff;
       color: #3a4c53; font-size: 22px; font-weight: 700; cursor: pointer; line-height: 1; display: flex; align-items: center; justify-content: center; }
     .btn-sub { background: #122029; color: #fff; border: none; font-family: 'Sora', sans-serif; font-weight: 700;
       font-size: 13px; padding: 10px 18px; border-radius: 10px; cursor: pointer; margin-left: 4px; }
@@ -197,6 +202,20 @@ import { AccountsService, MyAccountRow, HistoryRow, HistoryResponse } from '../a
     .hist-grid { display: grid; grid-template-columns: 1fr 0.8fr 1.4fr 0.8fr 1.2fr 1fr 50px; gap: 8px; align-items: center; }
     .hist-hd { padding: 11px 4px; font-size: 12px; font-weight: 700; color: #6b7f86; text-transform: uppercase; letter-spacing: .03em; }
     .hist-row { padding: 13px 4px; font-size: 14px; border-top: 1px solid #f0f3f0; }
+
+    @media (max-width: 640px) {
+      /* Sejarah: header sembunyi, baris jadi card menegak */
+      .hist-hd { display: none; }
+      .hist-row {
+        display: flex; flex-direction: column; gap: 3px;
+        padding: 14px 2px; border-top: 1px solid #f0f3f0;
+      }
+      .hist-row .c-amt { font-size: 17px; margin-top: 4px; }
+      .hist-row .dl-btn { align-self: flex-start; margin-top: 6px; }
+      .hist-filter { flex-direction: column; align-items: stretch; }
+      .fl-search { min-width: 0; width: 100%; }
+    }
+
     .c-mut { color: #4a5d64; }
     .c-doc { font-weight: 700; color: #16a34a; }
     .c-amt { font-family: 'Sora', sans-serif; font-weight: 700; white-space: nowrap; }

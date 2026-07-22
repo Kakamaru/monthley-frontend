@@ -24,6 +24,7 @@ export class PortalShellComponent {
   readonly spOpen = signal(true);
   readonly platOpen = signal(true);
   readonly spSwitchOpen = signal(false);
+  readonly mobileNav = signal(false);   // drawer sidebar mobile
 
   /** Platform — superadmin sahaja */
   readonly navPlatform: NavItem[] = [
@@ -79,6 +80,8 @@ export class PortalShellComponent {
   });
 
   toggleLang() { this.lang.set(this.lang() === 'BM' ? 'EN' : 'BM'); }
+  toggleMobileNav() { this.mobileNav.set(!this.mobileNav()); }
+  closeMobileNav() { this.mobileNav.set(false); }
   toggleCust() { this.custOpen.set(!this.custOpen()); }
   toggleSP()   { this.spOpen.set(!this.spOpen()); }
   togglePlat() { this.platOpen.set(!this.platOpen()); }
