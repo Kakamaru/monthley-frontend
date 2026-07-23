@@ -71,7 +71,7 @@ export class ManualPaymentComponent {
   mBankBranch = '';
   mRefNo = '';
   mNotes = '';
-  mAmount = 0;
+  readonly mAmount = signal(0);   // signal: dikemas kini dalam callback async (zoneless)
 
   fAccount = '';
   fInvoice = '';
@@ -146,7 +146,7 @@ export class ManualPaymentComponent {
     this.payPage.set(0);
     this.mMethod = 'CASH';
     this.mDate = new Date().toISOString().slice(0, 10);
-    this.mBank = ''; this.mBankBranch = ''; this.mRefNo = ''; this.mNotes = ''; this.mAmount = 0;
+    this.mBank = ''; this.mBankBranch = ''; this.mRefNo = ''; this.mNotes = ''; this.mAmount.set(0);
     this.mIdempotencyKey = crypto.randomUUID();   // sesi bayar baru = key baru
     this.api.outstanding({ account: a.accountNo, invoice: null, category: null, product: null, page: 0, size: 200 })
       .subscribe({
@@ -189,7 +189,7 @@ export class ManualPaymentComponent {
     this.payPage.set(0);
     this.mMethod = 'CASH';
     this.mDate = new Date().toISOString().slice(0, 10);
-    this.mBank = ''; this.mBankBranch = ''; this.mRefNo = ''; this.mNotes = ''; this.mAmount = 0;
+    this.mBank = ''; this.mBankBranch = ''; this.mRefNo = ''; this.mNotes = ''; this.mAmount.set(0);
     this.mIdempotencyKey = crypto.randomUUID();   // sesi bayar baru = key baru
     // Muat semua invois outstanding akaun ini
     this.api.outstanding({ account: r.accountNo, invoice: null, category: null, product: null, page: 0, size: 200 })
@@ -233,6 +233,18 @@ export class ManualPaymentComponent {
       this.recalcAmount();
     }
   }
+  /**
+   * Keterangan invois: bila dokumen ada TEPAT satu baris, papar nama item
+   * bersama period. Syaratnya bilangan baris, bukan tetapan split — jadi
+   * akaun yang langgan satu produk pun dapat faedah sama walaupun split off.
+   */
+  descOf(inv: OutstandingRow): string {
+    const item = inv.itemDesc?.trim();
+    const per = inv.period?.trim();
+    if (item && per) return `${item} · ${per}`;
+    return item || per || '—';
+  }
+
   invSelected(docId: number): boolean { return this.paySelected().has(docId); }
 
   toggleExpand(inv: OutstandingRow) {
@@ -285,7 +297,7 @@ export class ManualPaymentComponent {
         }
       }
     }
-    this.mAmount = Math.round(total * 100) / 100;
+    this.mAmount.set(Math.round(total * 100) / 100);
   }
 
   // Bilangan item dipilih: invois penuh (tanpa txn separa) + txn individu ditick.
@@ -317,18 +329,19 @@ export class ManualPaymentComponent {
     if (this.allOnPageSelected()) page.forEach(i => set.delete(i.documentId));
     else page.forEach(i => set.add(i.documentId));
     this.paySelected.set(set);
-    this.mAmount = this.payInvoices().filter(i => set.has(i.documentId)).reduce((s, i) => s + (i.outstanding ?? 0), 0);
-  }
 
-  selectedTotal(): number {
-    return this.payInvoices()
-      .filter(i => this.paySelected().has(i.documentId))
-      .reduce((sum, i) => sum + (i.outstanding ?? 0), 0);
+    // Select-all bermakna INVOIS PENUH — buang pilihan txn separa yang
+    // mungkin tertinggal dari expand sebelum ini.
+    page.forEach(i => delete this.txnPick[i.documentId]);
+
+    // Satu tempat mengira sahaja (termasuk pembundaran). Sebelum ini
+    // pengiraan disalin di sini tanpa pembundaran -> 561.5899999999999.
+    this.recalcAmount();
   }
 
   // att 2 — confirm popup
   askConfirm() {
-    if (this.mAmount <= 0) { this.payError.set('Amaun mesti lebih daripada sifar.'); return; }
+    if (this.mAmount() <= 0) { this.payError.set('Amaun mesti lebih daripada sifar.'); return; }
     // Tak pilih invois = auto FIFO (backend agih ke invois tertunggak). Partial dibenarkan.
     this.payError.set(null);
     this.showConfirm.set(true);
@@ -347,7 +360,7 @@ export class ManualPaymentComponent {
       paymentType: this.mMethod,
       paymentRefNo: this.mRefNo || undefined,
       paymentDate: this.mDate,
-      amount: this.mAmount,
+      amount: this.mAmount(),
       remarks: this.mNotes || undefined,
       idempotencyKey: this.mIdempotencyKey
     }).subscribe({

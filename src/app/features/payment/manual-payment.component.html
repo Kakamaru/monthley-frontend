@@ -193,7 +193,7 @@
               <span style="font-size:11px;color:var(--muted);transition:transform .2s" [style.transform]="expandedDoc() === inv.documentId ? 'rotate(90deg)' : 'none'">▸</span>
               {{ inv.invoiceNo }}
             </span>
-            <span style="font-size:13px;color:var(--ink)">{{ inv.period || '—' }}</span>
+            <span style="font-size:13px;color:var(--ink)">{{ descOf(inv) }}</span>
             <span style="font-size:13px;text-align:right;color:var(--ink);font-weight:600">{{ fmt(inv.outstanding) }}</span>
           </div>
           @if (expandedDoc() === inv.documentId) {
@@ -247,8 +247,8 @@
 
         <div style="margin-bottom:16px">
           <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">* Amount</label>
-          <input type="number" style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;color:var(--ink);background:var(--surface);text-align:right;font-weight:700;font-size:16px" [(ngModel)]="mAmount" />
-          <div style="font-size:11px;color:var(--muted);margin-top:4px">Dipilih: {{ fmt(mAmount) }} ({{ pickedCount() }} item)</div>
+          <input type="number" style="width:100%;padding:11px 13px;border:1.5px solid var(--line-input);border-radius:9px;font-size:14px;box-sizing:border-box;color:var(--ink);background:var(--surface);text-align:right;font-weight:700;font-size:16px" [ngModel]="mAmount()" (ngModelChange)="mAmount.set($event)" />
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Dipilih: {{ fmt(mAmount()) }} ({{ pickedCount() }} item)</div>
         </div>
 
         @if (payError()) { <div style="color:#c33;font-size:13px;margin-bottom:12px">{{ payError() }}</div> }
@@ -268,7 +268,7 @@
         </div>
         <p style="color:var(--ink);font-size:14px;margin:0 0 8px">Account : <b>{{ payAccount()?.no }}</b></p>
         <p style="color:var(--ink);font-size:14px;margin:0 0 8px">Account Name : <b>{{ payAccount()?.name }}</b></p>
-        <p style="color:var(--ink);font-size:14px;margin:0 0 16px">Total Amount : <b>{{ fmt(mAmount) }}</b></p>
+        <p style="color:var(--ink);font-size:14px;margin:0 0 16px">Total Amount : <b>{{ fmt(mAmount()) }}</b></p>
         <p style="color:var(--muted);font-size:14px;margin:0 0 20px">Anda pasti untuk keluarkan resit?</p>
         <div style="display:flex;justify-content:flex-end;gap:10px">
           <button (click)="cancelConfirm()" style="background:var(--surface-alt);border:1px solid var(--line-soft);border-radius:9px;padding:11px 24px;cursor:pointer;color:var(--ink);font-weight:600">Close</button>
