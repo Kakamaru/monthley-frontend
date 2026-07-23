@@ -1,8 +1,11 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { DashboardService, DashboardSummary, ChartPoint, MainProduct, RecentTxn, ArrearRow } from './dashboard.service';
 import { SpContextService } from '../../core/services/sp-context.service';
+import {
+  DashboardService, DashboardSummary, InvVsCol, ProductSlice,
+  RecentTxn, ArrearRow
+} from './dashboard.service';
 
 @Component({
   selector: 'app-sp-dashboard',
@@ -11,151 +14,190 @@ import { SpContextService } from '../../core/services/sp-context.service';
   template: `
   <div class="dash">
 
-    <div class="banner">
-      <div class="banner-glow"></div>
-      <div class="banner-row">
-        <div class="banner-main">
-          <span class="chip">● Fasa Automasi · {{ monthLabel() }}</span>
-          <h1>Selamat kembali, {{ sp.spName() }} 👋</h1>
-          <p>Kutipan berjalan lancar bulan ini.</p>
-        </div>
-        <div class="banner-actions">
-          <a routerLink="/portal/invoicing" class="b-btn b-primary">🧾 Jana Bil</a>
-          <a routerLink="/portal/reports" class="b-btn b-ghost">📈 Laporan</a>
-        </div>
+    <!-- Kepala -->
+    <div class="head">
+      <div>
+        <span class="chip">● Fasa Automasi · {{ monthLabel() }}</span>
+        <h1>Selamat kembali, Pentadbir 👋</h1>
+        <p class="sub">{{ sp.spName() }} · kutipan bulan ini</p>
+      </div>
+      <div class="head-actions">
+        <a routerLink="/portal/invoicing" class="b-btn b-primary">🧾 Jana Bil</a>
+        <a routerLink="/portal/reports" class="b-btn b-ghost">📈 Laporan</a>
       </div>
     </div>
 
-    <div class="stats">
-      <div class="stat">
-        <div class="stat-top">
-          <div class="stat-ic" style="background:#e7f6ec">💰</div>
-          <span class="stat-badge" style="color:#128a41;background:#e7f6ec">Bulan ini</span>
-        </div>
-        <div class="stat-lbl">Terkumpul ({{ monthShort() }})</div>
-        <div class="stat-val">RM {{ (s()?.collectedThisMonth ?? 0) | number:'1.2-2' }}</div>
-      </div>
+    <!-- Baris 1 -->
+    <div class="row-top">
 
-      <div class="stat">
-        <div class="stat-top">
-          <div class="stat-ic" style="background:#fdf1e6">⏰</div>
-          <span class="stat-badge" style="color:#c26a1f;background:#fdf1e6">Perlu tindakan</span>
-        </div>
-        <div class="stat-lbl">Tunggakan</div>
-        <div class="stat-val" style="color:#e0863b">RM {{ (s()?.outstanding ?? 0) | number:'1.2-2' }}</div>
-      </div>
-
-      <div class="stat">
-        <div class="stat-top">
-          <div class="stat-ic" style="background:#e8eefb">👥</div>
-          <span class="stat-badge" style="color:#6b7f86;background:#eef2ef">{{ s()?.inactiveAccounts ?? 0 }} tak aktif</span>
-        </div>
-        <div class="stat-lbl">Akaun Aktif</div>
-        <div class="stat-val">{{ s()?.activeAccounts ?? 0 }}</div>
-      </div>
-
-      <div class="stat">
-        <div class="stat-top">
-          <div class="stat-ic" style="background:#f2ecfb">🧾</div>
-          <span class="stat-badge" style="color:#128a41;background:#e7f6ec">Auto</span>
-        </div>
-        <div class="stat-lbl">Bil Dijana ({{ monthShort() }})</div>
-        <div class="stat-val">{{ s()?.billsThisMonth ?? 0 }}</div>
-      </div>
-    </div>
-
-    <div class="chart-card">
-      <div class="chart-head">
-        <div>
-          <h3>Kutipan Bulanan</h3>
-          <span class="chart-sub">RM</span>
-        </div>
-        <div class="seg">
-          <button [class.on]="months() === 6" (click)="setMonths(6)">6 Bulan</button>
-          <button [class.on]="months() === 12" (click)="setMonths(12)">12 Bulan</button>
-        </div>
-      </div>
-
-      @if (chartLoading()) {
-        <div class="chart-empty">Memuatkan…</div>
-      } @else if (chart().length === 0) {
-        <div class="chart-empty">Tiada data kutipan.</div>
-      } @else {
-        <div class="bars">
-          @for (b of chart(); track b.month) {
-            <div class="bar-col">
-              <div class="bar-val">{{ b.amount | number:'1.0-0' }}</div>
-              <div class="bar" [style.height.%]="barHeight(b.amount)"></div>
-              <div class="bar-m">{{ monthName(b.month) }}</div>
-            </div>
+      <!-- Terkumpul (kad gelap) -->
+      <div class="cash">
+        <div class="cash-top">
+          <div class="cash-lbl"><span class="cash-ic">💰</span> Terkumpul · {{ monthShort() }}</div>
+          @if (s(); as d) {
+            <span class="mom" [class.neg]="d.momChange < 0">
+              {{ d.momChange >= 0 ? '▲' : '▼' }} {{ abs(d.momChange) }}%
+            </span>
           }
         </div>
-      }
+        <div class="cash-val">RM {{ (s()?.collectedThisMonth ?? 0) | number:'1.2-2' }}</div>
+        <div class="cash-bar-lbl">
+          <span>Sasaran RM {{ (s()?.target ?? 0) | number:'1.0-0' }}</span>
+          <span class="cash-pct">{{ s()?.collectionRate ?? 0 }}%</span>
+        </div>
+        <div class="cash-track">
+          <div class="cash-fill" [style.width.%]="capPct(s()?.collectionRate ?? 0)"></div>
+        </div>
+      </div>
+
+      <!-- Donut kadar bayar -->
+      <div class="card donut-card">
+        <div class="donut" [style.background]="payGradient()">
+          <div class="donut-hole">
+            <div class="donut-val">{{ payPct() }}%</div>
+            <div class="donut-lbl">kadar bayar</div>
+          </div>
+        </div>
+        <div class="donut-foot">
+          {{ s()?.paidAccounts ?? 0 }} dibayar ·
+          <span class="warn">{{ s()?.unpaidAccounts ?? 0 }} tertunggak</span>
+        </div>
+      </div>
+
+      <!-- Dua kad kecil -->
+      <div class="mini-col">
+        <div class="card mini">
+          <div class="mini-ic" style="background:#fdf1e6">⏰</div>
+          <div>
+            <div class="mini-lbl">Tunggakan</div>
+            <div class="mini-val warn">RM {{ (s()?.outstanding ?? 0) | number:'1.2-2' }}</div>
+            <div class="mini-sub">{{ s()?.arrearsAccounts ?? 0 }} akaun</div>
+          </div>
+        </div>
+        <div class="card mini">
+          <div class="mini-ic" style="background:#e8eefb">👥</div>
+          <div>
+            <div class="mini-lbl">Akaun Aktif</div>
+            <div class="mini-val">{{ s()?.activeAccounts ?? 0 }}</div>
+            <div class="mini-sub">{{ s()?.inactiveAccounts ?? 0 }} tak aktif</div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Row: Carta (atas) sudah. Sekarang Produk Utama + row bawah -->
-    <div class="lower">
-      <!-- Produk Utama (kad gelap) -->
-      <div class="prod-card">
-        <div class="prod-tag">Produk Utama</div>
-        @if (product()?.name) {
-          <h3 class="prod-name">{{ product()?.name }}</h3>
-          <p class="prod-sub">RM{{ product()?.rate | number:'1.0-2' }} / bulan · {{ freqLabel(product()?.frequency ?? null) }}</p>
-          <div class="prod-bar-wrap">
-            <div class="prod-bar-lbl"><span>Kadar kutipan {{ monthShort() }}</span><span>{{ product()?.collectionRate }}%</span></div>
-            <div class="prod-track"><div class="prod-fill" [style.width.%]="product()?.collectionRate"></div></div>
+    <!-- Baris 2 -->
+    <div class="row-mid">
+
+      <!-- Invois vs Kutipan -->
+      <div class="card">
+        <div class="c-head">
+          <div>
+            <h3>Invois vs Kutipan</h3>
+            <span class="c-sub">RM</span>
           </div>
-          <div class="prod-stats">
-            <div class="prod-stat"><div class="ps-lbl">Dibayar</div><div class="ps-val">{{ product()?.paid }}</div></div>
-            <div class="prod-stat"><div class="ps-lbl">Tertunggak</div><div class="ps-val" style="color:#f0a35f">{{ product()?.unpaid }}</div></div>
+          <div class="seg">
+            <button [class.on]="months() === 6" (click)="setMonths(6)">6 Bulan</button>
+            <button [class.on]="months() === 12" (click)="setMonths(12)">12 Bulan</button>
           </div>
+        </div>
+
+        <div class="legend">
+          <span class="lg"><i style="background:#cbd5c0"></i>Invois</span>
+          <span class="lg"><i style="background:linear-gradient(#3fae52,#16a34a)"></i>Kutipan (semua)</span>
+          <span class="lg"><i style="background:linear-gradient(#5aa9e6,#2a6fdb)"></i>Kutipan invois bulan ini</span>
+        </div>
+
+        @if (chart().length === 0) {
+          <div class="empty">Tiada data.</div>
         } @else {
-          <p class="prod-empty">Tiada produk utama ditetapkan.</p>
+          <div class="bars">
+            @for (b of chart(); track b.month) {
+              <div class="bcol">
+                <div class="btrio">
+                  <div class="bar b-inv" [style.height.%]="h(b.invoiced)"></div>
+                  <div class="bar b-col" [style.height.%]="h(b.collected)"></div>
+                  <div class="bar b-own" [style.height.%]="h(b.collectedOwn)"></div>
+                  <span class="tip">
+                    <em>{{ monthName(b.month) }}</em>
+                    <span><i class="d-inv"></i>Invois<b>RM {{ b.invoiced | number:'1.2-2' }}</b></span>
+                    <span><i class="d-col"></i>Kutipan<b>RM {{ b.collected | number:'1.2-2' }}</b></span>
+                    <span><i class="d-own"></i>Invois bulan ini<b>RM {{ b.collectedOwn | number:'1.2-2' }}</b></span>
+                  </span>
+                </div>
+                <div class="bm">{{ monthName(b.month) }}</div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Kutipan Ikut Produk -->
+      <div class="card">
+        <h3>Kutipan Ikut Produk</h3>
+        <p class="c-sub2">{{ monthLabel() }} · RM {{ productTotal() | number:'1.2-2' }}</p>
+
+        @if (products().length === 0) {
+          <div class="empty">Tiada kutipan bulan ini.</div>
+        } @else {
+          <div class="donut-wrap">
+            <div class="donut sm" [style.background]="productGradient()">
+              <div class="donut-hole sm">
+                <div class="donut-lbl">Jumlah</div>
+                <div class="donut-val sm">RM {{ productTotal() | number:'1.0-0' }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="plist">
+            @for (p of products(); track p.name; let i = $index) {
+              <div class="prow">
+                <span class="pdot" [style.background]="sliceColor(i)"></span>
+                <span class="pname">{{ p.name }}</span>
+                <span class="ppct">{{ p.pct }}%</span>
+                <span class="pamt">RM {{ p.amount | number:'1.2-2' }}</span>
+              </div>
+            }
+          </div>
         }
       </div>
     </div>
 
-    <!-- Row bawah: Transaksi Terkini + Tunggakan Perlu Tindakan -->
+    <!-- Baris bawah -->
     <div class="feeds">
-      <div class="feed">
-        <div class="feed-head">
-          <h3>Transaksi Terkini</h3>
-          <a routerLink="/portal/finance" class="feed-link">Lihat semua</a>
-        </div>
+      <div class="card feed">
+        <div class="c-head"><h3>Transaksi Terkini</h3>
+          <a routerLink="/portal/finance" class="link">Lihat semua</a></div>
         @if (txns().length === 0) {
-          <div class="feed-empty">Tiada transaksi.</div>
+          <div class="empty">Tiada transaksi.</div>
         } @else {
           @for (t of txns(); track $index) {
-            <div class="feed-row">
-              <div class="feed-ava" style="background:#e7f6ec;color:#128a41">{{ initials(t.name) }}</div>
-              <div class="feed-main">
-                <div class="feed-name">{{ t.name }}</div>
-                <div class="feed-desc">{{ t.accountNo }} · {{ t.date }}</div>
+            <div class="frow">
+              <div class="fava" style="background:#e7f6ec;color:#128a41">{{ initials(t.name) }}</div>
+              <div class="fmain">
+                <div class="fname">{{ t.name }}</div>
+                <div class="fsub">{{ t.accountNo }} · {{ t.date }}</div>
               </div>
-              <div class="feed-amt" style="color:#128a41">RM {{ t.amount | number:'1.2-2' }}</div>
+              <div class="famt ok">RM {{ t.amount | number:'1.2-2' }}</div>
             </div>
           }
         }
       </div>
 
-      <div class="feed">
-        <div class="feed-head">
-          <h3>Tunggakan Perlu Tindakan</h3>
-          <a routerLink="/portal/reports" class="feed-link">Laporan</a>
-        </div>
+      <div class="card feed">
+        <div class="c-head"><h3>Tunggakan Perlu Tindakan</h3>
+          <a routerLink="/portal/reports" class="link">Laporan</a></div>
         @if (arrears().length === 0) {
-          <div class="feed-empty">Tiada tunggakan. 🎉</div>
+          <div class="empty">Tiada tunggakan. 🎉</div>
         } @else {
-          @for (ar of arrears(); track $index) {
-            <div class="feed-row">
-              <div class="feed-ava" style="background:#fdf1e6;color:#c26a1f">{{ initials(ar.name) }}</div>
-              <div class="feed-main">
-                <div class="feed-name">{{ ar.name }}</div>
-                <div class="feed-desc">{{ ar.accountNo }}</div>
+          @for (a of arrears(); track $index) {
+            <div class="frow">
+              <div class="fava" style="background:#fdf1e6;color:#c26a1f">{{ initials(a.name) }}</div>
+              <div class="fmain">
+                <div class="fname">{{ a.name }}</div>
+                <div class="fsub">{{ a.accountNo }}</div>
               </div>
-              <div class="feed-amt-wrap">
-                <div class="feed-amt" style="color:#e0863b">RM {{ ar.outstanding | number:'1.2-2' }}</div>
-                <div class="feed-amt-sub">tertunggak</div>
+              <div class="fright">
+                <div class="famt warn">RM {{ a.outstanding | number:'1.2-2' }}</div>
+                <div class="fsub">tertunggak</div>
               </div>
             </div>
           }
@@ -166,89 +208,166 @@ import { SpContextService } from '../../core/services/sp-context.service';
   </div>
   `,
   styles: [`
-    .dash { display: flex; flex-direction: column; gap: 16px; }
-    .banner { position: relative; overflow: hidden; border-radius: 20px;
-      background: linear-gradient(120deg, #122029, #1b3a2f); color: #eaf1ee; padding: 30px 34px; }
-    .banner-glow { position: absolute; top: -80px; right: -40px; width: 320px; height: 320px;
-      background: radial-gradient(circle, rgba(188,214,52,.18), transparent 70%); pointer-events: none; }
-    .banner-row { position: relative; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
-    .chip { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,.08);
-      border: 1px solid rgba(255,255,255,.14); padding: 6px 13px; border-radius: 999px;
-      font-size: 12px; font-weight: 700; color: #bcd634; }
-    .banner-main h1 { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 30px; margin: 14px 0 4px; }
-    .banner-main p { color: #a9bcc4; margin: 0; font-size: 15px; }
-    .banner-actions { display: flex; gap: 12px; }
-    .b-btn { padding: 12px 20px; border-radius: 12px; font-weight: 700; font-size: 14px;
-      text-decoration: none; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
-    .b-primary { background: linear-gradient(120deg, #bcd634, #3fae52); color: #0f2116; }
-    .b-ghost { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); color: #eaf1ee; }
-    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-    .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 20px; }
-    .stat-top { display: flex; align-items: center; justify-content: space-between; }
-    .stat-ic { width: 44px; height: 44px; border-radius: 13px; display: flex; align-items: center; justify-content: center; font-size: 21px; }
-    .stat-badge { font-size: 11px; font-weight: 800; padding: 4px 9px; border-radius: 999px; }
-    .stat-lbl { font-size: 13px; color: var(--muted); font-weight: 600; margin-top: 16px; }
-    .stat-val { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 26px; margin-top: 2px; color: var(--ink); }
-    .chart-card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 24px 26px; }
-    .chart-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
-    .chart-head h3 { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 17px; margin: 0; color: var(--ink); }
-    .chart-sub { font-size: 12px; color: var(--muted); font-weight: 600; }
+    :host {
+      --donut-track: #e6ebe7;
+      --donut-hole: #fff;
+      --seg-on-bg: #16262f;
+      --seg-on-ink: #fff;
+    }
+    :host-context([data-theme='dark']) {
+      --donut-track: rgba(255,255,255,.10);
+      --donut-hole: #16242c;
+      --seg-on-bg: #eaf1ee;
+      --seg-on-ink: #16262f;
+    }
+
+    .dash { display: flex; flex-direction: column; gap: 14px; }
+
+    /* Kepala */
+    .head { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+    .chip { display: inline-flex; align-items: center; gap: 8px; background: #e7f6ec;
+      border: 1px solid #cfe8d6; padding: 6px 13px; border-radius: 999px;
+      font-size: 12px; font-weight: 700; color: #128a41; }
+    .head h1 { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 28px;
+      margin: 12px 0 4px; color: var(--ink); }
+    .sub { color: var(--muted); margin: 0; font-size: 14px; }
+    .head-actions { display: flex; gap: 10px; }
+    .b-btn { padding: 11px 18px; border-radius: 11px; font-weight: 700; font-size: 14px;
+      text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+    .b-primary { background: #16a34a; color: #fff; }
+    .b-ghost { background: var(--surface); border: 1px solid var(--line); color: var(--ink); }
+
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 22px; }
+
+    /* Baris 1 */
+    .row-top { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 14px; }
+
+    .cash { background: linear-gradient(150deg, #12241c, #1d3a2a); border-radius: 20px;
+      padding: 22px; color: #eaf1ee; display: flex; flex-direction: column; }
+    .cash-top { display: flex; align-items: center; justify-content: space-between; }
+    .cash-lbl { display: flex; align-items: center; gap: 9px; font-size: 14px; font-weight: 600; }
+    .cash-ic { width: 34px; height: 34px; border-radius: 10px; background: rgba(255,255,255,.08);
+      display: inline-flex; align-items: center; justify-content: center; font-size: 16px; }
+    .mom { background: #bcd634; color: #16262f; font-size: 12px; font-weight: 800;
+      padding: 5px 11px; border-radius: 999px; }
+    .mom.neg { background: #f0a35f; }
+    .cash-val { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 38px; margin: 18px 0 auto; }
+    .cash-bar-lbl { display: flex; justify-content: space-between; font-size: 13px;
+      color: #a9bcc4; margin: 16px 0 8px; }
+    .cash-pct { color: #bcd634; font-weight: 800; }
+    .cash-track { height: 9px; background: rgba(255,255,255,.12); border-radius: 99px; overflow: hidden; }
+    .cash-fill { height: 100%; background: linear-gradient(90deg, #bcd634, #16a34a); transition: width .5s ease; }
+
+    .donut-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+    .donut { position: relative; width: 150px; height: 150px; border-radius: 50%; }
+    .donut.sm { width: 140px; height: 140px; }
+    .donut-hole { position: absolute; inset: 26px; border-radius: 50%; background: var(--donut-hole);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .donut-hole.sm { inset: 34px; }
+    .donut-val { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 26px; color: #16a34a; }
+    .donut-val.sm { font-size: 16px; color: var(--ink); }
+    .donut-lbl { font-size: 11px; color: var(--muted); font-weight: 600; }
+    .donut-foot { font-size: 13px; color: var(--muted); font-weight: 600; }
+
+    .mini-col { display: flex; flex-direction: column; gap: 14px; }
+    .mini { display: flex; align-items: center; gap: 14px; flex: 1; padding: 18px 20px; }
+    .mini-ic { width: 44px; height: 44px; border-radius: 13px; flex: none;
+      display: flex; align-items: center; justify-content: center; font-size: 20px; }
+    .mini-lbl { font-size: 13px; color: var(--muted); font-weight: 600; }
+    .mini-val { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 21px; color: var(--ink); }
+    .mini-sub { font-size: 11px; color: var(--muted); }
+    .warn { color: #e0863b; }
+    .ok { color: #128a41; }
+
+    /* Baris 2 */
+    .row-mid { display: grid; grid-template-columns: 1.9fr 1fr; gap: 14px; }
+    .c-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .c-head h3, .card > h3 { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 17px;
+      margin: 0; color: var(--ink); }
+    .c-sub { font-size: 12px; color: var(--muted); font-weight: 600; }
+    .c-sub2 { font-size: 12.5px; color: var(--muted); margin: 4px 0 16px; }
     .seg { display: flex; gap: 6px; background: var(--surface-alt); padding: 4px; border-radius: 10px; }
     .seg button { border: none; background: transparent; padding: 7px 14px; border-radius: 7px;
       font-weight: 700; font-size: 13px; color: var(--muted); cursor: pointer; }
-    .seg button.on { background: var(--ink); color: var(--surface); }
-    .bars { display: flex; align-items: flex-end; gap: 12px; height: 200px; padding-top: 10px; }
-    .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; height: 100%; justify-content: flex-end; }
-    .bar-val { font-size: 11px; font-weight: 700; color: var(--ink); }
-    .bar { width: 100%; border-radius: 7px 7px 0 0; background: linear-gradient(180deg, #bcd634, #16a34a); min-height: 4px;
-      transition: height .4s cubic-bezier(.2,.8,.3,1); }
-    .bar-m { font-size: 11px; color: var(--muted); font-weight: 600; }
-    .chart-empty { padding: 60px; text-align: center; color: var(--muted); }
-    /* Produk Utama (kad gelap) */
-    .lower { display: grid; grid-template-columns: 1fr; gap: 14px; }
-    .prod-card { background: linear-gradient(160deg, #122029, #1c3540); border-radius: 16px; padding: 22px; color: #eaf1ee; }
-    .prod-tag { font-size: 12px; font-weight: 700; letter-spacing: .05em; color: #bcd634; text-transform: uppercase; }
-    .prod-name { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 20px; margin: 8px 0 2px; }
-    .prod-sub { font-size: 13px; color: #a9bcc4; margin: 0; }
-    .prod-bar-wrap { margin: 20px 0 10px; }
-    .prod-bar-lbl { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; margin-bottom: 8px; }
-    .prod-track { height: 10px; background: rgba(255,255,255,.12); border-radius: 99px; overflow: hidden; }
-    .prod-fill { height: 100%; background: linear-gradient(90deg, #bcd634, #16a34a); transition: width .5s ease; }
-    .prod-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
-    .prod-stat { background: rgba(255,255,255,.06); border-radius: 12px; padding: 13px; }
-    .ps-lbl { font-size: 11px; color: #a9bcc4; font-weight: 600; }
-    .ps-val { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 18px; }
-    .prod-empty { color: #a9bcc4; font-size: 14px; margin: 16px 0 0; }
+    .seg button.on { background: var(--seg-on-bg); color: var(--seg-on-ink); }
 
-    /* Feeds (transaksi + tunggakan) */
+    .legend { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
+    .lg { display: flex; align-items: center; gap: 7px; font-size: 12.5px;
+      color: var(--muted); font-weight: 600; }
+    .lg i { width: 12px; height: 12px; border-radius: 3px; }
+
+    .bars { display: flex; align-items: flex-end; gap: 12px; height: 196px;
+      padding-top: 10px; overflow: visible; }
+    .bcol { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;
+      height: 100%; justify-content: flex-end; }
+    .btrio { display: flex; align-items: flex-end; justify-content: center; gap: 4px;
+      width: 100%; height: 100%; }
+    .bar { width: 30%; border-radius: 5px 5px 0 0; min-height: 2px; transition: height .5s cubic-bezier(.2,.8,.3,1); }
+    .btrio { position: relative; }
+    .btrio:hover .bar { filter: brightness(1.08); }
+    .tip { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+      margin-bottom: 10px; background: #16262f; color: #eaf1ee; padding: 10px 13px;
+      border-radius: 10px; font-size: 11.5px; font-weight: 600; white-space: nowrap;
+      display: flex; flex-direction: column; gap: 5px;
+      opacity: 0; pointer-events: none; transition: opacity .12s ease; z-index: 30;
+      box-shadow: 0 8px 26px rgba(0,0,0,.28); }
+    .tip em { font-style: normal; font-weight: 800; color: #a9bcc4; font-size: 11px;
+      text-transform: uppercase; letter-spacing: .04em; }
+    .tip span { display: flex; align-items: center; gap: 7px; }
+    .tip i { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+    .tip .d-inv { background: #cbd5c0; }
+    .tip .d-col { background: #16a34a; }
+    .tip .d-own { background: #2a6fdb; }
+    .tip b { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 12.5px;
+      margin-left: auto; padding-left: 14px; }
+    .tip::after { content: ''; position: absolute; top: 100%; left: 50%;
+      transform: translateX(-50%); border: 5px solid transparent; border-top-color: #16262f; }
+    .btrio:hover .tip { opacity: 1; }
+    .b-inv { background: #cbd5c0; }
+    .b-col { background: linear-gradient(#3fae52, #16a34a); }
+    .b-own { background: linear-gradient(#5aa9e6, #2a6fdb); }
+    .bm { font-size: 11px; color: var(--muted); font-weight: 600; }
+
+    .donut-wrap { display: flex; justify-content: center; margin-bottom: 18px; }
+    .plist { display: flex; flex-direction: column; gap: 9px; }
+    .prow { display: flex; align-items: center; gap: 9px; font-size: 13px; }
+    .pdot { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+    .pname { flex: 1; color: var(--ink); font-weight: 600; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis; }
+    .ppct { color: var(--muted); font-weight: 700; }
+    .pamt { color: #128a41; font-weight: 700; min-width: 84px; text-align: right; }
+
+    /* Feeds */
     .feeds { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .feed { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 22px; }
-    .feed-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-    .feed-head h3 { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 17px; margin: 0; color: var(--ink); }
-    .feed-link { font-size: 13px; font-weight: 700; color: var(--brand, #16a34a); text-decoration: none; }
-    .feed-row { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-top: 1px solid var(--line-soft); }
-    .feed-row:first-of-type { border-top: none; }
-    .feed-ava { width: 40px; height: 40px; border-radius: 11px; display: flex; align-items: center; justify-content: center;
-      font-family: 'Sora', sans-serif; font-weight: 800; font-size: 13px; flex: none; }
-    .feed-main { flex: 1; min-width: 0; }
-    .feed-name { font-weight: 700; font-size: 14px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .feed-desc { font-size: 12px; color: var(--muted); }
-    .feed-amt { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 14px; }
-    .feed-amt-wrap { text-align: right; }
-    .feed-amt-sub { font-size: 11px; color: var(--muted); font-weight: 600; }
-    .feed-empty { padding: 30px; text-align: center; color: var(--muted); font-size: 14px; }
+    .link { font-size: 13px; font-weight: 700; color: #16a34a; text-decoration: none; }
+    .frow { display: flex; align-items: center; gap: 12px; padding: 11px 0;
+      border-top: 1px solid var(--line-soft); }
+    .frow:first-of-type { border-top: none; }
+    .fava { width: 40px; height: 40px; border-radius: 11px; flex: none;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Sora', sans-serif; font-weight: 800; font-size: 13px; }
+    .fmain { flex: 1; min-width: 0; }
+    .fname { font-weight: 700; font-size: 14px; color: var(--ink);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .fsub { font-size: 12px; color: var(--muted); }
+    .famt { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 14px; }
+    .fright { text-align: right; }
+    .empty { padding: 40px; text-align: center; color: var(--muted); font-size: 14px; }
 
-    @media (max-width: 900px) {
-      .banner { padding: 22px 20px; }
-      .banner-main h1 { font-size: 23px; }
-      .stats { grid-template-columns: 1fr 1fr; }
-      .banner-actions { width: 100%; }
-      .b-btn { flex: 1; justify-content: center; }
-      .feeds { grid-template-columns: 1fr; }
+    @media (max-width: 1100px) {
+      .row-top { grid-template-columns: 1fr 1fr; }
+      .mini-col { grid-column: 1 / -1; flex-direction: row; }
+      .row-mid { grid-template-columns: 1fr; }
     }
-    @media (max-width: 560px) {
-      .stats { grid-template-columns: 1fr; }
+    @media (max-width: 760px) {
+      .head h1 { font-size: 23px; }
+      .head-actions { width: 100%; }
+      .b-btn { flex: 1; justify-content: center; }
+      .row-top, .feeds { grid-template-columns: 1fr; }
+      .mini-col { flex-direction: column; }
+      .cash-val { font-size: 30px; }
       .bars { gap: 6px; }
+      .bar { width: 28%; }
     }
   `]
 })
@@ -257,22 +376,27 @@ export class SpDashboardComponent implements OnInit {
   readonly sp = inject(SpContextService);
 
   readonly s = signal<DashboardSummary | null>(null);
-  readonly chart = signal<ChartPoint[]>([]);
-  readonly chartLoading = signal(true);
-  readonly months = signal<6 | 12>(6);
-  readonly product = signal<MainProduct | null>(null);
+  readonly chart = signal<InvVsCol[]>([]);
+  readonly products = signal<ProductSlice[]>([]);
   readonly txns = signal<RecentTxn[]>([]);
   readonly arrears = signal<ArrearRow[]>([]);
+  readonly months = signal<6 | 12>(6);
 
-  private readonly maxAmount = computed(() =>
-    Math.max(1, ...this.chart().map(c => c.amount)));
+  /** Skala carta — nilai tertinggi merentas ketiga-tiga siri. */
+  private readonly chartMax = computed(() =>
+    Math.max(1, ...this.chart().flatMap(b => [b.invoiced, b.collected, b.collectedOwn])));
+
+  readonly productTotal = computed(() =>
+    this.products().reduce((sum, p) => sum + p.amount, 0));
+
+  private static readonly SLICE = ['#16a34a', '#3fae52', '#a3cc42', '#cfe08a', '#e3ecc4', '#f0f5e2'];
 
   ngOnInit() {
     this.api.summary().subscribe({ next: r => this.s.set(r) });
-    this.loadChart();
-    this.api.mainProduct().subscribe({ next: r => this.product.set(r) });
+    this.api.collectionByProduct().subscribe({ next: r => this.products.set(r) });
     this.api.recentTransactions().subscribe({ next: r => this.txns.set(r) });
     this.api.topArrears().subscribe({ next: r => this.arrears.set(r) });
+    this.loadChart();
   }
 
   setMonths(m: 6 | 12) {
@@ -282,15 +406,52 @@ export class SpDashboardComponent implements OnInit {
   }
 
   private loadChart() {
-    this.chartLoading.set(true);
-    this.api.collectionChart(this.months()).subscribe({
-      next: r => { this.chart.set(r); this.chartLoading.set(false); },
-      error: () => { this.chart.set([]); this.chartLoading.set(false); }
+    this.api.invoiceVsCollection(this.months()).subscribe({
+      next: r => this.chart.set(r),
+      error: () => this.chart.set([])
     });
   }
 
-  barHeight(amount: number): number {
-    return Math.round((amount / this.maxAmount()) * 100);
+  /** Tinggi bar sebagai % daripada nilai tertinggi. */
+  h(value: number): number {
+    return Math.round((value / this.chartMax()) * 100);
+  }
+
+  abs(n: number): number { return Math.abs(n); }
+  capPct(n: number): number { return Math.min(100, Math.max(0, n)); }
+
+  /** Kadar bayar = akaun sudah bayar / akaun dikeluarkan invois. */
+  payPct(): number {
+    const d = this.s();
+    if (!d || d.invoicedAccounts === 0) return 0;
+    return Math.round((d.paidAccounts / d.invoicedAccounts) * 100);
+  }
+
+  payGradient(): string {
+    const pct = this.payPct();
+    return `conic-gradient(#16a34a 0% ${pct}%, var(--donut-track) ${pct}% 100%)`;
+  }
+
+  /** Donut produk — sempadan dikira terkumpul supaya tiada jurang. */
+  productGradient(): string {
+    const total = this.productTotal();
+    if (total <= 0) return 'var(--donut-track)';
+    let acc = 0;
+    const stops = this.products().map((p, i) => {
+      const from = (acc / total) * 100;
+      acc += p.amount;
+      const to = (acc / total) * 100;
+      return `${this.sliceColor(i)} ${from.toFixed(2)}% ${to.toFixed(2)}%`;
+    });
+    return `conic-gradient(${stops.join(', ')})`;
+  }
+
+  sliceColor(i: number): string {
+    return SpDashboardComponent.SLICE[i % SpDashboardComponent.SLICE.length];
+  }
+
+  initials(name: string): string {
+    return (name || '?').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
   }
 
   monthName(ym: string): string {
@@ -300,19 +461,10 @@ export class SpDashboardComponent implements OnInit {
   }
 
   monthLabel(): string {
-    const names = ['Januari','Februari','Mac','April','Mei','Jun','Julai','Ogos','September','Oktober','November','Disember'];
+    const names = ['Januari','Februari','Mac','April','Mei','Jun','Julai',
+                   'Ogos','September','Oktober','November','Disember'];
     const d = new Date();
     return `${names[d.getMonth()]} ${d.getFullYear()}`;
-  }
-
-  initials(name: string): string {
-    return (name || '?').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
-  }
-
-  freqLabel(f: string | null): string {
-    const map: Record<string, string> = { MONTHLY: 'Bulanan', YEAR: 'Tahunan',
-      QUARTERLY: 'Suku Tahun', HALF_YEAR: 'Setengah Tahun', ONE_TIME: 'Sekali', PER_USE: 'Per Guna' };
-    return f ? (map[f] ?? f) : '';
   }
 
   monthShort(): string {

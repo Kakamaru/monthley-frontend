@@ -60,7 +60,7 @@ export class AuthService {
   /** Ke mana selepas log masuk — bergantung siapa dia. */
   landingRoute(): string {
     if (this.isSuperadmin()) return '/platform/service-providers';
-    if (this.isSpAdmin())    return '/portal/products';
+    if (this.isSpAdmin())    return '/portal/my-accounts';
     return '/portal/my-accounts';
   }
 

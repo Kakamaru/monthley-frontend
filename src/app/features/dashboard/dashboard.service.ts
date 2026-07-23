@@ -8,22 +8,29 @@ export interface DashboardSummary {
   activeAccounts: number;
   inactiveAccounts: number;
   billsThisMonth: number;
+  target: number;            // sasaran = invois dikeluarkan bulan ini
+  collectionRate: number;    // terkumpul / sasaran (%)
+  momChange: number;         // % vs bulan lepas
+  invoicedAccounts: number;  // akaun dikeluarkan invois bulan ini
+  paidAccounts: number;      // antara itu, yang sudah bayar
+  unpaidAccounts: number;
+  arrearsAccounts: number;   // jumlah akaun bertunggak (semua)
 }
 
-export interface ChartPoint { month: string; amount: number; }
+export interface InvVsCol {
+  month: string;
+  invoiced: number;      // invois dijana bulan itu
+  collected: number;     // semua bayaran diterima bulan itu
+  collectedOwn: number;  // bahagian yang pergi ke invois bulan itu
+}
 
+export interface ProductSlice { name: string; amount: number; pct: number; }
 export interface MainProduct {
   name: string | null; rate: number; frequency: string | null;
   subscribers: number; paid: number; unpaid: number; collectionRate: number;
 }
-
-export interface RecentTxn {
-  name: string; accountNo: string; amount: number; date: string;
-}
-
-export interface ArrearRow {
-  name: string; accountNo: string; outstanding: number;
-}
+export interface RecentTxn { name: string; accountNo: string; amount: number; date: string; }
+export interface ArrearRow { name: string; accountNo: string; outstanding: number; }
 
 @Injectable({ providedIn: 'root' })
 export class DashboardService {
@@ -34,9 +41,13 @@ export class DashboardService {
     return this.http.get<DashboardSummary>(`${this.base}/summary`);
   }
 
-  collectionChart(months: 6 | 12 = 6): Observable<ChartPoint[]> {
+  invoiceVsCollection(months: 6 | 12 = 6): Observable<InvVsCol[]> {
     const params = new HttpParams().set('months', String(months));
-    return this.http.get<ChartPoint[]>(`${this.base}/collection-chart`, { params });
+    return this.http.get<InvVsCol[]>(`${this.base}/invoice-vs-collection`, { params });
+  }
+
+  collectionByProduct(): Observable<ProductSlice[]> {
+    return this.http.get<ProductSlice[]>(`${this.base}/collection-by-product`);
   }
 
   mainProduct(): Observable<MainProduct> {
