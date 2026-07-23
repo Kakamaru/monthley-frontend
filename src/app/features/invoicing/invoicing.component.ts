@@ -32,7 +32,8 @@ export class InvoicingComponent {
     this.busy.set(true);
     this.error.set(null);
     this.result.set(null);
-    this.api.generate({ period: this.currentPeriod, mode: 'CURRENT' }).subscribe({
+    // mode tidak dihantar — backend guna cfg.genMode() dari tetapan SP
+    this.api.generate({ period: this.currentPeriod }).subscribe({
       next: r => {
         this.result.set(r);
         this.busy.set(false);
