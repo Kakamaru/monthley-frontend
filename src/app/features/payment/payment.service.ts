@@ -7,6 +7,7 @@ export interface OutstandingRow {
   documentId: number; accountNo: string; accountName: string; accountId: number;
   invoiceNo: string; period?: string; docDate?: string; dueDate?: string;
   total: number; paid: number; outstanding: number;
+  itemDesc?: string;   // ada bila invois ada TEPAT satu baris
 }
 
 export interface OutstandingAccountRow {
