@@ -669,7 +669,7 @@ export class AccountsComponent {
       });
     } else {
       this.api.create(b).subscribe({
-        next: () => { this.saving.set(false); this.formOpen.set(false); this.page.set(0); this.load(); },
+        next: () => { this.saving.set(false); this.formOpen.set(false); this.load(); },   // kekal muka surat semasa
         error: e => { this.saving.set(false); this.error.set(e?.error?.message || 'Gagal menyimpan akaun.'); }
       });
     }

@@ -13,6 +13,11 @@ export interface GenerateResult {
   spCode: string;
   period: string;
   mode: string;
+  accountsScanned: number;
+  skippedNoSubscription: number;
+  skippedNothingToCharge: number;
+  skippedAlreadyGenerated: number;
+  billedPeriods: string[];   // tempoh SEBENAR dibilkan (bukan bulan larian)
   invoicesPosted: number;
 }
 

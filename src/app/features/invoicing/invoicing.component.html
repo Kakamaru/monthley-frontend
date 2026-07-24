@@ -23,22 +23,22 @@
       <div style="display:flex;flex-direction:column;gap:10px">
         <div style="display:flex;justify-content:space-between;background:var(--surface-alt);border-radius:10px;padding:12px 15px;font-size:14px">
           <span style="color:var(--muted);font-weight:600">Generation Mode</span>
-          <span style="font-weight:700">Current — bulan semasa</span>
+          <span style="font-weight:700">{{ modeLabel() }}</span>
         </div>
         <div style="display:flex;justify-content:space-between;background:var(--surface-alt);border-radius:10px;padding:12px 15px;font-size:14px">
           <span style="color:var(--muted);font-weight:600">Frequency</span>
-          <span style="font-weight:700">Monthly</span>
+          <span style="font-weight:700">{{ freqLabel() }}</span>
         </div>
         <div style="display:flex;justify-content:space-between;background:var(--surface-alt);border-radius:10px;padding:12px 15px;font-size:14px">
           <span style="color:var(--muted);font-weight:600">Day Of Month</span>
-          <span style="font-weight:700">1 haribulan</span>
+          <span style="font-weight:700">{{ genDay() }} haribulan</span>
         </div>
       </div>
 
       <div style="display:flex;align-items:center;gap:8px;margin-top:16px;background:var(--green-soft);border-radius:10px;padding:11px 14px">
         <span style="color:var(--green-dark);font-weight:800">●</span>
         <span style="font-size:13px;color:var(--green-dark);font-weight:700">
-          Aktif — bil seterusnya {{ nextRun }}
+          Aktif — bil seterusnya {{ nextRun() }}
         </span>
       </div>
     </div>
@@ -66,15 +66,14 @@
           <div style="display:flex;align-items:center;gap:8px;margin-top:14px;background:var(--green-soft);border-radius:10px;padding:11px 14px">
             <span style="color:var(--green-dark);font-weight:800">✓</span>
             <span style="font-size:13px;color:var(--green-dark);font-weight:700">
-              {{ result()!.invoicesPosted }} invois dijana untuk {{ result()!.period }}
+              {{ result()!.invoicesPosted }} invois dijana untuk {{ billedLabel(result()!) }}
             </span>
           </div>
         } @else {
           <div style="display:flex;align-items:flex-start;gap:8px;margin-top:14px;background:#fff8e6;border:1px solid #f5e2b8;border-radius:10px;padding:11px 14px">
             <span style="color:var(--orange);font-weight:800">ℹ</span>
             <span style="font-size:13px;color:#8a6d2f;font-weight:600;line-height:1.5">
-              <strong>Tiada bil baharu.</strong> Semua invois untuk {{ result()!.period }} sudah dijana sebelum ini —
-              sistem tidak menjana pendua.
+              <strong>Tiada bil baharu.</strong> {{ noBillReason(result()!) }}
             </span>
           </div>
         }
