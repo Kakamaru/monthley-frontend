@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { SpContextService } from '../../core/services/sp-context.service';
@@ -45,6 +45,10 @@ import {
           <span>Sasaran RM {{ (s()?.target ?? 0) | number:'1.0-0' }}</span>
           <span class="cash-pct">{{ s()?.collectionRate ?? 0 }}%</span>
         </div>
+        <svg class="flow" viewBox="0 0 400 60" preserveAspectRatio="none">
+          <path d="M8 44 C 120 10, 250 52, 392 16" fill="none"
+                stroke="#bcd634" stroke-width="2" stroke-linecap="round" />
+        </svg>
         <div class="cash-track">
           <div class="cash-fill" [style.width.%]="capPct(s()?.collectionRate ?? 0)"></div>
         </div>
@@ -52,15 +56,21 @@ import {
 
       <!-- Donut kadar bayar -->
       <div class="card donut-card">
-        <div class="donut" [style.background]="payGradient()">
-          <div class="donut-hole">
-            <div class="donut-val">{{ payPct() }}%</div>
-            <div class="donut-lbl">kadar bayar</div>
+        <div class="donut-pos">
+          <span class="dashring"></span>
+          <div class="donut" [style.background]="payGradient()">
+            <div class="donut-hole">
+              <div class="donut-val" [style.color]="ring().color">{{ ring().pct }}%</div>
+              <div class="donut-lbl">{{ ring().label }}</div>
+            </div>
           </div>
         </div>
-        <div class="donut-foot">
-          {{ s()?.paidAccounts ?? 0 }} dibayar ·
-          <span class="warn">{{ s()?.unpaidAccounts ?? 0 }} tertunggak</span>
+        <div class="donut-foot">{{ ring().sub }}</div>
+        <div class="dots">
+          @for (r of rings(); track $index) {
+            <button class="dot" [class.on]="ringIdx() % 3 === $index"
+                    (click)="ringIdx.set($index)" [title]="r.label"></button>
+          }
         </div>
       </div>
 
@@ -140,11 +150,15 @@ import {
           <div class="empty">Tiada kutipan bulan ini.</div>
         } @else {
           <div class="donut-wrap">
+            <div class="donut-pos">
+            <span class="dashring rev"></span>
+            <span class="coin">💰</span>
             <div class="donut sm" [style.background]="productGradient()">
               <div class="donut-hole sm">
                 <div class="donut-lbl">Jumlah</div>
                 <div class="donut-val sm">RM {{ productTotal() | number:'1.0-0' }}</div>
               </div>
+            </div>
             </div>
           </div>
           <div class="plist">
@@ -242,7 +256,8 @@ import {
     /* Baris 1 */
     .row-top { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 14px; }
 
-    .cash { background: linear-gradient(150deg, #12241c, #1d3a2a); border-radius: 20px;
+    .cash { position: relative; overflow: hidden;
+      background: linear-gradient(150deg, #12241c, #1d3a2a); border-radius: 20px;
       padding: 22px; color: #eaf1ee; display: flex; flex-direction: column; }
     .cash-top { display: flex; align-items: center; justify-content: space-between; }
     .cash-lbl { display: flex; align-items: center; gap: 9px; font-size: 14px; font-weight: 600; }
@@ -258,7 +273,46 @@ import {
     .cash-track { height: 9px; background: rgba(255,255,255,.12); border-radius: 99px; overflow: hidden; }
     .cash-fill { height: 100%; background: linear-gradient(90deg, #bcd634, #16a34a); transition: width .5s ease; }
 
-    .donut-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+    .donut-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
+
+    /* ── Animasi hiasan (CSS tulen, tiada library) ── */
+    .donut-pos { position: relative; display: inline-flex; }
+
+    .dashring { position: absolute; inset: -9px; border-radius: 50%;
+      border: 2px dashed #bcd634; animation: m-spin 14s linear infinite; }
+    .dashring.rev { inset: -8px; border-color: #3fae52;
+      animation: m-spin 20s linear infinite reverse; }
+
+    .coin { position: absolute; top: 50%; left: 50%; width: 26px; height: 26px;
+      margin: -13px 0 0 -13px; border-radius: 50%; z-index: 2;
+      background: linear-gradient(140deg, #f6e07a, #e0a92e);
+      display: flex; align-items: center; justify-content: center; font-size: 13px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.18);
+      animation: m-orbit 12s linear infinite; }
+
+    .flow { position: absolute; left: 0; right: 0; bottom: 44px;
+      width: 100%; height: 60px; pointer-events: none; opacity: .5; }
+    .flow path { stroke-dasharray: 7 9; animation: m-dash 22s linear infinite; }
+
+    .dots { display: flex; gap: 6px; }
+    .dot { width: 7px; height: 7px; padding: 0; border: none; border-radius: 99px;
+      background: var(--line); cursor: pointer; transition: all .25s ease; }
+    .dot.on { width: 20px; background: #16a34a; }
+
+    .donut-val, .donut-lbl, .donut-foot { animation: m-fade .35s ease; }
+
+    @keyframes m-spin { to { transform: rotate(360deg); } }
+    @keyframes m-dash { to { stroke-dashoffset: -1000; } }
+    @keyframes m-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes m-orbit {
+      from { transform: rotate(0deg) translateX(83px) rotate(0deg); }
+      to   { transform: rotate(360deg) translateX(83px) rotate(-360deg); }
+    }
+
+    /* Hormati tetapan pengguna yang matikan animasi */
+    @media (prefers-reduced-motion: reduce) {
+      .dashring, .coin, .flow path, .donut-val, .donut-lbl, .donut-foot { animation: none; }
+    }
     .donut { position: relative; width: 150px; height: 150px; border-radius: 50%; }
     .donut.sm { width: 140px; height: 140px; }
     .donut-hole { position: absolute; inset: 26px; border-radius: 50%; background: var(--donut-hole);
@@ -371,7 +425,7 @@ import {
     }
   `]
 })
-export class SpDashboardComponent implements OnInit {
+export class SpDashboardComponent implements OnInit, OnDestroy {
   private api = inject(DashboardService);
   readonly sp = inject(SpContextService);
 
@@ -381,6 +435,49 @@ export class SpDashboardComponent implements OnInit {
   readonly txns = signal<RecentTxn[]>([]);
   readonly arrears = signal<ArrearRow[]>([]);
   readonly months = signal<6 | 12>(6);
+  readonly ringIdx = signal(0);
+  private ringTimer?: ReturnType<typeof setInterval>;
+
+  /**
+   * Tiga metrik donut, semuanya DITERBITKAN daripada data sedia ada —
+   * tiada endpoint baharu. Bulan semasa = elemen terakhir carta.
+   */
+  readonly rings = computed(() => {
+    const d = this.s();
+    const now = this.chart().at(-1);
+    const invoiced = now?.invoiced ?? 0;
+    const own = now?.collectedOwn ?? 0;
+    const arrearsPaid = now ? now.collected - now.collectedOwn : 0;
+    const outstanding = d?.outstanding ?? 0;
+
+    return [
+      {
+        pct: d && d.invoicedAccounts > 0
+          ? Math.round((d.paidAccounts / d.invoicedAccounts) * 100) : 0,
+        color: '#16a34a',
+        label: 'kadar bayar',
+        sub: `${d?.paidAccounts ?? 0} dibayar · ${d?.unpaidAccounts ?? 0} tertunggak`
+      },
+      {
+        pct: outstanding > 0 ? Math.round((arrearsPaid / outstanding) * 100) : 0,
+        color: '#e0863b',
+        label: 'bayar tunggakan',
+        sub: `RM ${this.rm(arrearsPaid)} dari RM ${this.rm(outstanding)} dikutip`
+      },
+      {
+        pct: invoiced > 0 ? Math.round((own / invoiced) * 100) : 0,
+        color: '#2a6fdb',
+        label: 'invois bulan ini',
+        sub: `RM ${this.rm(own)} dari RM ${this.rm(invoiced)} dikutip`
+      }
+    ];
+  });
+
+  readonly ring = computed(() => this.rings()[this.ringIdx() % 3]);
+
+  private rm(v: number): string {
+    return v.toLocaleString('en-MY', { maximumFractionDigits: 0 });
+  }
 
   /** Skala carta — nilai tertinggi merentas ketiga-tiga siri. */
   private readonly chartMax = computed(() =>
@@ -397,6 +494,11 @@ export class SpDashboardComponent implements OnInit {
     this.api.recentTransactions().subscribe({ next: r => this.txns.set(r) });
     this.api.topArrears().subscribe({ next: r => this.arrears.set(r) });
     this.loadChart();
+    this.ringTimer = setInterval(() => this.ringIdx.update(i => (i + 1) % 3), 5000);
+  }
+
+  ngOnDestroy() {
+    if (this.ringTimer) clearInterval(this.ringTimer);
   }
 
   setMonths(m: 6 | 12) {
@@ -428,8 +530,8 @@ export class SpDashboardComponent implements OnInit {
   }
 
   payGradient(): string {
-    const pct = this.payPct();
-    return `conic-gradient(#16a34a 0% ${pct}%, var(--donut-track) ${pct}% 100%)`;
+    const r = this.ring();
+    return `conic-gradient(${r.color} 0% ${r.pct}%, var(--donut-track) ${r.pct}% 100%)`;
   }
 
   /** Donut produk — sempadan dikira terkumpul supaya tiada jurang. */
