@@ -1,4 +1,5 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { balanceColor } from '../../core/ui/balance';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DocumentLineRow, OutstandingAccountRow, PaymentService, OutstandingRow, PaymentType, PaymentResult } from './payment.service';
@@ -12,7 +13,7 @@ import { Product } from '../../core/models/product.model';
   imports: [CommonModule, FormsModule],
   templateUrl: './manual-payment.component.html'
 })
-export class ManualPaymentComponent {
+export class ManualPaymentComponent implements OnInit {
   private api = inject(PaymentService);
   private catalog = inject(ProductsService);
   private toast = inject(ToastService);
@@ -111,6 +112,17 @@ export class ManualPaymentComponent {
         this.loading.set(false);
       }
     });
+  }
+
+  /**
+   * Muat senarai bila skrin dibuka. Sebelum ini loadAccounts hanya dipanggil
+   * oleh switchTab, jadi skrin kosong sehingga pengguna berinteraksi.
+   * Kelemahan itu tersembunyi selagi senarai ditapis kepada akaun bertunggak
+   * — senarai kosong nampak munasabah.
+   */
+  ngOnInit() {
+    if (this.tab() === 'account') this.loadAccounts();
+    else this.load();
   }
 
   switchTab(t: 'account' | 'invoice') {
@@ -244,6 +256,9 @@ export class ManualPaymentComponent {
     if (item && per) return `${item} · ${per}`;
     return item || per || '—';
   }
+
+  /** Baki boleh negatif (kredit) — jangan merah (ADR 0009). */
+  balColor = balanceColor;
 
   invSelected(docId: number): boolean { return this.paySelected().has(docId); }
 

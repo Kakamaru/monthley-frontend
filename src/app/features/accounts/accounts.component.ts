@@ -1,4 +1,5 @@
 import { Component, computed, inject, signal, HostListener} from '@angular/core';
+import { balanceColor } from '../../core/ui/balance';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Account } from '../../core/models/account.model';
@@ -739,7 +740,6 @@ export class AccountsComponent {
   }
 
   /** Merah bila ada tunggakan, hijau bila bersih — seperti prototaip. */
-  balColor(v: number): string {
-    return (v ?? 0) > 0 ? 'var(--red)' : 'var(--green)';
-  }
+  /** Peraturan warna hidup dalam core/ui/balance (ADR 0009, guard 6). */
+  balColor = balanceColor;
 }
