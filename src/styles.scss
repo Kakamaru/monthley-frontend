@@ -4,6 +4,50 @@
    ===================================================================== */
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap');
 
+/* ── Fon jenama Monthley ────────────────────────────────────────────────
+   Sambungan .otf tetapi isinya TrueType (sfntVersion 0x00010000). Petunjuk
+   format() DIBUANG: pelayar memuat turun fail dengan format('truetype')
+   tetapi menolak menggunakannya, kerana ia menjangka CFF daripada .otf.
+   Tanpa petunjuk, pelayar mengesan kandungan sebenar dan menerimanya.
+   (openhtmltopdf tidak cerewet — PDF berfungsi dengan fail yang sama.)
+
+   Monthley TIADA U+2713 (✓) dan U+2715 (✕), jadi fallback mesti kekal
+   dalam senarai font-family; jika tidak tanda status hilang.
+
+   Digitnya proporsional (lebar '1' = 361, '0' = 662), jadi lajur nombor
+   TIDAK sejajar secara lalai. Fon ada ciri 'tnum' dan pelayar
+   menyokongnya — lihat .stmt-num di bawah. (PDF tidak boleh: openhtmltopdf
+   ialah perender CSS 2.1 dan mengabaikan font-feature-settings, jadi PDF
+   kekal DejaVu Sans Mono untuk nombor.) */
+@font-face {
+  font-family: 'Monthley';
+  src: url('/assets/fonts/Monthley.otf');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Monthley';
+  src: url('/assets/fonts/Monthley-SemiBold.otf');
+  font-weight: 600; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Monthley';
+  src: url('/assets/fonts/Monthley-Bold.otf');
+  font-weight: 700; font-style: normal; font-display: swap;
+}
+
+/* Skop penyata sahaja buat masa ini. Jika ia kena, barulah disebarkan. */
+.stmt-body {
+  font-family: 'Monthley', 'Manrope', sans-serif;
+  font-size: 13.3px;   /* 10pt, selaras PDF */
+}
+/* Angka jadual: 'tnum' menjadikan semua digit sama lebar supaya lajur
+   nombor sejajar menegak — mata mengimbas penyata kewangan ke bawah. */
+.stmt-num {
+  font-family: 'Monthley', 'Manrope', sans-serif;
+  font-feature-settings: 'tnum' 1;
+  font-variant-numeric: tabular-nums;
+}
+
 :root {
   /* permukaan */
   --bg:           #eef2ef;

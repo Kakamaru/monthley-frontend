@@ -429,59 +429,128 @@
 <!-- ===== MODAL PENYATA AKAUN ===== -->
 @if (stmtOpen()) {
   <div style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px" (click)="closeStatement()">
-    <div class="modal-card" style="border-radius:14px;max-width:820px;width:100%;max-height:88vh;overflow:auto" (click)="$event.stopPropagation()">
+    <div class="modal-card stmt-body" style="border-radius:14px;max-width:1040px;width:100%;max-height:88vh;overflow:auto" (click)="$event.stopPropagation()">
       @if (stmtLoading()) {
         <div style="padding:60px;text-align:center;color:var(--muted)">Memuatkan penyata…</div>
       } @else if (stmt(); as st) {
         <div style="padding:24px 28px;border-bottom:1.5px solid var(--line-soft);display:flex;justify-content:space-between;align-items:flex-start">
           <div>
-            <div style="font-family:'Sora',sans-serif;font-weight:800;font-size:20px;color:var(--ink)">PENYATA AKAUN</div>
+            <div style="font-weight:800;font-size:20px;color:var(--ink)">PENYATA AKAUN</div>
             <div style="font-size:14px;color:var(--muted);margin-top:6px">{{ st.accountNo }} — {{ st.accountName }}</div>
           </div>
-          <div style="text-align:right">
-            <div style="font-size:12px;color:var(--muted)">Baki Semasa</div>
-            <div style="font-family:'Sora',sans-serif;font-weight:800;font-size:22px;color:#c0392b">MYR {{ st.closingBalance | number:'1.2-2' }}</div>
+          <div style="display:flex;gap:24px;align-items:flex-start">
+            <div style="text-align:right">
+              <div style="font-size:12px;color:var(--muted)">Tunggakan</div>
+              <div class="stmt-num" style="font-weight:700;font-size:16px;color:var(--ink)">MYR {{ st.arrears | number:'1.2-2' }}</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:12px;color:var(--muted)">Baki Akhir</div>
+              <!-- balanceColor: negatif = KREDIT = hijau. Merah untuk kredit
+                   memberi amaran sedangkan keadaan baik (ADR 0009). -->
+              <div class="stmt-num" style="font-weight:800;font-size:22px"
+                   [style.color]="balColor(st.closingBalance)">{{ balText(st.closingBalance) }}</div>
+            </div>
           </div>
         </div>
 
+        <div style="padding:14px 28px 0;display:flex;justify-content:space-between;align-items:center;gap:12px">
+          <select class="fld" style="min-width:150px" [ngModel]="stmtYear()" (ngModelChange)="onStmtYearChange($event)">
+            @for (y of stmtYears; track y) { <option [value]="y">Tahun {{ y }}</option> }
+            <option value="">Semua rekod</option>
+          </select>
+          @if (stmtYear()) {
+            <div style="font-size:12px;color:var(--muted)">
+              Baki bawa ke hadapan:
+              <b [style.color]="balColor(st.openingBalance)">{{ balText(st.openingBalance) }}</b>
+            </div>
+          }
+        </div>
+
         <div style="padding:0 28px">
-          <div style="display:grid;grid-template-columns:150px 90px 120px 1.4fr 110px 1fr 1fr;gap:8px;padding:14px 0;border-bottom:1.5px solid var(--line-soft);font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">
-            <span>Transaction Date</span><span>Document</span><span>Document No.</span>
-            <span>Item</span><span>Period</span>
-            <span style="text-align:right">Amount</span>
-            <span style="text-align:right">Balance</span>
+          <div style="display:grid;grid-template-columns:90px 80px 115px 2.4fr 46px 110px 110px;gap:8px;padding:14px 0;border-bottom:1.5px solid var(--line-soft);font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">
+            <span>Tarikh</span><span>Dokumen</span><span>No. Dokumen</span>
+            <span>Keterangan</span>
+            <span style="text-align:center">Status</span>
+            <span style="text-align:right">Amaun</span>
+            <span style="text-align:right">Baki</span>
           </div>
-          @for (l of stmtLinesDesc(); track l.docNo) {
-            <div style="display:grid;grid-template-columns:150px 90px 120px 1.4fr 110px 1fr 1fr;gap:8px;padding:12px 0;border-bottom:1px solid var(--line-soft);font-size:12.5px;align-items:center">
-              <span style="color:var(--muted)">{{ l.date | date:'dd/MM/yyyy hh:mm a' }}</span>
+          <!-- track ikut docNo + tarikh + amaun: docNo SAHAJA tidak unik
+               apabila satu dokumen dibatalkan dan dijana semula. -->
+          @for (l of stmtLinesDesc(); track l.docNo + l.date + l.amount) {
+            <div style="display:grid;grid-template-columns:90px 80px 115px 2.4fr 46px 110px 110px;gap:8px;padding:12px 0;border-bottom:1px solid var(--line-soft);align-items:start"
+                 [style.opacity]="l.cancelled ? '0.55' : '1'">
+              <span class="stmt-num" style="color:var(--muted)">{{ l.date | date:'dd/MM/yyyy' }}</span>
               <span style="color:var(--ink)">{{ l.docType }}</span>
-              <span style="color:var(--green);font-weight:600">{{ l.docNo }}</span>
-              <span style="color:var(--ink)">{{ l.item }}</span>
-              <span style="color:var(--muted)">{{ l.period || '—' }}</span>
-              <span style="text-align:right;color:var(--ink);white-space:nowrap">
-                @if (l.credit > 0) {
-                  <span style="color:#2e7d32">(MYR {{ l.credit | number:'1.2-2' }})</span>
-                } @else {
-                  MYR {{ l.debit | number:'1.2-2' }}
+              @if (isCredit(l) && l.matches.length) {
+                <span style="color:var(--green);font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px"
+                      (click)="toggleStmtRow(l.docNo)">
+                  <span style="font-size:11px;color:var(--muted);transition:transform .2s"
+                        [style.transform]="stmtExpanded() === l.docNo ? 'rotate(90deg)' : 'none'">▸</span>
+                  {{ l.docNo }}
+                </span>
+              } @else {
+                <span style="color:var(--green);font-weight:600">{{ l.docNo }}</span>
+              }
+              <span style="color:var(--ink)">
+                {{ l.item }}
+                @if (l.remark) {
+                  <div style="font-style:italic;font-size:11.5px;color:var(--muted);margin-top:2px">{{ l.remark }}</div>
                 }
               </span>
-              <span style="text-align:right;font-weight:700;white-space:nowrap" [style.color]="l.balance < 0 ? '#2e7d32' : 'var(--ink)'">
-                @if (l.balance < 0) {
-                  (MYR {{ (-l.balance) | number:'1.2-2' }})
-                } @else {
-                  MYR {{ l.balance | number:'1.2-2' }}
-                }
+              <span style="text-align:center" [title]="l.cancelled ? 'Dibatalkan' : 'Aktif'">
+                {{ l.cancelled ? '✕' : '✓' }}
+              </span>
+              <span class="stmt-num" style="text-align:right;white-space:nowrap" [style.color]="l.amount < 0 ? '#2e7d32' : 'var(--ink)'">
+                {{ balText(l.amount) }}
+              </span>
+              <span class="stmt-num" style="text-align:right;font-weight:700;white-space:nowrap" [style.color]="balColor(l.balance)">
+                {{ balText(l.balance) }}
               </span>
             </div>
+
+            <!-- Sub-baris padanan: resit ini bayar invois mana. TIDAK
+                 menggerakkan lajur baki (ADR 0009). -->
+            @if (stmtShowMatches(l)) {
+            @for (m of l.matches; track (m.docNo ?? '') + m.period + m.amount) {
+              <div style="display:grid;grid-template-columns:90px 80px 115px 2.4fr 46px 110px 110px;gap:8px;padding:6px 0;border-bottom:1px dotted var(--line-soft);font-size:11.5px;color:var(--muted);background:var(--surface-alt)">
+                <span></span><span></span>
+                <span style="padding-left:12px">{{ m.docNo ? '↳ ' + m.docNo : '' }}</span>
+                <span>
+                  {{ m.item }}
+                  @if (m.period) { <span style="color:var(--muted)"> · {{ m.period | date:'MMM yyyy' }}</span> }
+                </span>
+                <span></span>
+                <span class="stmt-num" style="text-align:right;white-space:nowrap">MYR {{ m.amount | number:'1.2-2' }}</span>
+                <span></span>
+              </div>
+            }
+            }
           }
           @if (st.lines.length === 0) {
             <div style="padding:30px;text-align:center;color:var(--muted)">Tiada transaksi.</div>
           }
         </div>
 
-        <div style="padding:20px 28px;display:flex;justify-content:flex-end;gap:10px;border-top:1.5px solid var(--line-soft)">
-          <button class="btn btn-ghost" (click)="closeStatement()">Tutup</button>
-          <button class="btn btn-navy" (click)="printStatement()">🖨 Cetak</button>
+        <div style="padding:20px 28px;display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1.5px solid var(--line-soft)">
+          <!-- Sebelum ini TIADA pagination: service tidak menghantar
+               parameter, jadi akaun melebihi 100 baris dipotong SENYAP. -->
+          <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)">
+            @if (stmtTotalPages() > 1) {
+              <button class="btn btn-ghost" [disabled]="stmtPage() === 0"
+                      (click)="stmtGoPage(stmtPage() - 1)">‹</button>
+              <span>Muka {{ stmtPage() + 1 }} / {{ stmtTotalPages() }} · {{ st.total }} baris</span>
+              <button class="btn btn-ghost" [disabled]="stmtPage() + 1 >= stmtTotalPages()"
+                      (click)="stmtGoPage(stmtPage() + 1)">›</button>
+            } @else {
+              <span>{{ st.total }} baris</span>
+            }
+          </div>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-ghost" (click)="closeStatement()">Tutup</button>
+            <button class="btn btn-navy" [disabled]="stmtPdfBusy()" (click)="downloadStatementPdf()">
+              {{ stmtPdfBusy() ? 'Menjana…' : '⬇ Muat Turun PDF' }}
+            </button>
+          </div>
         </div>
       }
     </div>

@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Account } from '../../core/models/account.model';
@@ -35,8 +35,26 @@ export class AccountsService {
     return this.http.post<{ id: number; message: string }>(this.base, body);
   }
 
-  statement(id: number): Observable<StatementResponse> {
-    return this.http.get<StatementResponse>(`${this.base}/${id}/statement`);
+  /** year null = semua rekod (kekal sebagai pilihan, bukan lalai). */
+  statement(id: number, year: number | null, page = 0, size = 50)
+      : Observable<StatementResponse> {
+    let params = new HttpParams()
+      .set('page', String(page))
+      .set('size', String(size));
+    if (year != null) params = params.set('year', String(year));
+    return this.http.get<StatementResponse>(`${this.base}/${id}/statement`, { params });
+  }
+
+  /**
+   * PDF penyata. Interceptor menyisipkan Authorization dan X-SP-Id, jadi
+   * ia TIDAK boleh menjadi <a href> biasa — mesti HttpClient dengan blob.
+   */
+  statementPdf(id: number, year: number | null): Observable<HttpResponse<Blob>> {
+    let params = new HttpParams();
+    if (year != null) params = params.set('year', String(year));
+    return this.http.get(`/api/v1/statements/accounts/${id}`, {
+      params, responseType: 'blob', observe: 'response'
+    });
   }
 
   paymentReport(accountId: number, year: string): Observable<PaymentReportResponse> {
@@ -109,13 +127,35 @@ export class AccountsService {
   }
 }
 
+/**
+ * Sub-baris padanan — resit ini membayar invois itu (ADR 0010).
+ * TIDAK menggerakkan lajur baki: alokasi ialah padanan, bukan
+ * pergerakan baki (ADR 0009).
+ */
+export interface StatementMatch {
+  docNo: string; item: string | null;
+  period: string | null; amount: number;
+}
+
+/**
+ * Satu baris = SATU DOKUMEN, bukan satu alokasi.
+ *
+ * amount bertanda: positif menaikkan baki, negatif menurunkannya.
+ * Dokumen batal mempunyai amount SIFAR — dipapar tetapi tidak
+ * menggerakkan baki.
+ */
 export interface StatementLine {
   date: string; docNo: string; docType: string; item: string;
-  period: string | null; debit: number; credit: number; balance: number;
+  remark: string | null; cancelled: boolean;
+  amount: number; balance: number;
+  matches: StatementMatch[];
 }
 export interface StatementResponse {
   accountId: number; accountNo: string; accountName: string;
-  openingBalance: number; closingBalance: number; lines: StatementLine[];
+  year: number | null;
+  openingBalance: number; closingBalance: number; arrears: number;
+  total: number; page: number; size: number;
+  lines: StatementLine[];
 }
 
 export interface PaymentReportRow {

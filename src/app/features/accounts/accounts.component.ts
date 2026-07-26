@@ -1,5 +1,5 @@
 import { Component, computed, inject, signal, HostListener} from '@angular/core';
-import { balanceColor } from '../../core/ui/balance';
+import { balanceColor, balanceText } from '../../core/ui/balance';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Account } from '../../core/models/account.model';
@@ -23,23 +23,109 @@ export class AccountsComponent {
   readonly stmt = signal<StatementResponse | null>(null);
   readonly stmtLoading = signal(false);
 
+  // Tahun semasa sebagai lalai; '' bermakna SEMUA REKOD, yang kekal
+  // sebagai pilihan (kes JMB yang perlukan sejarah penuh) tetapi bukan
+  // lalai — ADR 0010 keputusan 6.
+  readonly stmtYear = signal<string>(String(new Date().getFullYear()));
+  readonly stmtYears = Array.from({ length: 10 },
+    (_, i) => String(new Date().getFullYear() - i));
+  readonly stmtPage = signal(0);
+  readonly stmtSize = 50;
+  readonly stmtPdfBusy = signal(false);
+  private stmtAccountId = 0;
+
+  /**
+   * Sub-baris resit dilipat; sub-baris invois kekal terbuka.
+   *
+   * Pecahan caj invois ialah maklumat yang pelanggan PERLU nampak — tanpanya
+   * baris berbunyi 'Invois M01' sahaja dan dia tidak tahu dicaj untuk apa.
+   * Alokasi resit ialah detail yang DICARI apabila perlu, jadi ia dilipat.
+   *
+   * PDF memaparkan kedua-duanya sepenuhnya: kertas tiada interaksi, jadi
+   * apa yang tidak dicetak akan hilang.
+   *
+   * Corak ▸ mengikut manual-payment (guard 6: satu corak, bukan tiga).
+   */
+  readonly stmtExpanded = signal<string | null>(null);
+  toggleStmtRow(docNo: string) {
+    this.stmtExpanded.set(this.stmtExpanded() === docNo ? null : docNo);
+  }
+  isCredit(l: StatementLine): boolean {
+    return l.docType === 'RECEIPT' || l.docType === 'CREDIT_NOTE';
+  }
+  stmtShowMatches(l: StatementLine): boolean {
+    if (!l.matches?.length) return false;
+    return this.isCredit(l) ? this.stmtExpanded() === l.docNo : true;
+  }
+
   openStatement(a: { id: number }) {
+    this.stmtAccountId = a.id;
     this.stmtOpen.set(true);
+    this.stmtPage.set(0);
+    this.loadStatement();
+  }
+
+  loadStatement() {
     this.stmt.set(null);
     this.stmtLoading.set(true);
-    this.api.statement(a.id).subscribe({
-      next: r => { this.stmt.set(r); this.stmtLoading.set(false); },
-      error: () => this.stmtLoading.set(false)
-    });
+    const y = this.stmtYear() ? Number(this.stmtYear()) : null;
+    this.api.statement(this.stmtAccountId, y, this.stmtPage(), this.stmtSize)
+      .subscribe({
+        next: r => { this.stmt.set(r); this.stmtLoading.set(false); },
+        error: () => this.stmtLoading.set(false)
+      });
   }
+
+  onStmtYearChange(y: string) { this.stmtYear.set(y); this.stmtPage.set(0); this.loadStatement(); }
+  stmtGoPage(p: number) { this.stmtPage.set(p); this.loadStatement(); }
+
+  stmtTotalPages(): number {
+    const st = this.stmt();
+    return st ? Math.max(1, Math.ceil(st.total / this.stmtSize)) : 1;
+  }
+
   // Backend sudah pulangkan lines DESCENDING (terbaru atas) + baki berjalan
   // tepat. Papar terus tanpa reverse.
   stmtLinesDesc(): StatementLine[] {
     const st = this.stmt();
     return st ? st.lines : [];
   }
+
   closeStatement() { this.stmtOpen.set(false); }
-  printStatement() { window.print(); }
+
+  /**
+   * Muat turun PDF. Menggantikan window.print(), yang mencetak modal
+   * berlatar gelap; PDF ini memang direka untuk kertas.
+   *
+   * Nama fail datang daripada Content-Disposition. Pelayar tidak
+   * mendedahkan header itu untuk permintaan silang-asal melainkan
+   * pelayan menghantar Access-Control-Expose-Headers — jadi ada
+   * fallback, dan kegagalan hanya bermakna nama generik.
+   */
+  downloadStatementPdf() {
+    this.stmtPdfBusy.set(true);
+    const y = this.stmtYear() ? Number(this.stmtYear()) : null;
+    this.api.statementPdf(this.stmtAccountId, y).subscribe({
+      next: res => {
+        const blob = res.body;
+        if (!blob) { this.stmtPdfBusy.set(false); return; }
+        const cd = res.headers.get('Content-Disposition') ?? '';
+        const m = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(cd);
+        const st = this.stmt();
+        const nama = m ? decodeURIComponent(m[1])
+          : `penyata-${st?.accountNo ?? this.stmtAccountId}-${this.stmtYear() || 'semua'}.pdf`;
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = nama;
+        document.body.appendChild(a); a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        this.stmtPdfBusy.set(false);
+      },
+      error: () => this.stmtPdfBusy.set(false)
+    });
+  }
 
   // Invoice Vs Receipt (report payment)
   readonly repOpen = signal(false);
@@ -742,4 +828,6 @@ export class AccountsComponent {
   /** Merah bila ada tunggakan, hijau bila bersih — seperti prototaip. */
   /** Peraturan warna hidup dalam core/ui/balance (ADR 0009, guard 6). */
   balColor = balanceColor;
+  /** Negatif dalam kurungan, ikut konvensyen perakaunan — tempat yang sama. */
+  balText = balanceText;
 }
