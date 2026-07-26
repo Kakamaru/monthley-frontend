@@ -517,7 +517,10 @@
                 <span style="padding-left:12px">{{ m.docNo ? '↳ ' + m.docNo : '' }}</span>
                 <span>
                   {{ m.item }}
-                  @if (m.period) { <span style="color:var(--muted)"> · {{ m.period | date:'MMM yyyy' }}</span> }
+                  <!-- Tempoh sudah diformat oleh backend: peraturan bulan-penuh lawan
+                       sebahagian-bulan hidup di SATU tempat (guard 6). Memformat
+                       semula di sini akan menyimpang. -->
+                  @if (m.period) { <span style="color:var(--muted)"> · {{ m.period }}</span> }
                 </span>
                 <span></span>
                 <span class="stmt-num" style="text-align:right;white-space:nowrap">MYR {{ m.amount | number:'1.2-2' }}</span>
