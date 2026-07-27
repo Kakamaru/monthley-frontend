@@ -6,6 +6,7 @@ import { DocumentLineRow, OutstandingAccountRow, PaymentService, OutstandingRow,
 import { ProductsService, ProductCategory } from '../products/products.service';
 import { ToastService } from '../../core/ui/toast.service';
 import { Product } from '../../core/models/product.model';
+import { SettingsService } from '../settings/settings.service';
 
 @Component({
   selector: 'app-manual-payment',
@@ -17,6 +18,19 @@ export class ManualPaymentComponent implements OnInit {
   private api = inject(PaymentService);
   private catalog = inject(ProductsService);
   private toast = inject(ToastService);
+  private settings = inject(SettingsService);
+
+  /**
+   * service_provider.allow_selective — dibaca oleh PaymentService.
+   *
+   * Apabila mati, targetDocumentIds yang dihantar DIABAIKAN dan bayaran
+   * menutup invois tertua dahulu. Kotak pilihan mesti disembunyikan; jika
+   * tidak kerani menanda enam invois dan sistem membayar yang ketujuh
+   * tanpa amaran (ditemui 27 Julai 2026).
+   *
+   * Lalai true supaya kotak tidak berkelip hilang semasa tetapan dimuat.
+   */
+  readonly allowSelective = signal(true);
 
   readonly cols = '0.9fr 2fr 1.2fr 1.1fr 90px';
 
@@ -121,6 +135,13 @@ export class ManualPaymentComponent implements OnInit {
    * — senarai kosong nampak munasabah.
    */
   ngOnInit() {
+    // Kegagalan dibiarkan senyap: lalai true bermakna kotak kekal ada, dan
+    // backend tetap menolak pilihan jika tetapan mati. Gagal ke arah
+    // memaparkan, bukan menyembunyikan.
+    this.settings.document().subscribe({
+      next: d => this.allowSelective.set(d.allowSelective !== false)
+    });
+
     if (this.tab() === 'account') this.loadAccounts();
     else this.load();
   }

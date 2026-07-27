@@ -66,6 +66,15 @@ export class AccountsService {
     return this.http.get<MyAccountRow[]>(`${this.base}/my`);
   }
 
+  /** Penyata PDF akaun sendiri. Pemilikan disemak melalui payer_user_id. */
+  myStatementPdf(accountId: number, year: number | null): Observable<HttpResponse<Blob>> {
+    let params = new HttpParams();
+    if (year != null) params = params.set('year', String(year));
+    return this.http.get(`${this.base}/my/${accountId}/statement`, {
+      params, responseType: 'blob', observe: 'response'
+    });
+  }
+
   adjustmentInvoices(accountId: number): Observable<AdjInvoiceOption[]> {
     return this.http.get<AdjInvoiceOption[]>('/api/v1/payments/adjustment/invoices',
       { params: new HttpParams().set('accountId', String(accountId)) });
@@ -167,7 +176,11 @@ export interface PaymentReportResponse {
 
 export interface MyAccountRow {
   id: number; spCode: string; spName: string;
-  accountNo: string; accountName: string; balance: number;
+  accountNo: string; accountName: string;
+  /** Boleh NEGATIF — negatif bermakna pelanggan ada KREDIT (ADR 0009). */
+  balance: number;
+  /** Invois belum berbayar. TIDAK boleh negatif. Dikira di backend. */
+  arrears: number;
   latestInvoiceAmount: number | null; dueDate: string | null;
 }
 

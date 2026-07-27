@@ -292,7 +292,13 @@
           <div>
             <label class="f-label">Split Invoice Transaction</label>
             <app-yesno [(ngModel)]="doc().splitInvoiceByProduct" />
-            <div class="f-hint">Satu invois berasingan bagi setiap produk</div>
+            <div class="f-hint">
+              <b>Ya</b> — satu invois bagi setiap produk, setiap tempoh.
+              Boleh batal satu bulan tanpa menyentuh bulan lain.<br>
+              <b>Tidak</b> — satu invois untuk semua produk dan tempoh dalam
+              satu janaan. Membatalkan sebahagian bermakna membatalkan
+              keseluruhan invois.
+            </div>
           </div>
           <div>
             <label class="f-label">Allow Price Override</label>
@@ -333,6 +339,17 @@
           <label class="f-label">Enable Manual Payment</label>
           <app-yesno [(ngModel)]="doc().enableManualPayment" />
           <div class="f-hint">Benarkan Cashier rekod bayaran tunai/cek di kaunter</div>
+        </div>
+
+        <div style="margin-top:4px">
+          <label class="f-label">Benarkan Pilih Invois</label>
+          <app-yesno [(ngModel)]="doc().allowSelective" />
+          <div class="f-hint">
+            <b>Ya</b> — kerani dan pelanggan boleh tanda invois mana hendak
+            dibayar.<br>
+            <b>Tidak</b> — bayaran sentiasa menutup invois tertua dahulu, dan
+            kotak pilihan disembunyikan.
+          </div>
         </div>
 
         <div class="st-actions">

@@ -47,6 +47,8 @@ export interface DocumentSetting {
   receiptTitle?: string; receiptPrefix?: string;
   receiptNoSize?: number; receiptNoStart?: number; receiptTemplateId?: string;
   enableManualPayment?: boolean;
+  /** service_provider.allow_selective — dibaca oleh PaymentService. */
+  allowSelective?: boolean;
   // Statement
   statementTitle?: string; statementTemplateId?: string;
 }

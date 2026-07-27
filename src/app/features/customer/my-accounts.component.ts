@@ -27,12 +27,12 @@ import { AccountsService, MyAccountRow, HistoryRow, HistoryResponse } from '../a
             <div>
               <div class="banner-chip">● {{ rows().length }} akaun aktif · {{ spCount() }} Service Provider</div>
               <h1 class="banner-h1">Assalamualaikum, {{ auth.displayName() }} 👋</h1>
-              <p class="banner-sub">Anda mempunyai <b>RM {{ totalOutstanding() | number:'1.2-2' }}</b>
+              <p class="banner-sub">Anda mempunyai <b>RM {{ totalArrears() | number:'1.2-2' }}</b>
                  tunggakan merentasi {{ outstandingCount() }} akaun.</p>
             </div>
             <div class="banner-pay">
               <div class="banner-pay-lbl">Jumlah perlu dibayar</div>
-              <button class="btn-payall" (click)="payAll()">Bayar Semua RM {{ totalOutstanding() | number:'1.0-0' }} →</button>
+              <button class="btn-payall" (click)="payAll()">Bayar Semua RM {{ totalToPay() | number:'1.0-0' }} →</button>
             </div>
           </div>
         </div>
@@ -56,11 +56,20 @@ import { AccountsService, MyAccountRow, HistoryRow, HistoryResponse } from '../a
                   </div>
                 </div>
                 <div class="card-body">
+                  <!-- Baki dan Tunggakan ialah nombor BERBEZA. Baki boleh
+                       negatif (kredit); tunggakan tidak. Legacy memaparkan
+                       kedua-duanya bersebelahan tanpa membezakannya. -->
                   <div class="bal-lbl">Baki Semasa</div>
+                  <!-- Negatif dipaparkan dengan tandanya (-500.00), hijau:
+                       pengguna portal membacanya sebagai lebihan tanpa perlu
+                       konvensyen kurungan perakaunan. Positif = tunggakan,
+                       merah. -->
                   <div class="bal" [class.neg]="a.balance < 0">
-                    @if (a.balance < 0) { (MYR {{ (-a.balance) | number:'1.2-2' }}) }
-                    @else { MYR {{ a.balance | number:'1.2-2' }} }
+                    MYR {{ a.balance | number:'1.2-2' }}
                   </div>
+                  @if (a.arrears > 0 && a.arrears !== a.balance) {
+                    <div class="latest">Tunggakan: <b>MYR {{ a.arrears | number:'1.2-2' }}</b></div>
+                  }
                   <div class="latest">Invois terkini: <b>MYR {{ (a.latestInvoiceAmount ?? 0) | number:'1.2-2' }}</b></div>
                   <div class="due-row">
                     <span class="due-lbl">Tarikh akhir:</span>
@@ -68,7 +77,10 @@ import { AccountsService, MyAccountRow, HistoryRow, HistoryResponse } from '../a
                   </div>
                 </div>
                 <div class="card-foot">
-                  <button class="foot-soft" (click)="statement(a)">📄 Penyata</button>
+                  <button class="foot-soft" [disabled]="stmtBusy() === a.id"
+                          (click)="statement(a)">
+                    {{ stmtBusy() === a.id ? 'Menjana…' : '📄 Penyata' }}
+                  </button>
                   <button class="foot-pay" (click)="pay(a)">Bayar Sekarang</button>
                 </div>
               </div>
@@ -161,54 +173,57 @@ import { AccountsService, MyAccountRow, HistoryRow, HistoryResponse } from '../a
       .nav-btn { flex: 0 0 34px; width: 34px; height: 34px; font-size: 18px; }
       .carousel { gap: 6px; }
     }
-.nav-btn { flex: 0 0 44px; width: 44px; height: 44px; border-radius: 11px; border: 1.5px solid #e6ebe7; background: #fff;
-      color: #3a4c53; font-size: 22px; font-weight: 700; cursor: pointer; line-height: 1; display: flex; align-items: center; justify-content: center; }
+.nav-btn { flex: 0 0 44px; width: 44px; height: 44px; border-radius: 11px; border: 1.5px solid var(--line); background: var(--surface);
+      color: var(--muted-3); font-size: 22px; font-weight: 700; cursor: pointer; line-height: 1; display: flex; align-items: center; justify-content: center; }
     .btn-sub { background: #122029; color: #fff; border: none; font-family: 'Sora', sans-serif; font-weight: 700;
       font-size: 13px; padding: 10px 18px; border-radius: 10px; cursor: pointer; margin-left: 4px; }
 
     .scroller { flex: 1 1 auto; min-width: 0; display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; }
-    .card { flex: 1 1 0; min-width: 300px; max-width: 460px; scroll-snap-align: start; background: #fff; border: 1px solid #e6ebe7; border-radius: 18px; overflow: hidden; }
-    .card-top { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid #f0f3f0; }
+    .card { flex: 1 1 0; min-width: 300px; max-width: 460px; scroll-snap-align: start; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+    .card-top { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid var(--line-soft); }
     .card-org { display: flex; align-items: center; gap: 11px; }
     .logo { width: 42px; height: 42px; border-radius: 11px; color: #fff; display: flex; align-items: center; justify-content: center;
       font-family: 'Sora', sans-serif; font-weight: 800; font-size: 14px; }
-    .org-name { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 14px; color: #16262f; }
-    .org-no { font-size: 11px; color: #6b7f86; }
+    .org-name { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 14px; color: var(--ink); }
+    .org-no { font-size: 14px; color: var(--ink); font-weight: 700;
+               letter-spacing: .02em; }
     .org-holder { font-size: 12px; color: #e0863b; font-weight: 700; margin-top: 1px; }
     .card-body { padding: 18px; }
-    .bal-lbl { font-size: 12px; color: #6b7f86; font-weight: 600; }
+    .bal-lbl { font-size: 12px; color: var(--muted); font-weight: 600; }
     .bal { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 28px; margin: 2px 0 12px; color: #c0392b; white-space: nowrap; }
     .bal.neg { color: #2e7d32; }
-    .latest { font-size: 13px; color: #6b7f86; }
-    .latest b { color: #16262f; }
+    .latest { font-size: 13px; color: var(--muted); }
+    .latest b { color: var(--ink); }
     .due-row { display: flex; align-items: center; gap: 7px; margin-top: 10px; }
-    .due-lbl { font-size: 12px; color: #6b7f86; font-weight: 600; }
+    .due-lbl { font-size: 12px; color: var(--muted); font-weight: 600; }
     .due-chip { background: #e9f7ef; color: #1b7a43; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 8px; }
     .due-chip.overdue { background: #fdecec; color: #c0392b; }
-    .card-foot { display: flex; border-top: 1px solid #f0f3f0; }
-    .foot-soft { flex: 1; background: #fff; border: none; border-right: 1px solid #f0f3f0; font-family: 'Sora', sans-serif;
-      font-weight: 700; font-size: 13px; color: #3a4c53; padding: 14px; cursor: pointer; }
-    .foot-pay { flex: 1; background: #16a34a; border: none; color: #fff; font-family: 'Sora', sans-serif; font-weight: 700; font-size: 13px; padding: 14px; cursor: pointer; }
-    .hist-card { background: #fff; border: 1px solid #e6ebe7; border-radius: 18px; padding: 22px; margin-top: 20px; }
-    .hist-head { display: flex; align-items: center; gap: 20px; border-bottom: 1px solid #f0f3f0; padding-bottom: 12px; margin-bottom: 12px; }
-    .hist-head h3 { font-size: 18px; margin: 0; }
-    .tab { background: #fff; border: 1.5px solid #e6ebe7; color: #6b7f86; font-family: 'Sora', sans-serif; font-weight: 700; font-size: 13px; padding: 8px 18px; border-radius: 9px; cursor: pointer; }
-    .tab.active { background: #122029; color: #fff; border-color: #122029; }
+    .card-foot { display: flex; border-top: 1px solid var(--line-soft); }
+    .foot-soft { flex: 1; background: var(--surface); border: none; border-right: 1px solid var(--line-soft); font-family: 'Sora', sans-serif;
+      font-weight: 700; font-size: 13px; color: var(--muted-3); padding: 14px; cursor: pointer; }
+    .foot-pay { flex: 1; background: var(--green); border: none; color: #fff; font-family: 'Sora', sans-serif; font-weight: 700; font-size: 13px; padding: 14px; cursor: pointer; }
+    .hist-card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 22px; margin-top: 20px; }
+    .hist-head { display: flex; align-items: center; gap: 20px; border-bottom: 1px solid var(--line-soft); padding-bottom: 12px; margin-bottom: 12px; }
+    .hist-head h3 { font-size: 18px; margin: 0; color: var(--ink); }
+    .tab { background: var(--surface); border: 1.5px solid var(--line); color: var(--muted); font-family: 'Sora', sans-serif; font-weight: 700; font-size: 13px; padding: 8px 18px; border-radius: 9px; cursor: pointer; }
+    .tab.active { background: var(--green-soft); color: var(--green-dark);
+                 border-color: var(--green); font-weight: 800; }
     .hist-filter { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
-    .fl-lbl { font-size: 12px; font-weight: 700; color: #6b7f86; }
-    .fl-date { padding: 9px 11px; border: 1.5px solid #dbe3de; border-radius: 9px; font-size: 13px; color: #3a4c53; }
-    .fl-search { flex: 1; min-width: 200px; padding: 9px 13px; border: 1.5px solid #dbe3de; border-radius: 9px; font-size: 13px; }
-    .fl-btn { background: #16a34a; color: #fff; border: none; font-family: 'Sora', sans-serif; font-weight: 700; font-size: 13px; padding: 9px 20px; border-radius: 9px; cursor: pointer; }
+    .fl-lbl { font-size: 12px; font-weight: 700; color: var(--muted); }
+    .fl-date { padding: 9px 11px; border: 1.5px solid var(--line-input); border-radius: 9px; font-size: 13px; color: var(--muted-3); }
+    .fl-search { flex: 1; min-width: 200px; padding: 9px 13px; border: 1.5px solid var(--line-input); border-radius: 9px; font-size: 13px; }
+    .fl-btn { background: var(--green); color: #fff; border: none; font-family: 'Sora', sans-serif; font-weight: 700; font-size: 13px; padding: 9px 20px; border-radius: 9px; cursor: pointer; }
     .hist-grid { display: grid; grid-template-columns: 1fr 0.8fr 1.4fr 0.8fr 1.2fr 1fr 50px; gap: 8px; align-items: center; }
-    .hist-hd { padding: 11px 4px; font-size: 12px; font-weight: 700; color: #6b7f86; text-transform: uppercase; letter-spacing: .03em; }
-    .hist-row { padding: 13px 4px; font-size: 14px; border-top: 1px solid #f0f3f0; }
+    .hist-hd { padding: 11px 4px; font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+    .hist-row { padding: 13px 4px; font-size: 14px; color: var(--ink);
+                border-top: 1px solid var(--line-soft); }
 
     @media (max-width: 640px) {
       /* Sejarah: header sembunyi, baris jadi card menegak */
       .hist-hd { display: none; }
       .hist-row {
         display: flex; flex-direction: column; gap: 3px;
-        padding: 14px 2px; border-top: 1px solid #f0f3f0;
+        padding: 14px 2px; border-top: 1px solid var(--line-soft);
       }
       .hist-row .c-amt { font-size: 17px; margin-top: 4px; }
       .hist-row .dl-btn { align-self: flex-start; margin-top: 6px; }
@@ -216,14 +231,14 @@ import { AccountsService, MyAccountRow, HistoryRow, HistoryResponse } from '../a
       .fl-search { min-width: 0; width: 100%; }
     }
 
-    .c-mut { color: #4a5d64; }
-    .c-doc { font-weight: 700; color: #16a34a; }
+    .c-mut { color: var(--muted-2); }
+    .c-doc { font-weight: 700; color: var(--green); }
     .c-amt { font-family: 'Sora', sans-serif; font-weight: 700; white-space: nowrap; }
-    .dl-btn { width: 32px; height: 32px; border-radius: 8px; border: none; background: #16a34a; color: #fff; cursor: pointer; }
-    .hist-empty { padding: 30px; text-align: center; color: #6b7f86; }
-    .hist-pager { display: flex; align-items: center; justify-content: space-between; padding: 14px 4px 2px; border-top: 1px solid #f0f3f0; margin-top: 6px; font-size: 13px; }
+    .dl-btn { width: 32px; height: 32px; border-radius: 8px; border: none; background: var(--green); color: #fff; cursor: pointer; }
+    .hist-empty { padding: 30px; text-align: center; color: var(--muted); }
+    .hist-pager { display: flex; align-items: center; justify-content: space-between; padding: 14px 4px 2px; border-top: 1px solid var(--line-soft); margin-top: 6px; font-size: 13px; }
     .pager-btns { display: flex; gap: 6px; }
-    .pg { width: 34px; height: 34px; border-radius: 8px; border: 1.5px solid #e6ebe7; background: #fff; color: #3a4c53; font-size: 15px; cursor: pointer; }
+    .pg { width: 34px; height: 34px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--surface); color: var(--muted-3); font-size: 15px; cursor: pointer; }
     .pg:disabled { opacity: .4; cursor: not-allowed; }
   `]
 })
@@ -235,9 +250,31 @@ export class MyAccountsComponent implements OnInit {
   readonly loading = signal(false);
 
   readonly spCount = computed(() => new Set(this.rows().map(r => r.spCode)).size);
-  readonly totalOutstanding = computed(() =>
+  // Tunggakan dikira di BACKEND dan dihantar sebagai medan sendiri.
+  // Math.max(0, balance) di sini menduplikasi peraturan yang sudah hidup
+  // dalam core/ui/balance.ts dan dalam SQL — tiga tempat untuk satu
+  // takrifan (guard 6). Kredit pada satu akaun tidak mengurangkan hutang
+  // pada akaun lain, jadi jumlahkan arrears, bukan balance.
+  /**
+   * DUA nombor, dua tujuan — jangan campur.
+   *
+   * totalArrears  = invois belum berbayar. Untuk ayat "anda mempunyai X
+   *                 tunggakan".
+   * totalToPay    = jumlah yang perlu dijelaskan SELEPAS kredit belum
+   *                 dipadankan ditolak. Untuk butang Bayar.
+   *
+   * M04 (27 Julai 2026): tunggakan 700.59 tetapi baki 500.59 — RM200
+   * sudah dibayar, cuma belum dialokasi. Butang yang menggunakan arrears
+   * akan meminta RM200 yang bukan hak kita (CASE-005 semula).
+   *
+   * Kredit pada satu akaun TIDAK mengurangkan hutang pada akaun lain,
+   * jadi max(0, ...) dikenakan per akaun sebelum dijumlahkan.
+   */
+  readonly totalArrears = computed(() =>
+    this.rows().reduce((s, r) => s + (r.arrears ?? 0), 0));
+  readonly totalToPay = computed(() =>
     this.rows().reduce((s, r) => s + Math.max(0, r.balance), 0));
-  readonly outstandingCount = computed(() => this.rows().filter(r => r.balance > 0).length);
+  readonly outstandingCount = computed(() => this.rows().filter(r => (r.arrears ?? 0) > 0).length);
 
   // Sejarah state
   readonly histType = signal<'RECEIPT' | 'INVOICE'>('RECEIPT');
@@ -283,7 +320,7 @@ export class MyAccountsComponent implements OnInit {
   searchHist() { this.histPage.set(0); this.loadHist(); }
   goPage(p: number) { this.histPage.set(p); this.loadHist(); }
 
-  private readonly palette = ['#16a34a','#dc2626','#2563eb','#d97706','#7c3aed','#0891b2'];
+  private readonly palette = ['var(--green)','#dc2626','#2563eb','#d97706','#7c3aed','#0891b2'];
   logoBg(a: MyAccountRow): string {
     let h = 0; for (const c of a.spCode) h = (h * 31 + c.charCodeAt(0)) >>> 0;
     return this.palette[h % this.palette.length];
@@ -299,7 +336,37 @@ export class MyAccountsComponent implements OnInit {
     const el = document.querySelector('.scroller') as HTMLElement | null;
     if (el) el.scrollBy({ left: dir * 350, behavior: 'smooth' });
   }
-  statement(a: MyAccountRow) { /* TODO: modal penyata pelanggan */ }
+  readonly stmtBusy = signal<number | null>(null);
+
+  /**
+   * Muat turun penyata PDF akaun sendiri.
+   *
+   * Interceptor menyisipkan Authorization, jadi ini tidak boleh menjadi
+   * <a href> biasa. Backend menyemak payer_user_id dan mengembalikan 404
+   * (bukan 403) untuk akaun orang lain, supaya ID tidak boleh dibilang.
+   */
+  statement(a: MyAccountRow) {
+    this.stmtBusy.set(a.id);
+    this.api.myStatementPdf(a.id, new Date().getFullYear()).subscribe({
+      next: res => {
+        const blob = res.body;
+        if (!blob) { this.stmtBusy.set(null); return; }
+        const cd = res.headers.get('Content-Disposition') ?? '';
+        const m = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(cd);
+        const nama = m ? decodeURIComponent(m[1])
+          : `penyata-${a.accountNo}-${new Date().getFullYear()}.pdf`;
+
+        const url = URL.createObjectURL(blob);
+        const el = document.createElement('a');
+        el.href = url; el.download = nama;
+        document.body.appendChild(el); el.click();
+        document.body.removeChild(el);
+        URL.revokeObjectURL(url);
+        this.stmtBusy.set(null);
+      },
+      error: () => this.stmtBusy.set(null)
+    });
+  }
   pay(a: MyAccountRow) { /* TODO: FPX bayar akaun */ }
   payAll() { /* TODO: FPX bayar semua */ }
   subscribe() { /* TODO: modal langgan akaun */ }
