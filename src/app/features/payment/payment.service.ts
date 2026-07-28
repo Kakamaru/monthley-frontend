@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Page } from '../../core/models/product.model';
@@ -28,7 +28,13 @@ export interface ManualPaymentRequest {
 }
 
 export interface PaymentResult {
-  receiptId: number; receiptNo: string; allocated: number; deposit: number;
+  /** payment.id — untuk batal bayaran. */
+  paymentId: number;
+  /** financial_document.id — untuk resit PDF. Dua id, dua maksud. */
+  receiptDocumentId: number;
+  /** Nombor resit sebenar (doc_no), bukan rentetan dikarang. */
+  receiptNo: string;
+  allocated: number; deposit: number;
 }
 
 export interface OutstandingQuery {
@@ -70,5 +76,18 @@ export class PaymentService {
 
   record(body: ManualPaymentRequest): Observable<PaymentResult> {
     return this.http.post<PaymentResult>(`${this.base}/manual`, body);
+  }
+
+  /**
+   * Resit PDF. Interceptor menyisipkan Authorization dan X-SP-Id, jadi ini
+   * tidak boleh menjadi <a href> biasa.
+   *
+   * receiptDocumentId ialah financial_document.id — BUKAN
+   * PaymentResult.receiptId(), yang mengembalikan payment.id.
+   */
+  receiptPdf(receiptDocumentId: number): Observable<HttpResponse<Blob>> {
+    return this.http.get(`/api/v1/statements/receipts/${receiptDocumentId}`, {
+      responseType: 'blob', observe: 'response'
+    });
   }
 }

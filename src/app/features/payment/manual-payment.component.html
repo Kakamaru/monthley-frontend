@@ -153,9 +153,17 @@
       @if (res.deposit > 0) {
         <p style="color:var(--muted);font-size:14px;margin:0 0 4px">Lebihan {{ fmt(res.deposit) }} menjadi deposit.</p>
       }
-      <p style="color:var(--muted);font-size:14px;margin:0 0 20px">Resit telah dihantar ke e-mel pengguna. Anda juga boleh cetak dengan klik butang Print.</p>
-      <div style="display:flex;gap:16px;justify-content:center">
-        <a style="color:var(--green);font-weight:700;cursor:pointer;text-decoration:none" (click)="backToCounter()">Print</a>
+      <!-- Ayat asal berbunyi 'Resit telah dihantar ke e-mel pengguna'.
+           Itu TIDAK berlaku: notification_queue kosong dan EmailPort tiada
+           kaedah resit. Kerani memberitahu pelanggan perkara yang sama,
+           pelanggan menunggu e-mel yang tidak akan sampai, kemudian
+           telefon. Kembalikan ayat itu apabila e-mel benar-benar dihantar
+           (ADR 0011). -->
+      <p style="color:var(--muted);font-size:14px;margin:0 0 20px">Klik Cetak Resit untuk memuat turun atau mencetak.</p>
+      <div style="display:flex;gap:16px;justify-content:center;align-items:center">
+        <a style="color:var(--green);font-weight:700;cursor:pointer;text-decoration:none"
+           [style.opacity]="resitBusy() ? '0.5' : '1'"
+           (click)="cetakResit()">{{ resitBusy() ? 'Menjana…' : 'Cetak Resit' }}</a>
         <span style="color:var(--muted)">|</span>
         <a style="color:var(--green);font-weight:700;cursor:pointer;text-decoration:none" (click)="backToCounter()">Back to counter</a>
       </div>

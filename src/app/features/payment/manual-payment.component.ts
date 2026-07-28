@@ -32,6 +32,45 @@ export class ManualPaymentComponent implements OnInit {
    */
   readonly allowSelective = signal(true);
 
+  readonly resitBusy = signal(false);
+
+  /**
+   * Muat turun resit PDF.
+   *
+   * Butang 'Print' sebelum ini memanggil backToCounter() — ia menutup
+   * skrin tanpa mencetak apa-apa.
+   *
+   * receiptDocumentId ialah financial_document.id — id yang endpoint
+   * perlukan. Percubaan pertama mengekstraknya daripada receiptNo dengan
+   * regex; itu pecah sebaik sahaja SP menetapkan prefix mereka sendiri
+   * dalam Tetapan Resit.
+   */
+  cetakResit() {
+    const res = this.result();
+    if (!res?.receiptDocumentId) return;
+    const docId = res.receiptDocumentId;
+
+    this.resitBusy.set(true);
+    this.api.receiptPdf(docId).subscribe({
+      next: r => {
+        const blob = r.body;
+        if (!blob) { this.resitBusy.set(false); return; }
+        const cd = r.headers.get('Content-Disposition') ?? '';
+        const m = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(cd);
+        const nama = m ? decodeURIComponent(m[1]) : `resit-${res.receiptNo}.pdf`;
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = nama;
+        document.body.appendChild(a); a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        this.resitBusy.set(false);
+      },
+      error: () => this.resitBusy.set(false)
+    });
+  }
+
   readonly cols = '0.9fr 2fr 1.2fr 1.1fr 90px';
 
   readonly rows = signal<OutstandingRow[]>([]);
