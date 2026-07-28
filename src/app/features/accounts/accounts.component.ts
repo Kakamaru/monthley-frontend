@@ -345,8 +345,50 @@ export class AccountsComponent {
   toggleMore(id: number, ev: Event) {
     ev.stopPropagation();
     this.moreMenuFor.set(this.moreMenuFor() === id ? null : id);
+    this.printMenuFor.set(null);
   }
-  closeMore() { this.moreMenuFor.set(null); }
+  closeMore() { this.moreMenuFor.set(null); this.printMenuFor.set(null); }
+
+  // ── Menu cetak penyata ──
+  //
+  // Ikon 🧾 membuka modal untuk MELIHAT; ikon 🖨 memuat turun TERUS.
+  // Sebelum ini kedua-duanya memanggil openStatement().
+  //
+  // Tahun semasa digunakan tanpa bertanya — ini laluan pantas. Untuk
+  // tahun lain, SP membuka modal dan menggunakan butang di sana.
+  readonly printMenuFor = signal<number | null>(null);
+
+  togglePrint(id: number, ev: Event) {
+    ev.stopPropagation();
+    this.printMenuFor.set(this.printMenuFor() === id ? null : id);
+    this.moreMenuFor.set(null);
+  }
+
+  cetakPenyata(a: { id: number; accountNo?: string }, format: 'pdf' | 'xlsx') {
+    this.printMenuFor.set(null);
+    const tahun = new Date().getFullYear();
+    const req = format === 'pdf'
+      ? this.api.statementPdf(a.id, tahun)
+      : this.api.statementXlsx(a.id, tahun);
+
+    req.subscribe({
+      next: res => {
+        const blob = res.body;
+        if (!blob) return;
+        const cd = res.headers.get('Content-Disposition') ?? '';
+        const m = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(cd);
+        const nama = m ? decodeURIComponent(m[1])
+          : `penyata-${a.accountNo ?? a.id}-${tahun}.${format}`;
+
+        const url = URL.createObjectURL(blob);
+        const el = document.createElement('a');
+        el.href = url; el.download = nama;
+        document.body.appendChild(el); el.click();
+        document.body.removeChild(el);
+        URL.revokeObjectURL(url);
+      }
+    });
+  }
 
   // Placeholder — fungsi sebenar dibina kemudian
   // ── Account Adjustment (modal) ──
