@@ -50,11 +50,18 @@ export class AccountsService {
    * ia TIDAK boleh menjadi <a href> biasa — mesti HttpClient dengan blob.
    */
   statementPdf(id: number, year: number | null): Observable<HttpResponse<Blob>> {
+    return this.statementFile(`/api/v1/statements/accounts/${id}`, year);
+  }
+
+  /** XLSX penyata — dua sheet rata, boleh dipivot. */
+  statementXlsx(id: number, year: number | null): Observable<HttpResponse<Blob>> {
+    return this.statementFile(`/api/v1/statements/accounts/${id}/xlsx`, year);
+  }
+
+  private statementFile(url: string, year: number | null): Observable<HttpResponse<Blob>> {
     let params = new HttpParams();
     if (year != null) params = params.set('year', String(year));
-    return this.http.get(`/api/v1/statements/accounts/${id}`, {
-      params, responseType: 'blob', observe: 'response'
-    });
+    return this.http.get(url, { params, responseType: 'blob', observe: 'response' });
   }
 
   paymentReport(accountId: number, year: string): Observable<PaymentReportResponse> {

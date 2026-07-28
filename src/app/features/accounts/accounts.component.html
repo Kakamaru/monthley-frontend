@@ -550,8 +550,13 @@
           </div>
           <div style="display:flex;gap:10px">
             <button class="btn btn-ghost" (click)="closeStatement()">Tutup</button>
-            <button class="btn btn-navy" [disabled]="stmtPdfBusy()" (click)="downloadStatementPdf()">
-              {{ stmtPdfBusy() ? 'Menjana…' : '⬇ Muat Turun PDF' }}
+            <button class="btn btn-ghost" [disabled]="stmtBusy() !== null"
+                    (click)="downloadStatement('xlsx')">
+              {{ stmtBusy() === 'xlsx' ? 'Menjana…' : '⬇ Excel' }}
+            </button>
+            <button class="btn btn-navy" [disabled]="stmtBusy() !== null"
+                    (click)="downloadStatement('pdf')">
+              {{ stmtBusy() === 'pdf' ? 'Menjana…' : '⬇ Muat Turun PDF' }}
             </button>
           </div>
         </div>

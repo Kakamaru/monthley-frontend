@@ -31,7 +31,7 @@ export class AccountsComponent {
     (_, i) => String(new Date().getFullYear() - i));
   readonly stmtPage = signal(0);
   readonly stmtSize = 50;
-  readonly stmtPdfBusy = signal(false);
+  readonly stmtBusy = signal<'pdf' | 'xlsx' | null>(null);
   private stmtAccountId = 0;
 
   /**
@@ -94,26 +94,36 @@ export class AccountsComponent {
   closeStatement() { this.stmtOpen.set(false); }
 
   /**
-   * Muat turun PDF. Menggantikan window.print(), yang mencetak modal
-   * berlatar gelap; PDF ini memang direka untuk kertas.
+   * Muat turun penyata.
+   *
+   * PDF menggantikan window.print(), yang mencetak modal berlatar gelap.
+   * XLSX ialah dua sheet rata untuk analisis — sub-baris tidak digunakan
+   * kerana sekali pengguna sort, anak terpisah daripada induk.
+   *
+   * Interceptor menyisipkan Authorization dan X-SP-Id, jadi ini tidak
+   * boleh menjadi <a href> biasa.
    *
    * Nama fail datang daripada Content-Disposition. Pelayar tidak
-   * mendedahkan header itu untuk permintaan silang-asal melainkan
-   * pelayan menghantar Access-Control-Expose-Headers — jadi ada
-   * fallback, dan kegagalan hanya bermakna nama generik.
+   * mendedahkan header itu untuk permintaan silang-asal melainkan pelayan
+   * menghantar Access-Control-Expose-Headers — jadi ada fallback, dan
+   * kegagalan hanya bermakna nama generik.
    */
-  downloadStatementPdf() {
-    this.stmtPdfBusy.set(true);
+  downloadStatement(format: 'pdf' | 'xlsx') {
+    this.stmtBusy.set(format);
     const y = this.stmtYear() ? Number(this.stmtYear()) : null;
-    this.api.statementPdf(this.stmtAccountId, y).subscribe({
+    const req = format === 'pdf'
+      ? this.api.statementPdf(this.stmtAccountId, y)
+      : this.api.statementXlsx(this.stmtAccountId, y);
+
+    req.subscribe({
       next: res => {
         const blob = res.body;
-        if (!blob) { this.stmtPdfBusy.set(false); return; }
+        if (!blob) { this.stmtBusy.set(null); return; }
         const cd = res.headers.get('Content-Disposition') ?? '';
         const m = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(cd);
         const st = this.stmt();
         const nama = m ? decodeURIComponent(m[1])
-          : `penyata-${st?.accountNo ?? this.stmtAccountId}-${this.stmtYear() || 'semua'}.pdf`;
+          : `penyata-${st?.accountNo ?? this.stmtAccountId}-${this.stmtYear() || 'semua'}.${format}`;
 
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -121,9 +131,9 @@ export class AccountsComponent {
         document.body.appendChild(a); a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        this.stmtPdfBusy.set(false);
+        this.stmtBusy.set(null);
       },
-      error: () => this.stmtPdfBusy.set(false)
+      error: () => this.stmtBusy.set(null)
     });
   }
 
