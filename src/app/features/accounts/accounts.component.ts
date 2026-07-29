@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal, HostListener} from '@angular/core';
 import { balanceColor, balanceText } from '../../core/ui/balance';
+import { periodRange } from '../../core/ui/period-range';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Account } from '../../core/models/account.model';
@@ -528,11 +529,13 @@ export class AccountsComponent {
           // Berjaya jana -> tutup modal + maklum
           this.genModalOpen.set(false);
           this.genAccountId.set(null);
-          this.toast.set(`${r.invoicesPosted} invois dijana untuk akaun ${this.genAccountNo()} (period ${r.period}).`);
+          this.toast.set(`${r.invoicesPosted} invois dijana untuk akaun `
+            + `${this.genAccountNo()} (${periodRange(r.billedPeriods, r.period)}).`);
           setTimeout(() => this.toast.set(null), 4000);
         } else {
           // Idempotent / tiada caj -> kekal modal, maklum
-          this.genResult.set(`Tiada invois baru — period ${r.period} sudah dijana atau tiada caj untuk period ini.`);
+          this.genResult.set(`Tiada invois baru — period ${r.period} sudah `
+            + `dijana atau tiada caj untuk period ini.`);
         }
       },
       error: e => { this.genRunning.set(false); this.genResult.set(e?.error?.message || 'Gagal menjana invois.'); }

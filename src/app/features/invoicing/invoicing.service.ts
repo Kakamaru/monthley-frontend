@@ -36,7 +36,10 @@ export class InvoicingService {
 
 export interface GenerateSingleResult {
   accountId: number;
+  /** Bulan LARIAN yang dihantar — bukan tempoh yang muncul pada invois. */
   period: string;
   mode: string;
   invoicesPosted: number;
+  /** Tempoh SEBENAR dibilkan, tersusun ikut masa. */
+  billedPeriods: string[];
 }

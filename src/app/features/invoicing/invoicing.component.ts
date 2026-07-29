@@ -1,4 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
+import { periodRange } from '../../core/ui/period-range';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { InvoicingService, GenerateResult } from './invoicing.service';
@@ -63,9 +64,15 @@ export class InvoicingComponent implements OnInit {
    * sentiasa melaporkan "sudah dijana sebelum ini" — tidak benar bagi akaun
    * baharu yang langganannya bermula selepas tempoh bil.
    */
-  /** Tempoh yang benar-benar dibilkan. POSTPAID pada Julai membilkan Jun. */
+  /**
+   * Tempoh yang benar-benar dibilkan. POSTPAID pada Julai membilkan Jun.
+   *
+   * join(', ') dahulu menyenaraikan SEMUA — akaun YEAR dengan produk
+   * MONTHLY menghasilkan dua belas tempoh dan toast mengambil separuh
+   * skrin. periodRange memberi julat.
+   */
   billedLabel(r: GenerateResult): string {
-    return r.billedPeriods?.length ? r.billedPeriods.join(', ') : r.period;
+    return periodRange(r.billedPeriods, r.period);
   }
 
   noBillReason(r: GenerateResult): string {
