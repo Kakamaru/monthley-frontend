@@ -61,7 +61,15 @@ import { ToastService } from '../../core/ui/toast.service';
         </select>
         <input class="fld" placeholder="Payment Ref No." [(ngModel)]="fPayRef" (keyup.enter)="cari()" />
         <!-- Memilih produk MENUKAR paparan ke peringkat baris. -->
-        <select class="fld" [(ngModel)]="fProductId" (change)="cari()">
+        <!--
+          (ngModelChange) dan bukan (change): pada <select> dengan
+          [ngValue], (change) berjalan SEBELUM ngModel menetapkan nilai,
+          jadi cari() melihat fProductId lama dan modBaris() kekal false —
+          dropdown menunjukkan produk dipilih sementara jadual kekal mod
+          dokumen.
+        -->
+        <select class="fld" [ngModel]="fProductId"
+                (ngModelChange)="pilihProduk($event)">
           <option [ngValue]="null">Produk — Semua</option>
           @for (p of produk(); track p.id) {
             <option [ngValue]="p.id">{{ p.name }}</option>
@@ -86,6 +94,12 @@ import { ToastService } from '../../core/ui/toast.service';
               (click)="lanjutan.set(!lanjutan())">{{ lanjutan() ? '⌃' : '⌄' }}</button>
     </div>
   </div>
+
+  @if (ralat()) {
+    <div style="background:var(--red-soft);border:1px solid var(--red);border-radius:10px;padding:12px 15px;font-size:13.5px;color:var(--red);margin-bottom:14px">
+      {{ ralat() }}
+    </div>
+  }
 
   <!-- ── jadual dokumen (mod lalai) ── -->
   @if (!modBaris()) {
@@ -424,6 +438,7 @@ export class DocumentsComponent implements OnInit {
   readonly page = signal(0);
   readonly size = 10;
   readonly loading = signal(false);
+  readonly ralat = signal<string | null>(null);
   readonly lanjutan = signal(false);
   readonly menuFor = signal<number | null>(null);
   readonly pdfBusy = signal<number | null>(null);
@@ -459,6 +474,7 @@ export class DocumentsComponent implements OnInit {
     this.fDocNo = ''; this.fAccount = ''; this.fDocType = '';
     this.fPayRef = ''; this.fFrom = ''; this.fTo = ''; this.fPayStatus = '';
     this.fProductId = null;
+    this.modBaris.set(false);
     this.cari();
   }
 
@@ -475,9 +491,18 @@ export class DocumentsComponent implements OnInit {
         next: r => {
           this.baris.set(r.items);
           this.total.set(r.total);
+          this.ralat.set(null);
           this.loading.set(false);
         },
-        error: () => this.loading.set(false)
+        // Ralat MESTI kelihatan. Menelannya bermakna jadual kosong dengan
+        // total lama daripada carian dokumen — kelihatan seperti 'tiada
+        // data' sedangkan permintaan gagal.
+        error: e => {
+          this.baris.set([]);
+          this.total.set(0);
+          this.ralat.set(e?.error?.message ?? `Gagal memuat baris (${e?.status ?? '?'})`);
+          this.loading.set(false);
+        }
       });
       return;
     }
@@ -491,9 +516,15 @@ export class DocumentsComponent implements OnInit {
       next: r => {
         this.rows.set(r.items);
         this.total.set(r.total);
+        this.ralat.set(null);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false)
+      error: e => {
+        this.rows.set([]);
+        this.total.set(0);
+        this.ralat.set(e?.error?.message ?? `Gagal memuat dokumen (${e?.status ?? '?'})`);
+        this.loading.set(false);
+      }
     });
   }
 
@@ -529,7 +560,13 @@ export class DocumentsComponent implements OnInit {
   readonly xlsBusy = signal(false);
   fProductId: number | null = null;
 
-  readonly modBaris = computed(() => this.fProductId !== null);
+  readonly modBaris = signal(false);
+
+  pilihProduk(id: number | null) {
+    this.fProductId = id;
+    this.modBaris.set(id !== null);
+    this.cari();
+  }
 
   /** Lencana baris — peraturan sama seperti dokumen, satu tempat. */
   lencanaBaris(l: ProductLineRow): { teks: string; bg: string; fg: string } {
