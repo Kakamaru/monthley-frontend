@@ -46,6 +46,13 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/products/products.component').then(m => m.ProductsComponent)
       },
+      // Dokumen Kewangan — CLERK mencetak semula, SP_ADMIN membatalkan.
+      // Tiada spAdminGuard: kerani memerlukan skrin ini setiap hari.
+      {
+        path: 'finance-documents',
+        loadComponent: () =>
+          import('./features/documents/documents.component').then(m => m.DocumentsComponent)
+      },
       {
         path: 'accounts', canActivate: [spAdminGuard],
         loadComponent: () =>

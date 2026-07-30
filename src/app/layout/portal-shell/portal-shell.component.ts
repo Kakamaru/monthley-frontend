@@ -50,7 +50,7 @@ export class PortalShellComponent {
     { id: 'accounts',     icon: '👥',  label: 'Akaun', route: '/portal/accounts' },
     { id: 'invoicing',    icon: '🧾',  label: 'Jana Bil', route: '/portal/invoicing', roles: ['SP_ADMIN'] },
     { id: 'manualPay',    icon: '💵',  label: 'Manual Payment', route: '/portal/manual-payment', roles: ['CLERK'] },
-    { id: 'finance',      icon: '📁',  label: 'Dokumen Kewangan' },
+    { id: 'finance',      icon: '📁',  label: 'Dokumen Kewangan', route: '/portal/finance-documents' },
     { id: 'adhoc',        icon: '⚡',  label: 'Adhoc Invois' },
     { id: 'reports',      icon: '📈',  label: 'Laporan' },
     { id: 'tools',        icon: '🛠️', label: 'Alat' },

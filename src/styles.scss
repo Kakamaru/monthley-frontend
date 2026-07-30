@@ -74,6 +74,11 @@
   --green-soft:   #e7f6ec;
   --green-tint:   #eaf7ef;
   --green-line:   #cfe3d5;
+  /* Lencana batal dan kotak nota. Ditambah bersama skrin Dokumen
+     Kewangan — komponen tidak menulis hex sendiri (guard 6). */
+  --red-soft:     #fdecec;
+  --amber:        #e8c76a;
+  --amber-soft:   #fdf6e3;
   --navy:         #122029;
   --navy-2:       #1b3a2f;
   --lime:         #bcd634;
@@ -120,6 +125,9 @@
   --green-soft:   rgba(188,214,52,.14);
   --green-tint:   rgba(22,163,74,.12);
   --green-line:   rgba(188,214,52,.35);
+  --red-soft:     rgba(226,87,76,.16);
+  --amber:        rgba(232,199,106,.45);
+  --amber-soft:   rgba(232,199,106,.12);
   --navy:         #0d181f;
   --navy-2:       #1b3a2f;
   --lime:         #cfe25c;
@@ -476,6 +484,22 @@ select.fld { color: var(--muted); }
 
 
 /* Modal card — background pekat ikut tema (elak --surface telus dark mode) */
+/* Latar modal — SATU tempat.
+
+   Gaya ini ditulis inline pada setiap modal sebelum ini
+   (position:fixed;inset:0;background:rgba(0,0,0,.7);...), disalin sekali
+   untuk setiap dialog. Salinan menyimpang: modal Dokumen Kewangan
+   pertama tiada gaya ini sama sekali dan muncul sebagai blok biasa di
+   BAWAH halaman, bukan bertindih. */
+.modal-back {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(0,0,0,.7);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px; overflow: auto;
+}
+/* Modal tinggi bermula dari atas supaya kepalanya kelihatan. */
+.modal-back.top { align-items: flex-start; padding-top: 40px; }
+
 .modal-card {
   background: #ffffff;
   box-shadow: 0 20px 60px rgba(0,0,0,.3);
