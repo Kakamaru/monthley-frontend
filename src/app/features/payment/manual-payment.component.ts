@@ -32,6 +32,18 @@ export class ManualPaymentComponent implements OnInit {
    */
   readonly allowSelective = signal(true);
 
+  /**
+   * enable_manual_payment daripada Tetapan Resit.
+   *
+   * Backend menolak bayaran apabila ia mati (b0aeb53), tetapi hanya
+   * SELEPAS kerani menaip amaun, menanda invois dan menekan Simpan.
+   * Menyemak semasa skrin dibuka menjimatkan kerja yang akan dibuang.
+   *
+   * Lalai TRUE supaya borang tidak berkelip terkunci semasa tetapan
+   * dimuat — dan kalau panggilan gagal, backend tetap menguatkuasakan.
+   */
+  readonly manualDibenarkan = signal(true);
+
   readonly resitBusy = signal(false);
 
   /**
@@ -178,7 +190,10 @@ export class ManualPaymentComponent implements OnInit {
     // backend tetap menolak pilihan jika tetapan mati. Gagal ke arah
     // memaparkan, bukan menyembunyikan.
     this.settings.document().subscribe({
-      next: d => this.allowSelective.set(d.allowSelective !== false)
+      next: d => {
+        this.allowSelective.set(d.allowSelective !== false);
+        this.manualDibenarkan.set(d.enableManualPayment !== false);
+      }
     });
 
     if (this.tab() === 'account') this.loadAccounts();

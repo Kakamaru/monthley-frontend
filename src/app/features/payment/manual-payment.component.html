@@ -278,7 +278,24 @@
 
         @if (payError()) { <div style="color:#c33;font-size:13px;margin-bottom:12px">{{ payError() }}</div> }
 
-        <button (click)="askConfirm()" [disabled]="payBusy()" style="width:100%;background:var(--green);border:none;border-radius:10px;padding:14px;cursor:pointer;color:#fff;font-weight:700;font-size:15px">Accept Payment</button>
+        @if (!manualDibenarkan()) {
+          <!--
+            Backend menolak bayaran apabila tetapan ini mati, tetapi hanya
+            SELEPAS kerani menaip amaun, menanda invois dan menekan Simpan.
+            Amaran di sini menjimatkan kerja yang akan dibuang.
+
+            Mesej merujuk pentadbir, bukan menu Tetapan: kerani berperanan
+            CLERK dan menu itu tidak wujud untuknya.
+          -->
+          <div style="background:var(--amber-soft);border:1px solid var(--amber);border-radius:9px;padding:12px 14px;font-size:13.5px;color:var(--ink);margin-bottom:12px">
+            <b>Bayaran manual dimatikan</b> untuk SP ini.
+            Hubungi pentadbir untuk menghidupkannya.
+          </div>
+        }
+        <button (click)="askConfirm()" [disabled]="payBusy() || !manualDibenarkan()"
+                [style.opacity]="manualDibenarkan() ? '1' : '.5'"
+                [style.cursor]="manualDibenarkan() ? 'pointer' : 'not-allowed'"
+                style="width:100%;background:var(--green);border:none;border-radius:10px;padding:14px;color:#fff;font-weight:700;font-size:15px">Accept Payment</button>
       </div>
     </div>
   </div>
