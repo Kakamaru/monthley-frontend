@@ -49,6 +49,11 @@ export const routes: Routes = [
       // Dokumen Kewangan — CLERK mencetak semula, SP_ADMIN membatalkan.
       // Tiada spAdminGuard: kerani memerlukan skrin ini setiap hari.
       {
+        path: 'adhoc-invoice',
+        loadComponent: () =>
+          import('./features/adhoc/adhoc.component').then(m => m.AdhocComponent)
+      },
+      {
         path: 'finance-documents',
         loadComponent: () =>
           import('./features/documents/documents.component').then(m => m.DocumentsComponent)
