@@ -121,11 +121,9 @@ import { ToastService } from '../../core/ui/toast.service';
                    [style.bottom]="i >= rows().length - 2 ? 'calc(100% + 4px)' : 'auto'"
                    style="position:absolute;right:0;z-index:60;border:1px solid var(--line-soft);border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.2);min-width:200px;overflow:hidden"
                    (click)="$event.stopPropagation()">
-                <!-- Batal dilumpuhkan: backend menanda dokumen tanpa
-                     membalikkan alokasi (soalan 23). -->
-                <button class="more-item" disabled
-                        title="Belum tersedia — pembalikan transaksi masih dalam pembinaan"
-                        style="opacity:.45;cursor:not-allowed">Cancel Document</button>
+                <button class="more-item" [disabled]="d.status === 'CANCELLED'"
+                        [style.opacity]="d.status === 'CANCELLED' ? '.45' : '1'"
+                        (click)="bukaBatal(d)">Cancel Document</button>
                 <button class="more-item" [disabled]="d.status === 'CANCELLED'"
                         [style.opacity]="d.status === 'CANCELLED' ? '.45' : '1'"
                         (click)="bukaResend(d)">Resend Document…</button>
@@ -255,6 +253,61 @@ import { ToastService } from '../../core/ui/toast.service';
       </div>
     </div>
   }
+
+  <!-- ── modal batal ── -->
+  @if (batalOpen()) {
+    <div class="modal-back" (click)="batalOpen.set(false)">
+      <div class="modal-card" style="border-radius:14px;max-width:620px;width:100%"
+           (click)="$event.stopPropagation()">
+        <div style="padding:22px 26px;border-bottom:1.5px solid var(--line-soft);display:flex;justify-content:space-between;align-items:center">
+          <div style="font-weight:800;font-size:19px;color:var(--ink)">Cancel Document</div>
+          <button class="btn btn-ghost" (click)="batalOpen.set(false)">✕</button>
+        </div>
+
+        <div style="padding:22px 26px">
+          <div style="background:var(--amber-soft);border:1px solid var(--amber);border-radius:9px;padding:12px 14px;font-size:13.5px;color:var(--ink);margin-bottom:18px">
+            <b>Transaksi akan dibalikkan</b>, tetapi dokumen tidak dipadam —
+            ia kekal dalam rekod sebagai dibatalkan.
+            @if (batalDoc()?.docType === 'RECEIPT') {
+              <div style="margin-top:8px">
+                Invois yang dibayar resit ini akan terbuka semula.
+              </div>
+            } @else {
+              <div style="margin-top:8px">
+                Jika invois ini sudah dibayar, duit itu kembali menjadi
+                kredit pada akaun dan boleh digunakan untuk bayaran lain.
+              </div>
+            }
+          </div>
+
+          <div style="font-size:13.5px;color:var(--muted);margin-bottom:16px;line-height:1.7">
+            <div>{{ batalDoc()?.title }} <b style="color:var(--ink)">{{ batalDoc()?.docNo }}</b></div>
+            <div>{{ batalDoc()?.accountNo }} · {{ batalDoc()?.issuedTo }}</div>
+            <div>MYR {{ batalDoc()?.amount | number:'1.2-2' }}</div>
+          </div>
+
+          <label style="display:block;font-size:13px;font-weight:700;color:var(--ink);margin-bottom:6px">
+            <span style="color:var(--red)">*</span> Sebab pembatalan
+          </label>
+          <textarea class="fld" style="width:100%;min-height:92px;resize:vertical;box-sizing:border-box"
+                    placeholder="Kenapa dokumen ini dibatalkan?"
+                    [(ngModel)]="batalSebab"></textarea>
+
+          @if (batalError()) {
+            <div style="color:var(--red);font-size:13px;margin-top:10px">{{ batalError() }}</div>
+          }
+        </div>
+
+        <div style="padding:18px 26px;display:flex;justify-content:flex-end;gap:10px;border-top:1.5px solid var(--line-soft)">
+          <button class="btn btn-ghost" (click)="batalOpen.set(false)">Close</button>
+          <button class="btn" style="background:var(--red);color:#fff;border:none"
+                  [disabled]="batalBusy() || !batalSebab.trim()" (click)="sahBatal()">
+            {{ batalBusy() ? 'Membatalkan…' : 'Batalkan Dokumen' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
   `
 })
 export class DocumentsComponent implements OnInit {
@@ -370,6 +423,43 @@ export class DocumentsComponent implements OnInit {
     this.txnLines.set([]);
     this.txnOpen.set(true);
     this.api.lines(d.id).subscribe({ next: l => this.txnLines.set(l) });
+  }
+
+  // ── modal batal ──
+  readonly batalOpen = signal(false);
+  readonly batalDoc = signal<DocumentRow | null>(null);
+  readonly batalBusy = signal(false);
+  readonly batalError = signal<string | null>(null);
+  batalSebab = '';
+
+  bukaBatal(d: DocumentRow) {
+    this.menuFor.set(null);
+    this.batalDoc.set(d);
+    this.batalSebab = '';
+    this.batalError.set(null);
+    this.batalOpen.set(true);
+  }
+
+  sahBatal() {
+    const d = this.batalDoc();
+    const sebab = this.batalSebab.trim();
+    if (!d || !sebab) return;
+
+    this.batalBusy.set(true);
+    this.batalError.set(null);
+    this.api.cancel(d.id, sebab).subscribe({
+      next: () => {
+        this.batalBusy.set(false);
+        this.batalOpen.set(false);
+        this.toast.success(`${d.title} ${d.docNo} dibatalkan`,
+          'Transaksi telah dibalikkan.');
+        this.muat();
+      },
+      error: e => {
+        this.batalBusy.set(false);
+        this.batalError.set(e?.error?.message ?? 'Gagal membatalkan dokumen.');
+      }
+    });
   }
 
   // ── modal resend ──

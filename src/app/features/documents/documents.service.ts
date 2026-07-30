@@ -89,6 +89,17 @@ export class DocumentsService {
     return this.http.get(laluan, { responseType: 'blob', observe: 'response' });
   }
 
+  /**
+   * Batal dokumen. Sebab WAJIB — lajur cancel_reason wujud sejak V1
+   * tetapi tidak pernah diisi sebelum ini.
+   *
+   * SP_ADMIN sahaja: kerani menerima duit, admin membatalkannya.
+   */
+  cancel(id: number, reason: string): Observable<{ docNo: string; status: string }> {
+    return this.http.post<{ docNo: string; status: string }>(
+      `/api/v1/payments/documents/${id}/cancel`, { reason });
+  }
+
   /** Hantar semula kepada satu atau lebih alamat. */
   resend(id: number, emails: string[]): Observable<{ sent: number; recipients: string[] }> {
     return this.http.post<{ sent: number; recipients: string[] }>(
