@@ -303,7 +303,11 @@ import { ToastService } from '../../core/ui/toast.service';
               <span class="stmt-num" style="text-align:right;font-weight:700">{{ l.amount | number:'1.2-2' }}</span>
             </div>
           }
-          @if (txnLines().length === 0) {
+          @if (txnRalat()) {
+            <div style="padding:24px 0;text-align:center;color:var(--red);font-size:13.5px">
+              {{ txnRalat() }}
+            </div>
+          } @else if (txnLines().length === 0) {
             <div style="padding:24px 0;text-align:center;color:var(--muted)">
               {{ txnKredit()
                   ? 'Resit ini belum dipadankan dengan mana-mana invois.'
@@ -632,9 +636,10 @@ export class DocumentsComponent implements OnInit {
         URL.revokeObjectURL(url);
         this.xlsBusy.set(false);
       },
-      error: () => {
+      error: e => {
         this.xlsBusy.set(false);
-        this.toast.error('Gagal muat turun', 'Cuba lagi.');
+        this.toast.error(`Gagal muat turun (${e?.status ?? '?'})`,
+          e?.error?.message ?? 'Cuba lagi.');
       }
     });
   }
@@ -663,10 +668,16 @@ export class DocumentsComponent implements OnInit {
         // Jangan revoke serta-merta — tab baharu masih memuatkannya.
         setTimeout(() => URL.revokeObjectURL(url), 60_000);
       },
-      error: () => {
+      // Mesej lama menyalahkan nota kredit tanpa mengira punca sebenar.
+      // 404 pada resit dan 500 pada templat rosak kelihatan sama, dan
+      // kerani mendapat penjelasan yang salah.
+      error: e => {
         this.pdfBusy.set(null);
-        this.toast.error('Gagal papar dokumen',
-          'Nota kredit belum mempunyai templat sendiri.');
+        const kod = e?.status ?? '?';
+        this.toast.error(`Gagal papar dokumen (${kod})`,
+          e?.error?.message ?? (d.docType === 'CREDIT_NOTE'
+            ? 'Nota kredit belum mempunyai templat sendiri.'
+            : 'Cuba lagi atau semak log.'));
       }
     });
   }
@@ -675,6 +686,7 @@ export class DocumentsComponent implements OnInit {
   readonly txnOpen = signal(false);
   readonly txnDoc = signal<DocumentRow | null>(null);
   readonly txnLines = signal<LineRow[]>([]);
+  readonly txnRalat = signal<string | null>(null);
 
   /**
    * Dokumen kredit (resit, nota kredit) menunjukkan ALOKASI, bukan baris
@@ -691,7 +703,15 @@ export class DocumentsComponent implements OnInit {
     this.txnDoc.set(d);
     this.txnLines.set([]);
     this.txnOpen.set(true);
-    this.api.lines(d.id).subscribe({ next: l => this.txnLines.set(l) });
+    this.txnRalat.set(null);
+    // Tanpa pengendali ralat, permintaan yang gagal memaparkan 'Tiada
+    // baris transaksi' — mengelirukan dengan cara yang sama seperti mod
+    // baris memaparkan jadual kosong pada 404.
+    this.api.lines(d.id).subscribe({
+      next: l => this.txnLines.set(l),
+      error: e => this.txnRalat.set(
+        e?.error?.message ?? `Gagal memuat baris (${e?.status ?? '?'})`)
+    });
   }
 
   // ── modal batal ──
