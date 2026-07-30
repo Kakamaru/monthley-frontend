@@ -1,7 +1,9 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DocumentRow, DocumentsService, LineRow } from './documents.service';
+import { DocumentRow, DocumentsService, LineRow, ProductLineRow } from './documents.service';
+import { ProductsService } from '../products/products.service';
+import { Product } from '../../core/models/product.model';
 import { ToastService } from '../../core/ui/toast.service';
 
 /**
@@ -48,7 +50,23 @@ import { ToastService } from '../../core/ui/toast.service';
 
     @if (lanjutan()) {
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px">
+        <!-- 'Aktif' pada invois tidak memberitahu apa-apa; SP bertanya
+             bayaran mana yang belum masuk. -->
+        <select class="fld" [(ngModel)]="fPayStatus" (change)="cari()">
+          <option value="">Status Bayaran — Semua</option>
+          <option value="UNPAID">Belum Bayar</option>
+          <option value="PARTIAL">Bayar Sebahagian</option>
+          <option value="PAID">Lunas</option>
+          <option value="CANCELLED">Dibatalkan</option>
+        </select>
         <input class="fld" placeholder="Payment Ref No." [(ngModel)]="fPayRef" (keyup.enter)="cari()" />
+        <!-- Memilih produk MENUKAR paparan ke peringkat baris. -->
+        <select class="fld" [(ngModel)]="fProductId" (change)="cari()">
+          <option [ngValue]="null">Produk — Semua</option>
+          @for (p of produk(); track p.id) {
+            <option [ngValue]="p.id">{{ p.name }}</option>
+          }
+        </select>
         <div>
           <label style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">Dikeluarkan Dari</label>
           <input class="fld" type="date" [(ngModel)]="fFrom" />
@@ -69,7 +87,8 @@ import { ToastService } from '../../core/ui/toast.service';
     </div>
   </div>
 
-  <!-- ── jadual ── -->
+  <!-- ── jadual dokumen (mod lalai) ── -->
+  @if (!modBaris()) {
   <div style="background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden">
     <div [style.grid-template-columns]="cols"
          style="display:grid;gap:8px;padding:13px 18px;background:var(--surface-alt);font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">
@@ -98,11 +117,16 @@ import { ToastService } from '../../core/ui/toast.service';
           <span style="color:var(--muted-2)">{{ d.docDate | date:'dd/MM/yyyy' }}</span>
           <span style="color:var(--muted-2)">{{ d.period }}</span>
           <span style="text-align:center">
-            <span [style.background]="d.status === 'CANCELLED' ? 'var(--red-soft)' : 'var(--green-soft)'"
-                  [style.color]="d.status === 'CANCELLED' ? 'var(--red)' : 'var(--green-dark)'"
-                  style="font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:999px">
-              {{ d.status === 'CANCELLED' ? 'Batal' : 'Aktif' }}
+            <span [style.background]="lencana(d).bg" [style.color]="lencana(d).fg"
+                  style="font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:999px;white-space:nowrap">
+              {{ lencana(d).teks }}
             </span>
+            @if (d.paymentStatus === 'PARTIAL') {
+              <!-- 'Belum lunas' tidak cukup; SP perlu tahu berapa lagi. -->
+              <div class="stmt-num" style="font-size:11px;color:var(--muted);margin-top:3px">
+                baki {{ d.outstanding | number:'1.2-2' }}
+              </div>
+            }
           </span>
           <span class="stmt-num" style="text-align:right;font-weight:700;white-space:nowrap">
             MYR {{ d.amount | number:'1.2-2' }}
@@ -146,6 +170,83 @@ import { ToastService } from '../../core/ui/toast.service';
       </div>
     </div>
   </div>
+
+  }
+
+  <!-- ── mod BARIS: hanya bila produk dipilih ── -->
+  @if (modBaris()) {
+    <!--
+      Nota, bukan toggle. Pertukaran berlaku secara semula jadi daripada
+      tapisan produk; menambah kawalan bermakna kerani perlu faham dua
+      konsep sebelum mencari.
+    -->
+    <div style="background:var(--green-tint);border:1px solid var(--green-line);border-radius:10px;padding:11px 15px;font-size:13px;color:var(--ink);margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:14px">
+      <span>
+        Menunjukkan <b>baris produk</b>, bukan dokumen — satu baris untuk
+        setiap tempoh yang dicaj. Nota debit tidak muncul kerana ia tiada
+        baris produk.
+      </span>
+      <button class="btn btn-green" style="white-space:nowrap"
+              [disabled]="xlsBusy()" (click)="muatTurunBaris()">
+        {{ xlsBusy() ? 'Menjana…' : '⬇ Muat Turun' }}
+      </button>
+    </div>
+
+    <div style="background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden">
+      <div [style.grid-template-columns]="colsBaris"
+           style="display:grid;gap:8px;padding:13px 18px;background:var(--surface-alt);font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">
+        <span>No. Dokumen</span><span>Akaun</span><span>Issued To</span>
+        <span>Produk</span><span>Tempoh</span>
+        <span style="text-align:center">Status</span>
+        <span style="text-align:right">Jumlah</span>
+        <span style="text-align:right">Baki</span>
+      </div>
+
+      @if (loading()) {
+        <div style="padding:28px;text-align:center;color:var(--muted)">Memuatkan…</div>
+      } @else if (baris().length === 0) {
+        <div style="padding:28px;text-align:center;color:var(--muted)">
+          Tiada baris dijumpai untuk kriteria ini.
+        </div>
+      } @else {
+        @for (l of baris(); track l.lineId) {
+          <div [style.grid-template-columns]="colsBaris"
+               style="display:grid;gap:8px;padding:13px 18px;border-top:1px solid var(--line-soft);align-items:center;font-size:13.5px"
+               [style.opacity]="l.paymentStatus === 'CANCELLED' ? '0.55' : '1'">
+            <span style="color:var(--green);font-weight:700">{{ l.docNo }}</span>
+            <span style="color:var(--muted-2)">{{ l.accountNo }}</span>
+            <span>{{ l.issuedTo }}</span>
+            <span>{{ l.productName }}</span>
+            <span style="color:var(--muted-2)">{{ l.period || (l.periodStart | date:'MMM yyyy') }}</span>
+            <span style="text-align:center">
+              <span [style.background]="lencanaBaris(l).bg" [style.color]="lencanaBaris(l).fg"
+                    style="font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:999px;white-space:nowrap">
+                {{ lencanaBaris(l).teks }}
+              </span>
+            </span>
+            <span class="stmt-num" style="text-align:right;font-weight:700;white-space:nowrap">
+              {{ l.total | number:'1.2-2' }}
+            </span>
+            <span class="stmt-num" style="text-align:right;white-space:nowrap"
+                  [style.color]="l.outstanding > 0 ? 'var(--red)' : 'var(--muted-2)'">
+              {{ l.outstanding | number:'1.2-2' }}
+            </span>
+          </div>
+        }
+      }
+
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-top:1px solid var(--line-soft)">
+        <span style="font-size:13px;color:var(--muted)">{{ label() }}</span>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button class="btn btn-ghost" [disabled]="page() === 0" (click)="pergi(page() - 1)">‹</button>
+          <span style="font-size:13px;color:var(--muted)">{{ page() + 1 }} / {{ jumlahHalaman() }}</span>
+          <button class="btn btn-ghost" [disabled]="page() + 1 >= jumlahHalaman()"
+                  (click)="pergi(page() + 1)">›</button>
+        </div>
+      </div>
+    </div>
+  }
+
 
   <!-- ── modal transaksi ── -->
   @if (txnOpen()) {
@@ -313,8 +414,10 @@ import { ToastService } from '../../core/ui/toast.service';
 export class DocumentsComponent implements OnInit {
   private api = inject(DocumentsService);
   private toast = inject(ToastService);
+  private catalog = inject(ProductsService);
 
   readonly cols = '1.3fr 0.8fr 0.7fr 1.4fr 0.9fr 1fr 0.8fr 1fr 130px';
+  readonly colsBaris = '1.3fr 0.7fr 1.3fr 1.2fr 1fr 0.9fr 0.9fr 0.9fr';
 
   readonly rows = signal<DocumentRow[]>([]);
   readonly total = signal(0);
@@ -329,6 +432,7 @@ export class DocumentsComponent implements OnInit {
   fAccount = '';
   fDocType = '';
   fPayRef = '';
+  fPayStatus = '';
   fFrom = '';
   fTo = '';
 
@@ -342,23 +446,46 @@ export class DocumentsComponent implements OnInit {
     return `Menunjukkan ${dari}–${hingga} daripada ${t}`;
   });
 
-  ngOnInit() { this.muat(); }
+  ngOnInit() {
+    this.catalog.list({ active: true, page: 0, size: 200 })
+      .subscribe({ next: r => this.produk.set(r.items), error: () => {} });
+    this.muat();
+  }
 
   cari() { this.page.set(0); this.muat(); }
   pergi(p: number) { this.page.set(p); this.muat(); }
 
   kosongkan() {
     this.fDocNo = ''; this.fAccount = ''; this.fDocType = '';
-    this.fPayRef = ''; this.fFrom = ''; this.fTo = '';
+    this.fPayRef = ''; this.fFrom = ''; this.fTo = ''; this.fPayStatus = '';
+    this.fProductId = null;
     this.cari();
   }
 
   muat() {
     this.loading.set(true);
     this.menuFor.set(null);
+
+    if (this.modBaris()) {
+      this.api.searchLines({
+        docNo: this.fDocNo, account: this.fAccount, productId: this.fProductId,
+        paymentStatus: this.fPayStatus, issuedFrom: this.fFrom, issuedTo: this.fTo,
+        page: this.page(), size: this.size
+      }).subscribe({
+        next: r => {
+          this.baris.set(r.items);
+          this.total.set(r.total);
+          this.loading.set(false);
+        },
+        error: () => this.loading.set(false)
+      });
+      return;
+    }
+
     this.api.search({
       docNo: this.fDocNo, account: this.fAccount, docType: this.fDocType,
       paymentRefNo: this.fPayRef, issuedFrom: this.fFrom, issuedTo: this.fTo,
+      paymentStatus: this.fPayStatus,
       page: this.page(), size: this.size
     }).subscribe({
       next: r => {
@@ -367,6 +494,111 @@ export class DocumentsComponent implements OnInit {
         this.loading.set(false);
       },
       error: () => this.loading.set(false)
+    });
+  }
+
+  /**
+   * Lencana status — SATU tempat.
+   *
+   * Dibatalkan mengatasi segalanya. Untuk invois, status BAYARAN yang
+   * bermakna; untuk resit dan nota kredit, ia bayaran itu sendiri jadi
+   * 'Aktif' betul.
+   */
+  lencana(d: DocumentRow): { teks: string; bg: string; fg: string } {
+    switch (d.paymentStatus) {
+      case 'CANCELLED':
+        return { teks: 'Batal', bg: 'var(--red-soft)', fg: 'var(--red)' };
+      case 'PAID':
+        return { teks: 'Lunas', bg: 'var(--green-soft)', fg: 'var(--green-dark)' };
+      case 'PARTIAL':
+        return { teks: 'Sebahagian', bg: 'var(--amber-soft)', fg: 'var(--ink)' };
+      case 'UNPAID':
+        return { teks: 'Belum Bayar', bg: 'var(--surface-alt)', fg: 'var(--muted-2)' };
+      default:
+        return { teks: 'Aktif', bg: 'var(--green-soft)', fg: 'var(--green-dark)' };
+    }
+  }
+
+  // ── mod BARIS ──────────────────────────────────────────────────────
+  //
+  // Dipicu oleh pemilihan produk, bukan toggle. Granulariti berubah
+  // kerana soalannya berubah: 'invois mana belum lunas' menjadi
+  // 'siapa belum bayar produk ini'.
+  readonly baris = signal<ProductLineRow[]>([]);
+  readonly produk = signal<Product[]>([]);
+  readonly xlsBusy = signal(false);
+  fProductId: number | null = null;
+
+  readonly modBaris = computed(() => this.fProductId !== null);
+
+  /** Lencana baris — peraturan sama seperti dokumen, satu tempat. */
+  lencanaBaris(l: ProductLineRow): { teks: string; bg: string; fg: string } {
+    switch (l.paymentStatus) {
+      case 'CANCELLED':
+        return { teks: 'Batal', bg: 'var(--red-soft)', fg: 'var(--red)' };
+      case 'PAID':
+        return { teks: 'Lunas', bg: 'var(--green-soft)', fg: 'var(--green-dark)' };
+      case 'PARTIAL':
+        return { teks: 'Sebahagian', bg: 'var(--amber-soft)', fg: 'var(--ink)' };
+      default:
+        return { teks: 'Belum Bayar', bg: 'var(--surface-alt)', fg: 'var(--muted-2)' };
+    }
+  }
+
+  /**
+   * Muat turun senarai baris sebagai CSV.
+   *
+   * CSV dan bukan XLSX: pelayar boleh menjananya tanpa panggilan
+   * tambahan, dan Excel membukanya. Kalau SP perlukan format berformat,
+   * itu endpoint XLSX di backend seperti penyata.
+   */
+  muatTurunBaris() {
+    if (this.baris().length === 0) return;
+    this.xlsBusy.set(true);
+
+    // Ambil SEMUA baris, bukan halaman semasa — SP memuat turun untuk
+    // bekerja di luar sistem, dan sepuluh baris pertama tidak berguna.
+    this.api.searchLines({
+      docNo: this.fDocNo, account: this.fAccount, productId: this.fProductId,
+      paymentStatus: this.fPayStatus, issuedFrom: this.fFrom, issuedTo: this.fTo,
+      page: 0, size: 5000
+    }).subscribe({
+      next: r => {
+        const kepala = ['No. Dokumen', 'Akaun', 'Issued To', 'Produk',
+                        'Tempoh', 'Status', 'Jumlah', 'Dibayar', 'Baki'];
+        const label: Record<string, string> = {
+          PAID: 'Lunas', PARTIAL: 'Sebahagian',
+          UNPAID: 'Belum Bayar', CANCELLED: 'Batal'
+        };
+        const petik = (v: unknown) => {
+          const t = String(v ?? '');
+          return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
+        };
+        const baris = r.items.map(l => [
+          l.docNo, l.accountNo, l.issuedTo, l.productName,
+          l.period || '', label[l.paymentStatus] ?? l.paymentStatus,
+          l.total.toFixed(2), l.paid.toFixed(2), l.outstanding.toFixed(2)
+        ].map(petik).join(','));
+
+        // BOM supaya Excel mengenali UTF-8 — tanpa ia, nama dengan
+        // aksara bukan-ASCII menjadi sampah.
+        const csv = '\ufeff' + [kepala.join(','), ...baris].join('\r\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const nama = this.produk().find(p => p.id === this.fProductId)?.name ?? 'produk';
+        a.href = url;
+        a.download = `bayaran-${nama}-${new Date().toISOString().slice(0, 10)}.csv`
+          .replace(/[^A-Za-z0-9.\-_]/g, '_');
+        document.body.appendChild(a); a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        this.xlsBusy.set(false);
+      },
+      error: () => {
+        this.xlsBusy.set(false);
+        this.toast.error('Gagal muat turun', 'Cuba lagi.');
+      }
     });
   }
 

@@ -19,6 +19,14 @@ export interface DocumentRow {
   status: string;
   amount: number;
   paymentRefNo: string;
+  /**
+   * PAID | PARTIAL | UNPAID — untuk invois dan nota debit.
+   * ACTIVE — dokumen kredit; ia bayaran, bukan hutang.
+   * CANCELLED — mengatasi segalanya.
+   */
+  paymentStatus: string;
+  paid: number;
+  outstanding: number;
 }
 
 export interface LineRow {
@@ -31,6 +39,32 @@ export interface LineRow {
   periodEnd: string | null;
 }
 
+/**
+ * Baris invois dengan status bayaran sendiri.
+ *
+ * Bila SP menapis ikut produk, granulariti berubah dari DOKUMEN ke BARIS
+ * — invois tak-split mempunyai tiga produk, dan 'invois ini belum lunas'
+ * tidak memberitahu bahagian mana.
+ */
+export interface ProductLineRow {
+  lineId: number;
+  documentId: number;
+  docNo: string;
+  docType: string;
+  docDate: string;
+  accountNo: string;
+  issuedTo: string;
+  productName: string;
+  period: string;
+  periodStart: string | null;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+  paid: number;
+  outstanding: number;
+  paymentStatus: string;
+}
+
 export interface DocumentSearch {
   docNo?: string | null;
   account?: string | null;
@@ -39,6 +73,8 @@ export interface DocumentSearch {
   paymentRefNo?: string | null;
   issuedFrom?: string | null;
   issuedTo?: string | null;
+  paymentStatus?: string | null;
+  productId?: number | null;
   page?: number;
   size?: number;
 }
@@ -65,8 +101,37 @@ export class DocumentsService {
     tambah('paymentRefNo', f.paymentRefNo);
     tambah('issuedFrom', f.issuedFrom);
     tambah('issuedTo', f.issuedTo);
+    tambah('paymentStatus', f.paymentStatus);
+    tambah('productId', f.productId);
 
     return this.http.get<Page<DocumentRow>>(this.base, { params: p });
+  }
+
+  /**
+   * Carian peringkat BARIS — hanya bila produk dipilih.
+   *
+   * Endpoint berasingan, bukan bendera: dua bentuk hasil yang berbeza
+   * tidak sepatutnya berkongsi satu endpoint.
+   */
+  searchLines(f: DocumentSearch): Observable<Page<ProductLineRow>> {
+    let p = new HttpParams()
+      .set('page', String(f.page ?? 0))
+      .set('size', String(f.size ?? 20));
+
+    const tambah = (k: string, v: unknown) => {
+      if (v !== null && v !== undefined && String(v).trim() !== '') {
+        p = p.set(k, String(v).trim());
+      }
+    };
+    tambah('docNo', f.docNo);
+    tambah('account', f.account);
+    tambah('productId', f.productId);
+    tambah('periodId', f.periodId);
+    tambah('paymentStatus', f.paymentStatus);
+    tambah('issuedFrom', f.issuedFrom);
+    tambah('issuedTo', f.issuedTo);
+
+    return this.http.get<Page<ProductLineRow>>(`${this.base}/lines`, { params: p });
   }
 
   /** Baris dokumen — modal 'List of Transaction'. */
