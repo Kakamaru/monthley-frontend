@@ -279,8 +279,21 @@ export class ManualPaymentComponent implements OnInit {
     this.mDate = tarikhIso();
     this.mBank = ''; this.mBankBranch = ''; this.mRefNo = ''; this.mNotes = ''; this.mAmount.set(0);
     this.mIdempotencyKey = crypto.randomUUID();   // sesi bayar baru = key baru
-    // Muat semua invois outstanding akaun ini
-    this.api.outstanding({ account: r.accountNo, invoice: null, category: null, product: null, page: 0, size: 200 })
+    // Muat semua invois outstanding akaun ini — KECUALI akaun adhoc.
+    //
+    // ADHOC-SALES ialah satu akaun teknikal yang dikongsi semua invois
+    // adhoc SP (V50). Memuatkan "semua invois akaun" di situ bermakna
+    // menawarkan invois ORANG LAIN dengan checkbox: kerani menerima
+    // RM100 daripada seorang dan sebahagiannya membayar invois orang
+    // yang tidak berkaitan.
+    //
+    // Untuk pelanggan berdaftar kelakuan asal betul dan dikekalkan —
+    // satu akaun, satu orang, dan membayar beberapa invois sekali gus
+    // ialah sebab skrin ini wujud.
+    const carian = r.adhoc
+      ? { account: null, invoice: r.invoiceNo, category: null, product: null, page: 0, size: 200 }
+      : { account: r.accountNo, invoice: null, category: null, product: null, page: 0, size: 200 };
+    this.api.outstanding(carian)
       .subscribe({
         next: res => {
           this.payInvoices.set(res.items);

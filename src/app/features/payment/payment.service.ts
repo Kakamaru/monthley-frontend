@@ -8,6 +8,7 @@ export interface OutstandingRow {
   invoiceNo: string; period?: string; docDate?: string; dueDate?: string;
   total: number; paid: number; outstanding: number;
   itemDesc?: string;   // ada bila invois ada TEPAT satu baris
+  adhoc: boolean;      // akaun teknikal ADHOC-SALES, dikongsi ramai
 }
 
 export interface OutstandingAccountRow {
