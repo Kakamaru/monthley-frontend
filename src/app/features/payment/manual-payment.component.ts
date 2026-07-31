@@ -1,5 +1,6 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { balanceColor } from '../../core/ui/balance';
+import { tarikhIso } from '../../core/tarikh';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DocumentLineRow, OutstandingAccountRow, PaymentService, OutstandingRow, PaymentType, PaymentResult } from './payment.service';
@@ -132,7 +133,7 @@ export class ManualPaymentComponent implements OnInit {
     { code: 'ADJUSTMENT', label: 'Penyelarasan' }
   ];
   mMethod = 'CASH';
-  mDate = new Date().toISOString().slice(0, 10);
+  mDate = tarikhIso();
   mBank = '';
   mBankBranch = '';
   mRefNo = '';
@@ -232,7 +233,7 @@ export class ManualPaymentComponent implements OnInit {
     this.paySelected.set(new Set());
     this.payPage.set(0);
     this.mMethod = 'CASH';
-    this.mDate = new Date().toISOString().slice(0, 10);
+    this.mDate = tarikhIso();
     this.mBank = ''; this.mBankBranch = ''; this.mRefNo = ''; this.mNotes = ''; this.mAmount.set(0);
     this.mIdempotencyKey = crypto.randomUUID();   // sesi bayar baru = key baru
     this.api.outstanding({ account: a.accountNo, invoice: null, category: null, product: null, page: 0, size: 200 })
@@ -275,7 +276,7 @@ export class ManualPaymentComponent implements OnInit {
     this.paySelected.set(new Set());
     this.payPage.set(0);
     this.mMethod = 'CASH';
-    this.mDate = new Date().toISOString().slice(0, 10);
+    this.mDate = tarikhIso();
     this.mBank = ''; this.mBankBranch = ''; this.mRefNo = ''; this.mNotes = ''; this.mAmount.set(0);
     this.mIdempotencyKey = crypto.randomUUID();   // sesi bayar baru = key baru
     // Muat semua invois outstanding akaun ini

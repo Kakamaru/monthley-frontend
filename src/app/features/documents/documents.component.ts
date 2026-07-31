@@ -5,6 +5,7 @@ import { DocumentRow, DocumentsService, LineRow, ProductLineRow } from './docume
 import { ProductsService } from '../products/products.service';
 import { Product } from '../../core/models/product.model';
 import { ToastService } from '../../core/ui/toast.service';
+import { tarikhIso } from '../../core/tarikh';
 
 /**
  * Dokumen Kewangan — cari, papar dan hantar semula dokumen.
@@ -629,7 +630,7 @@ export class DocumentsComponent implements OnInit {
         const a = document.createElement('a');
         const nama = this.produk().find(p => p.id === this.fProductId)?.name ?? 'produk';
         a.href = url;
-        a.download = `bayaran-${nama}-${new Date().toISOString().slice(0, 10)}.csv`
+        a.download = `bayaran-${nama}-${tarikhIso()}.csv`
           .replace(/[^A-Za-z0-9.\-_]/g, '_');
         document.body.appendChild(a); a.click();
         document.body.removeChild(a);

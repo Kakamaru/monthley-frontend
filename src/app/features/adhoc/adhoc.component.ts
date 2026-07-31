@@ -7,6 +7,7 @@ import { ProductsService } from '../products/products.service';
 import { Product } from '../../core/models/product.model';
 import { Account } from '../../core/models/account.model';
 import { ToastService } from '../../core/ui/toast.service';
+import { tarikhIso, bulanIso } from '../../core/tarikh';
 
 interface BarisProduk {
   produk: Product;
@@ -378,7 +379,7 @@ export class AdhocComponent implements OnInit {
       next: p => {
         this.tempoh.set(p);
         // Lalai tempoh SEMASA — invois adhoc biasanya untuk bulan ini.
-        const kini = new Date().toISOString().slice(0, 7);
+        const kini = bulanIso();
         this.periodId = p.find(x => x.startDt?.startsWith(kini))?.periodId
           ?? p[p.length - 1]?.periodId ?? null;
       }
@@ -405,7 +406,7 @@ export class AdhocComponent implements OnInit {
     // Lalai tarikh akhir: dua minggu dari hari ini.
     const d = new Date();
     d.setDate(d.getDate() + 14);
-    this.dueDate = d.toISOString().slice(0, 10);
+    this.dueDate = tarikhIso(d);
   }
 
   amaunBaris(b: BarisProduk): number {
@@ -625,7 +626,7 @@ export class AdhocComponent implements OnInit {
           documentId: r.documentId,
           docNo: r.docNo,
           issuedTo: this.nama.trim(),
-          issuedDate: new Date().toISOString().slice(0, 10),
+          issuedDate: tarikhIso(),
           total: r.total
         });
         this.kosongkan();

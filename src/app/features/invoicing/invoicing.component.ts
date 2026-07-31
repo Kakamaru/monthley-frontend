@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { periodRange } from '../../core/ui/period-range';
+import { bulanIso } from '../../core/tarikh';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { InvoicingService, GenerateResult } from './invoicing.service';
@@ -25,7 +26,7 @@ export class InvoicingComponent implements OnInit {
   readonly error = signal<string | null>(null);
 
   /** Bulan semasa 'YYYY-MM' */
-  readonly currentPeriod = new Date().toISOString().slice(0, 7);
+  readonly currentPeriod = bulanIso();
 
   private settingsApi = inject(SettingsService);
   readonly cfg = signal<DocumentSetting | null>(null);
