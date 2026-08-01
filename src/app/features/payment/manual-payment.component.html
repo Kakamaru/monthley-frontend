@@ -65,7 +65,7 @@
 
     @if (searchOpen()) {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
-        <select class="fld" [(ngModel)]="fCategory">
+        <select class="fld" [(ngModel)]="fCategory" (ngModelChange)="kategoriBerubah()">
           <option [ngValue]="null">Please Select Product Category</option>
           @for (c of categories(); track c.id) {
             <option [ngValue]="c.id">{{ c.name }}</option>

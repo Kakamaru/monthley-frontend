@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AdhocService, AdhocSiap, PeriodOption } from './adhoc.service';
 import { AccountsService } from '../accounts/accounts.service';
 import { ProductsService } from '../products/products.service';
+import { SettingsService } from '../settings/settings.service';
 import { Product } from '../../core/models/product.model';
 import { Account } from '../../core/models/account.model';
 import { ToastService } from '../../core/ui/toast.service';
@@ -358,6 +359,7 @@ export class AdhocComponent implements OnInit {
   private api = inject(AdhocService);
   private accounts = inject(AccountsService);
   private catalog = inject(ProductsService);
+  private settings = inject(SettingsService);
   private toast = inject(ToastService);
 
   readonly tempoh = signal<PeriodOption[]>([]);
@@ -399,8 +401,18 @@ export class AdhocComponent implements OnInit {
           .map(p => ({ produk: p, dipilih: false, kuantiti: 1 })))
     });
 
-    this.catalog.categories().subscribe({
-      next: k => this.kategori.set(k), error: () => {}
+    // Kategori AKAUN (account_category), bukan kategori PRODUK.
+    //
+    // Carian di bawahnya menapis a.category_id. Panggilan asal
+    // menggunakan catalog.categories() -> /api/v1/product-categories:
+    // jadual yang berbeza, konsep yang berbeza, nama yang hampir sama.
+    //
+    // Ia kelihatan seperti dropdown kosong kerana product_category
+    // kebetulan tiada baris. Kalau SP mencipta kategori produk, dropdown
+    // akan memaparkan senarai yang SALAH dan kelihatan berfungsi.
+    this.settings.accountCategories().subscribe({
+      next: k => this.kategori.set(k),
+      error: () => this.toast.error('Kategori akaun gagal dimuat.')
     });
 
     // Lalai tarikh akhir: dua minggu dari hari ini.

@@ -154,8 +154,35 @@ export class ManualPaymentComponent implements OnInit {
   constructor() {
     this.api.paymentTypes().subscribe({ next: t => this.types.set(t), error: () => {} });
     this.catalog.categories().subscribe({ next: c => this.categories.set(c), error: () => {} });
-    this.catalog.list({ active: true, page: 0, size: 100 })
-      .subscribe({ next: r => this.products.set(r.items), error: () => {} });
+    this.muatProduk();
+  }
+
+  /**
+   * Senarai produk untuk dropdown, ditapis oleh kategori kalau dipilih.
+   *
+   * Sebelum ini dimuat SEKALI semasa init tanpa kategori: memilih
+   * kategori tidak mengubah senarai produk, dan kerani boleh memilih
+   * kombinasi yang mustahil (kategori A + produk kategori B) lalu
+   * mendapat sifar hasil tanpa memahami sebabnya.
+   *
+   * size 500, bukan 100: had lama menggugurkan produk ke-101 dan
+   * seterusnya secara SENYAP. 500 masih had, tetapi ia melepasi setiap
+   * SP yang kita tahu. Kalau ia dilanggar, dropdown perlu carian, bukan
+   * had yang lebih besar.
+   */
+  private muatProduk() {
+    this.catalog.list({
+      active: true, category: this.fCategory, page: 0, size: 500
+    }).subscribe({
+      next: r => this.products.set(r.items),
+      error: () => this.toast.error('Senarai produk gagal dimuat.')
+    });
+  }
+
+  /** Kategori berubah -> produk yang dipilih mungkin tidak lagi sah. */
+  kategoriBerubah() {
+    this.fProduct = null;
+    this.muatProduk();
   }
 
   search() {
@@ -249,6 +276,7 @@ export class ManualPaymentComponent implements OnInit {
   clear() {
     this.fAccount = ''; this.fInvoice = '';
     this.fCategory = null; this.fProduct = null;
+    this.muatProduk();   // kategori dikosongkan -> senarai penuh semula
     this.rows.set([]); this.total.set(0);
     this.searched.set(false);
   }

@@ -7,6 +7,8 @@ import { Page } from '../../core/models/product.model';
 export interface AccountQuery {
   active: boolean;
   category?: number | null;
+  /** Akaun yang ada BARIS dokumen produk ini — bukan langganan aktif. */
+  product?: number | null;
   linked?: boolean | null;
   q?: string | null;
   page: number;
@@ -25,6 +27,7 @@ export class AccountsService {
       .set('size', String(query.size));
 
     if (query.category != null) params = params.set('category', String(query.category));
+    if (query.product != null)  params = params.set('product', String(query.product));
     if (query.linked != null)   params = params.set('linked', String(query.linked));
     if (query.q)                params = params.set('q', query.q);
 

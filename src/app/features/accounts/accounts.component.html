@@ -34,7 +34,27 @@
           <option value="true">Linked</option>
           <option value="false">Not Linked</option>
         </select>
+      </div>
 
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px">
+        <!-- Kategori produk menapis dropdown produk di sebelahnya, dan
+             TIDAK dihantar ke carian: yang menentukan hasil ialah produk.
+             Kategori tidak wajib pada produk, jadi memilihnya memang
+             menggugurkan produk tanpa kategori. -->
+        <select class="fld" [(ngModel)]="fProdCategory"
+                (ngModelChange)="kategoriProdukBerubah()">
+          <option [ngValue]="null">Please Select Product Category</option>
+          @for (c of prodCategories(); track c.id) {
+            <option [ngValue]="c.id">{{ c.name }}</option>
+          }
+        </select>
+        <select class="fld" [(ngModel)]="fProduct">
+          <option [ngValue]="null">Please Select Product</option>
+          @for (p of carianProducts(); track p.id) {
+            <option [ngValue]="p.id">{{ p.name }}</option>
+          }
+        </select>
+        <div></div>
       </div>
     }
 

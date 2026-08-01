@@ -188,6 +188,17 @@ export class AccountsComponent {
   fProdCategory: number | null = null;
   fProduct: number | null = null;
 
+  readonly prodCategories = signal<{ id: number; name: string }[]>([]);
+  /**
+   * Produk untuk dropdown CARIAN sahaja — BUKAN products().
+   *
+   * products() menyimpan katalog penuh dan digunakan oleh borang
+   * langganan untuk menapis produk yang belum dilanggan serta mencari
+   * harga. Menapisnya ikut kategori carian akan menyembunyikan produk
+   * daripada borang Add Subscription.
+   */
+  readonly carianProducts = signal<{ id: number; name: string }[]>([]);
+
   readonly totalPages = computed(() => Math.max(1, Math.ceil(this.total() / this.size())));
 
   readonly pageLabel = computed(() => {
@@ -819,6 +830,10 @@ export class AccountsComponent {
 
   constructor() {
     this.api.categories().subscribe({ next: c => this.categories.set(c), error: () => {} });
+    this.catalog.categories().subscribe({
+      next: c => this.prodCategories.set(c), error: () => {}
+    });
+    this.muatProduk();
     this.catalog.list({ active: true, page: 0, size: 100 })
       .subscribe({ next: r => this.products.set(r.items), error: () => {} });
     this.load();
@@ -830,6 +845,12 @@ export class AccountsComponent {
     const q = [this.fAccount, this.fName].filter(Boolean).join(' ').trim();
     this.api.list({
       active: this.activeTab(),
+      // Dropdown Kategori wujud dalam templat dengan [ngValue] yang betul
+      // dan fCategory dikosongkan dalam clear() — tetapi nilainya tidak
+      // pernah dihantar. Kerani memilih kategori, senarai tidak berubah,
+      // dan tiada apa yang kelihatan rosak.
+      category: this.fCategory,
+      product: this.fProduct,
       linked: this.fLinked === '' ? null : this.fLinked === 'true',
       q: q || null,
       page: this.page(),
@@ -855,10 +876,35 @@ export class AccountsComponent {
 
   search() { this.page.set(0); this.load(); }
 
+  /**
+   * Senarai produk untuk dropdown, ditapis oleh kategori produk kalau
+   * dipilih. Kategori TIDAK wajib pada produk, jadi senarai penuh
+   * termasuk produk tanpa kategori — menapis ikut kategori memang
+   * menggugurkannya, dan itu betul.
+   *
+   * size 500: had 100 dalam Manual Payment menggugurkan produk ke-101
+   * secara senyap. Kalau 500 dilanggar, dropdown perlukan carian, bukan
+   * had yang lebih besar.
+   */
+  private muatProduk() {
+    this.catalog.list({
+      active: true, category: this.fProdCategory, page: 0, size: 500
+    }).subscribe({
+      next: r => this.carianProducts.set(r.items), error: () => {}
+    });
+  }
+
+  /** Kategori produk berubah -> produk yang dipilih mungkin tidak sah. */
+  kategoriProdukBerubah() {
+    this.fProduct = null;
+    this.muatProduk();
+  }
+
   clear() {
     this.fAccount = ''; this.fName = ''; this.fCategory = null;
     this.fBalFrom = ''; this.fBalTo = ''; this.fLinked = '';
     this.fProdCategory = null; this.fProduct = null;
+    this.muatProduk();   // kategori dikosongkan -> senarai penuh semula
     this.page.set(0);
     this.load();
   }
