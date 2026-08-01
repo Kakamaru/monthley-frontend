@@ -95,8 +95,17 @@ interface BarisProduk {
                invois mungkin ditujukan kepada wakil, atau nama akaun
                sudah lapuk. Nilai yang ditaip digunakan untuk invois INI
                sahaja dan tidak mengubah akaun. -->
+          <!-- HURUF BESAR semasa menaip. Nama penerima muncul pada
+               invois dan resit; nama yang ditaip huruf kecil kelihatan
+               tidak kemas di sebelah data lain, dan kerani tidak
+               sepatutnya perlu ingat menekan Caps Lock.
+               (input) dengan menulis semula elemen, bukan
+               (ngModelChange): nilai ditapis tetapi Angular tidak
+               menulis semula ke medan biasa, jadi huruf kecil kekal
+               kelihatan (sama seperti telefon di bawah). -->
           <input class="fld" style="width:100%;box-sizing:border-box" [(ngModel)]="nama"
-                 placeholder="Nama penerima" />
+                 (input)="besarkanNama($event)"
+                 placeholder="NAMA PENERIMA" />
         </div>
         <div>
           <label style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">
@@ -492,17 +501,36 @@ export class AdhocComponent implements OnInit {
   }
 
   /** Digit, ruang, tanda tolak dan + sahaja. */
+  /** Nama penerima sentiasa HURUF BESAR — pada dokumen dan dalam DB. */
+  besarkanNama(e: Event) {
+    const el = e.target as HTMLInputElement;
+    const kursor = el.selectionStart;
+    const besar = el.value.toUpperCase();
+    if (besar !== el.value) {
+      el.value = besar;
+      // Kursor melompat ke hujung tanpa ini apabila kerani menyunting
+      // bahagian tengah nama.
+      el.setSelectionRange(kursor, kursor);
+    }
+    this.nama = besar;
+  }
+
   tapisTelefon(e: KeyboardEvent) {
     // Kekunci kawalan mesti lulus: tanpa ini Backspace dan Ctrl+A mati.
     if (e.key.length > 1 || e.ctrlKey || e.metaKey) return;
-    if (!/[0-9+\-\s]/.test(e.key)) {
+    // DIGIT sahaja. Ruang, tanda tolak dan + dibenarkan sebelum ini,
+    // yang bermakna nombor yang sama boleh disimpan dalam empat bentuk
+    // berbeza — '012-345 6789', '0123456789', '+60123456789'. Mencari
+    // atau membandingkan nombor kemudian memerlukan normalisasi di
+    // setiap tempat yang membacanya. Normalisasi SEKALI, semasa input.
+    if (!/[0-9]/.test(e.key)) {
       e.preventDefault();
     }
   }
 
   tampalTelefon(e: ClipboardEvent) {
     const teks = e.clipboardData?.getData('text') ?? '';
-    const bersih = teks.replace(/[^0-9+\-\s]/g, '');
+    const bersih = teks.replace(/[^0-9]/g, '');
     if (bersih !== teks) {
       e.preventDefault();
       this.telefon = (this.telefon + bersih).slice(0, 20);
