@@ -56,9 +56,27 @@
           <span [style.color]="p.active ? 'var(--green)' : 'var(--muted)'" style="font-weight:700">
             {{ p.active ? 'Active' : 'Inactive' }}
           </span>
-          <span class="acts" style="justify-content:flex-end">
+          <span class="acts" style="justify-content:flex-end;position:relative">
             <button class="act" data-tip="Edit" style="font-size:14px" (click)="openEdit(p)">✎</button>
             <button class="act" data-tip="Delete" style="font-size:14px">🗑</button>
+            <button class="act" data-tip="Lagi" style="font-size:14px"
+                    (click)="toggleMenu(p.id!)">⋯</button>
+
+            @if (menuOpen() === p.id) {
+              <!-- Menu ditutup dengan mengkliknya semula. Overlay penuh
+                   skrin akan menghalang klik pada baris lain, dan menu
+                   ini bukan modal. -->
+              <div style="position:absolute;top:100%;right:0;margin-top:6px;z-index:50;
+                          background:var(--surface);border:1px solid var(--line);border-radius:12px;
+                          box-shadow:0 8px 28px rgba(0,0,0,.18);min-width:190px;overflow:hidden">
+                <button class="menu-item" (click)="bukaPelanggan(p)"
+                        style="display:block;width:100%;text-align:left;padding:12px 16px;
+                               background:none;border:none;font-size:14px;cursor:pointer;
+                               color:var(--ink)">
+                  👥&nbsp; View Account
+                </button>
+              </div>
+            }
           </span>
         </div>
       }
@@ -74,6 +92,109 @@
       <button class="pg-nav" [disabled]="page() >= totalPages() - 1" (click)="goPage(page() + 1)">›</button>
     </div>
   </div>
+
+  <!-- Modal: akaun yang melanggan produk -->
+  @if (subsOpen()) {
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;
+                align-items:center;justify-content:center;z-index:1000"
+         (click)="tutupPelanggan()">
+      <!-- .m-modal membawa latar, sempadan dan pengendalian mod gelap.
+           Warna hardcode (#fff, #16262f) melangkaunya sepenuhnya dan
+           menjadikan teks hampir hilang dalam tema gelap. -->
+      <div class="m-modal" style="width:min(820px,94vw);max-height:88vh;overflow:auto"
+           (click)="$event.stopPropagation()">
+
+        <div style="display:flex;align-items:flex-start;justify-content:space-between">
+          <div>
+            <h2 style="margin:0;font-size:22px;font-weight:800">Subscribed Accounts</h2>
+            <div style="color:var(--muted);font-size:14px;margin-top:4px">
+              Akaun yang <strong>masih melanggan</strong> produk
+              <strong>{{ subsProduct()?.name }}</strong> ({{ subsProduct()?.code }}).
+              <br>
+              <!-- Skrin Akaun menapis ikut baris langganan WUJUD; di sini
+                   langganan yang sudah tamat tempoh ditapis keluar. Dua
+                   soalan berbeza, dua kiraan berbeza — dan tanpa ayat ini
+                   admin SP melihat 7 di satu tempat, 6 di sini, tanpa
+                   apa-apa menerangkannya. -->
+              <span style="font-size:13px">
+                Tidak termasuk langganan yang sudah tamat tempoh.
+              </span>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center">
+            <!-- btn-green, bukan btn-ghost: .btn-ghost menetapkan
+                 background:#fff secara hardcode dan tidak mengikut tema,
+                 jadi ia pudar dalam mod gelap. Membetulkan kelas itu
+                 menyentuh setiap skrin — kerja berasingan. -->
+            <button class="btn btn-green" (click)="eksportPelanggan()"
+                    [disabled]="subsExporting() || subsTotal() === 0"
+                    style="font-size:13px;padding:9px 18px;white-space:nowrap">
+              {{ subsExporting() ? 'Memuat turun…' : '⬇ Muat Turun' }}
+            </button>
+            <button class="m-close" (click)="tutupPelanggan()">✕</button>
+          </div>
+        </div>
+
+        <!-- Dua kiraan: langganan dalam tempoh, dan berapa daripadanya
+             akaunnya aktif. Akaun ditutup yang masih melanggan tetap
+             dikira — menyembunyikannya menjadikan nombor ini tidak
+             boleh dibandingkan dengan senarai di bawah. -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px">
+          <div style="background:var(--surface-alt);border:1px solid var(--line);
+                      border-radius:14px;padding:18px 20px">
+            <div style="font-size:12px;letter-spacing:.4px;color:var(--muted)">JUMLAH AKAUN MELANGGAN</div>
+            <div style="font-size:30px;font-weight:800;margin-top:6px;color:var(--ink)">
+              {{ subsTotal() }}
+            </div>
+          </div>
+          <div style="background:var(--green-tint);border:1px solid var(--green-line);
+                      border-radius:14px;padding:18px 20px">
+            <div style="font-size:12px;letter-spacing:.4px;color:var(--muted)">AKTIF</div>
+            <div style="font-size:30px;font-weight:800;margin-top:6px;color:var(--green)">
+              {{ subsAktif() }}
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:20px">
+          <div class="grid-head" style="grid-template-columns:1fr 1.7fr 1fr .5fr .9fr .8fr">
+            <span>Account</span><span>Name</span><span>Kategori</span>
+            <span class="r">Qty</span><span>Subscribed Since</span><span>Status</span>
+          </div>
+
+          @if (subsLoading()) {
+            <div class="empty">Memuatkan…</div>
+          } @else if (subsRows().length === 0) {
+            <div class="empty">Tiada akaun melanggan produk ini.</div>
+          } @else {
+            @for (s of subsRows(); track s.accountId) {
+              <div class="grid-row" style="grid-template-columns:1fr 1.7fr 1fr .5fr .9fr .8fr;padding:13px 20px">
+                <span style="font-weight:700;color:var(--green)">{{ s.accountNo }}</span>
+                <span>{{ s.accountName }}</span>
+                <span style="color:var(--muted)">{{ s.categoryName || '—' }}</span>
+                <span class="r">{{ s.quantity | number:'1.0-2' }}</span>
+                <span style="color:var(--muted)">{{ s.startDate || '—' }}</span>
+                <span [style.color]="s.accountActive ? 'var(--green)' : 'var(--muted)'"
+                      style="font-weight:700">
+                  {{ s.accountActive ? 'Aktif' : 'Tidak Aktif' }}
+                </span>
+              </div>
+            }
+          }
+
+          @if (subsTotalPages() > 1) {
+            <div class="pager">
+              <button class="pg-nav" [disabled]="subsPage() === 0"
+                      (click)="subsGoPage(subsPage() - 1)">‹</button>
+              <span class="pager-label">{{ subsPage() + 1 }} / {{ subsTotalPages() }}</span>
+              <button class="pg-nav" [disabled]="subsPage() >= subsTotalPages() - 1"
+                      (click)="subsGoPage(subsPage() + 1)">›</button>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
 
   <!-- Modal Add/Edit Product -->
   @if (formOpen()) {

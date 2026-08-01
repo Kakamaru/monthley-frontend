@@ -6,6 +6,7 @@ import { ProductsService } from '../products/products.service';
 import { Product } from '../../core/models/product.model';
 import { ToastService } from '../../core/ui/toast.service';
 import { tarikhIso } from '../../core/tarikh';
+import { binaCsv, muatTurunCsv } from '../../core/csv';
 
 /**
  * Dokumen Kewangan — cari, papar dan hantar semula dokumen.
@@ -612,29 +613,16 @@ export class DocumentsComponent implements OnInit {
           PAID: 'Lunas', PARTIAL: 'Sebahagian',
           UNPAID: 'Belum Bayar', CANCELLED: 'Batal'
         };
-        const petik = (v: unknown) => {
-          const t = String(v ?? '');
-          return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
-        };
-        const baris = r.items.map(l => [
+        // Peraturan escape, BOM dan CRLF duduk dalam core/csv —
+        // salinan kedua di sini akan menyimpang secara SENYAP: fail
+        // tetap terbuka, cuma lajur bergeser.
+        const csv = binaCsv(kepala, r.items.map(l => [
           l.docNo, l.accountNo, l.issuedTo, l.productName,
           l.period || '', label[l.paymentStatus] ?? l.paymentStatus,
           l.total.toFixed(2), l.paid.toFixed(2), l.outstanding.toFixed(2)
-        ].map(petik).join(','));
-
-        // BOM supaya Excel mengenali UTF-8 — tanpa ia, nama dengan
-        // aksara bukan-ASCII menjadi sampah.
-        const csv = '\ufeff' + [kepala.join(','), ...baris].join('\r\n');
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
+        ]));
         const nama = this.produk().find(p => p.id === this.fProductId)?.name ?? 'produk';
-        a.href = url;
-        a.download = `bayaran-${nama}-${tarikhIso()}.csv`
-          .replace(/[^A-Za-z0-9.\-_]/g, '_');
-        document.body.appendChild(a); a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        muatTurunCsv(`bayaran-${nama}-${tarikhIso()}.csv`, csv);
         this.xlsBusy.set(false);
       },
       error: e => {

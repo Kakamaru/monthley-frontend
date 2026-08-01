@@ -2,7 +2,9 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Product } from '../../core/models/product.model';
-import { ProductsService, ProductCategory } from './products.service';
+import { ProductsService, ProductCategory, Subscriber } from './products.service';
+import { binaCsv, muatTurunCsv } from '../../core/csv';
+import { tarikhIso } from '../../core/tarikh';
 
 @Component({
   selector: 'app-products',
@@ -29,6 +31,25 @@ export class ProductsComponent {
   searchName = '';
   category: number | null = null;
 
+  // ── Menu tindakan + modal pelanggan ──────────────────────────────
+
+  /** id produk yang menunya terbuka; null = tiada. */
+  readonly menuOpen = signal<number | null>(null);
+
+  readonly subsOpen = signal(false);
+  readonly subsProduct = signal<Product | null>(null);
+  readonly subsRows = signal<Subscriber[]>([]);
+  readonly subsTotal = signal(0);
+  readonly subsAktif = signal(0);
+  readonly subsPage = signal(0);
+  readonly subsLoading = signal(false);
+  readonly subsSize = 10;
+
+  readonly subsTotalPages = computed(
+    () => Math.max(1, Math.ceil(this.subsTotal() / this.subsSize)));
+
+  readonly subsExporting = signal(false);
+
   readonly totalPages = computed(() => Math.max(1, Math.ceil(this.total() / this.size())));
 
   readonly pageLabel = computed(() => {
@@ -41,6 +62,81 @@ export class ProductsComponent {
   constructor() {
     this.loadCategories();
     this.load();
+  }
+
+  // ── Menu tindakan ────────────────────────────────────────────────
+
+  toggleMenu(id: number) {
+    this.menuOpen.set(this.menuOpen() === id ? null : id);
+  }
+
+  // ── View Account ─────────────────────────────────────────────────
+
+  bukaPelanggan(p: Product) {
+    this.menuOpen.set(null);
+    this.subsProduct.set(p);
+    this.subsPage.set(0);
+    this.subsOpen.set(true);
+    this.muatPelanggan();
+  }
+
+  tutupPelanggan() {
+    this.subsOpen.set(false);
+    this.subsRows.set([]);
+  }
+
+  subsGoPage(n: number) {
+    if (n < 0 || n >= this.subsTotalPages()) return;
+    this.subsPage.set(n);
+    this.muatPelanggan();
+  }
+
+  /**
+   * Eksport SEMUA pelanggan, bukan halaman semasa.
+   *
+   * Kerani di halaman satu daripada tiga belas yang memuat turun
+   * sepuluh baris mendapat fail yang tidak berguna, dan tiada apa
+   * memberitahunya bahawa selebihnya hilang.
+   */
+  eksportPelanggan() {
+    const p = this.subsProduct();
+    if (!p || this.subsExporting()) return;
+
+    this.subsExporting.set(true);
+    // 5000: cukup untuk setiap SP yang kita tahu. Kalau ia dilanggar,
+    // eksport perlukan penstriman, bukan had yang lebih besar.
+    this.api.subscribers(p.id!, 0, 5000).subscribe({
+      next: r => {
+        const csv = binaCsv(
+          ['Akaun', 'Nama', 'Kategori', 'Kuantiti', 'Melanggan Sejak', 'Status'],
+          r.items.map(s => [
+            s.accountNo, s.accountName, s.categoryName ?? '',
+            s.quantity, s.startDate ?? '',
+            s.accountActive ? 'Aktif' : 'Tidak Aktif'
+          ]));
+        muatTurunCsv(`pelanggan-${p.code}-${tarikhIso()}.csv`, csv);
+        this.subsExporting.set(false);
+      },
+      error: () => this.subsExporting.set(false)
+    });
+  }
+
+  private muatPelanggan() {
+    const p = this.subsProduct();
+    if (!p) return;
+    this.subsLoading.set(true);
+    this.api.subscribers(p.id!, this.subsPage(), this.subsSize).subscribe({
+      next: r => {
+        this.subsRows.set(r.items);
+        this.subsTotal.set(r.total);
+        this.subsAktif.set(r.aktif);
+        this.subsLoading.set(false);
+      },
+      error: () => {
+        this.subsRows.set([]);
+        this.subsLoading.set(false);
+      }
+    });
   }
 
   loadCategories() {
