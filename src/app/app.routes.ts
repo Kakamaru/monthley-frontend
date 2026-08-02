@@ -74,9 +74,17 @@ export const routes: Routes = [
           import('./features/settings/settings.component').then(m => m.SettingsComponent)
       },
       {
-        path: 'invoicing', canActivate: [spAdminGuard],
+        // Alat menggantikan Jana Bil: kedua-dua kadnya berpindah ke sini,
+        // dan Caj Penggunaan ditambah di bawahnya.
+        //
+        // SP_ADMIN sahaja. Endpoint caj penggunaan membenarkan CLERK
+        // juga, tetapi skrin ini mengandungi butang Jana Bil — kerani
+        // yang boleh memuat naik meter tidak sepatutnya boleh menjana
+        // bil untuk semua akaun. Kalau kerani perlu memuat naik, Caj
+        // Penggunaan memerlukan skrinnya sendiri.
+        path: 'tools', canActivate: [spAdminGuard],
         loadComponent: () =>
-          import('./features/invoicing/invoicing.component').then(m => m.InvoicingComponent)
+          import('./features/tools/tools.component').then(m => m.ToolsComponent)
       }
     ]
   },
