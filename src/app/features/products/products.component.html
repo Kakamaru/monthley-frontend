@@ -34,7 +34,7 @@
   <!-- jadual -->
   <div class="card" data-card style="overflow:hidden">
     <div class="grid-head" [style.grid-template-columns]="cols">
-      <span>Code</span><span>Product Category</span>
+      <span>Code</span><span>Subscription Code</span><span>Product Category</span>
       <span>Name</span><span class="r">Rate</span><span>Frequency</span>
       <span>Status</span><span class="r">Action</span>
     </div>
@@ -47,6 +47,7 @@
       @for (p of rows(); track p.id) {
         <div class="grid-row" data-row [style.grid-template-columns]="cols" style="padding:15px 20px">
           <span style="font-weight:700;color:var(--green)">{{ p.code }}</span>
+          <span style="color:var(--muted)">{{ p.subscriptionCode || '—' }}</span>
           <span style="color:var(--muted)">{{ categoryName(p.categoryId) }}</span>
           <span style="font-weight:700;color:var(--green)">{{ p.name }}</span>
           <span class="r" style="font-family:'Sora',sans-serif;font-weight:700">
@@ -58,7 +59,6 @@
           </span>
           <span class="acts" style="justify-content:flex-end;position:relative">
             <button class="act" data-tip="Edit" style="font-size:14px" (click)="openEdit(p)">✎</button>
-            <button class="act" data-tip="Delete" style="font-size:14px">🗑</button>
             <button class="act" data-tip="Lagi" style="font-size:14px"
                     (click)="toggleMenu(p.id!)">⋯</button>
 
@@ -66,14 +66,18 @@
               <!-- Menu ditutup dengan mengkliknya semula. Overlay penuh
                    skrin akan menghalang klik pada baris lain, dan menu
                    ini bukan modal. -->
-              <div style="position:absolute;top:100%;right:0;margin-top:6px;z-index:50;
-                          background:var(--surface);border:1px solid var(--line);border-radius:12px;
-                          box-shadow:0 8px 28px rgba(0,0,0,.18);min-width:190px;overflow:hidden">
-                <button class="menu-item" (click)="bukaPelanggan(p)"
-                        style="display:block;width:100%;text-align:left;padding:12px 16px;
-                               background:none;border:none;font-size:14px;cursor:pointer;
-                               color:var(--ink)">
+              <!-- .pop-card + .more-item — corak yang sama seperti menu
+                   tindakan Dokumen Kewangan. Draf pertama saya mencipta
+                   .pop-menu, kelas KEDUA untuk perkara yang sama. -->
+              <div class="pop-card more-menu"
+                   style="position:absolute;top:100%;right:0;margin-top:6px;z-index:60;
+                          border:1px solid var(--line-soft);border-radius:10px;
+                          box-shadow:0 8px 30px rgba(0,0,0,.2);min-width:200px;overflow:hidden">
+                <button class="more-item" (click)="bukaPelanggan(p)">
                   👥&nbsp; View Account
+                </button>
+                <button class="more-item" (click)="bukaStatus(p)">
+                  {{ p.active ? '⏻&nbsp; Nyah Aktif' : '✓&nbsp; Aktifkan' }}
                 </button>
               </div>
             }
@@ -92,6 +96,58 @@
       <button class="pg-nav" [disabled]="page() >= totalPages() - 1" (click)="goPage(page() + 1)">›</button>
     </div>
   </div>
+
+  <!-- Dialog: sahkan tukar status -->
+  @if (statusOpen()) {
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;
+                align-items:center;justify-content:center;z-index:1100"
+         (click)="tutupStatus()">
+      <div class="m-modal" style="width:min(460px,92vw)" (click)="$event.stopPropagation()">
+        <div class="m-modal-head">
+          <h3>{{ statusProduct()?.active ? 'Nyah Aktif Produk' : 'Aktifkan Produk' }}</h3>
+        </div>
+
+        <div style="font-size:15px;line-height:1.6;color:var(--muted-2)">
+          @if (statusProduct()?.active) {
+            Nyah aktifkan <strong>{{ statusProduct()?.name }}</strong>
+            ({{ statusProduct()?.code }})?
+
+            <!-- Kerani yang menyahaktifkan produk tanpa sedar berapa
+                 akaun terjejas akan perasan bulan depan apabila hasil
+                 turun. Dibaca sebelum dialog dipapar. -->
+            @if (statusPelanggan() !== null && statusPelanggan()! > 0) {
+              <div style="margin-top:14px;padding:12px 14px;border-radius:12px;
+                          background:var(--green-tint);border:1px solid var(--green-line);
+                          font-size:14px;color:var(--ink)">
+                <strong>{{ statusPelanggan() }} akaun</strong> melanggan produk ini
+                dan akan <strong>berhenti dibil</strong>.
+              </div>
+            }
+            <div style="margin-top:12px;font-size:13px">
+              Produk berpindah ke tab <strong>Inactive Products</strong> dan
+              boleh diaktifkan semula bila-bila masa.
+            </div>
+          } @else {
+            Aktifkan semula <strong>{{ statusProduct()?.name }}</strong>
+            ({{ statusProduct()?.code }})?
+            <div style="margin-top:12px;font-size:13px">
+              Produk kembali ke senarai aktif dan akan dibil semula untuk
+              akaun yang melanggannya.
+            </div>
+          }
+        </div>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:24px">
+          <button class="btn btn-ghost" (click)="tutupStatus()"
+                  [disabled]="statusBusy()">Tidak</button>
+          <button class="btn btn-green" (click)="sahkanStatus()"
+                  [disabled]="statusBusy()">
+            {{ statusBusy() ? 'Menyimpan…' : 'Ya' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
 
   <!-- Modal: akaun yang melanggan produk -->
   @if (subsOpen()) {

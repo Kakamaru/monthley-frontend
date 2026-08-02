@@ -17,7 +17,7 @@ export class ProductsComponent {
   private api = inject(ProductsService);
 
   /** grid columns — sama dengan prototaip */
-  readonly cols = '0.7fr 1.1fr 1.5fr 0.9fr 1fr 0.8fr 130px';
+  readonly cols = '0.6fr 1fr 1.1fr 1.4fr 0.8fr 0.9fr 0.7fr 150px';
 
   readonly activeTab = signal(true);
   readonly rows = signal<Product[]>([]);
@@ -50,6 +50,14 @@ export class ProductsComponent {
 
   readonly subsExporting = signal(false);
 
+  // ── Nyahaktif / aktifkan ─────────────────────────────────────────
+
+  readonly statusOpen = signal(false);
+  readonly statusProduct = signal<Product | null>(null);
+  /** Bilangan akaun yang melanggan — dibaca sebelum dialog dipapar. */
+  readonly statusPelanggan = signal<number | null>(null);
+  readonly statusBusy = signal(false);
+
   readonly totalPages = computed(() => Math.max(1, Math.ceil(this.total() / this.size())));
 
   readonly pageLabel = computed(() => {
@@ -68,6 +76,50 @@ export class ProductsComponent {
 
   toggleMenu(id: number) {
     this.menuOpen.set(this.menuOpen() === id ? null : id);
+  }
+
+  // ── Nyahaktif / aktifkan ─────────────────────────────────────────
+
+  /**
+   * Buka dialog pengesahan.
+   *
+   * Bilangan pelanggan dibaca DAHULU dan dipaparkan: kerani yang
+   * menyahaktifkan produk tanpa sedar enam akaun berhenti dibil akan
+   * perasan bulan depan apabila hasil turun.
+   */
+  bukaStatus(p: Product) {
+    this.menuOpen.set(null);
+    this.statusProduct.set(p);
+    this.statusPelanggan.set(null);
+    this.statusOpen.set(true);
+
+    if (p.active) {
+      this.api.subscribers(p.id!, 0, 1).subscribe({
+        next: r => this.statusPelanggan.set(r.total),
+        error: () => this.statusPelanggan.set(null)
+      });
+    }
+  }
+
+  tutupStatus() {
+    this.statusOpen.set(false);
+    this.statusProduct.set(null);
+  }
+
+  sahkanStatus() {
+    const p = this.statusProduct();
+    if (!p || this.statusBusy()) return;
+
+    this.statusBusy.set(true);
+    this.api.setStatus(p.id!, !p.active).subscribe({
+      next: () => {
+        this.statusBusy.set(false);
+        this.tutupStatus();
+        // Produk berpindah ke tab lain, jadi senarai semasa berubah.
+        this.load();
+      },
+      error: () => this.statusBusy.set(false)
+    });
   }
 
   // ── View Account ─────────────────────────────────────────────────

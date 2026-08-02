@@ -63,6 +63,11 @@ export class ProductsService {
     return this.http.put<Product>(`${this.base}/${id}`, body);
   }
 
+  /** Tukar status sahaja — bukan update penuh (medan lain tidak disentuh). */
+  setStatus(id: number, active: boolean): Observable<Product> {
+    return this.http.put<Product>(`${this.base}/${id}/status`, { active });
+  }
+
   /**
    * Akaun yang melanggan produk ini.
    *
