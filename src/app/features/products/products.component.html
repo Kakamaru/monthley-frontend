@@ -21,7 +21,9 @@
       </select>
     </div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px">
-      <button class="btn btn-green" data-cta style="padding:10px 26px;border-radius:9px" (click)="openAdd()">+ Add Product</button>
+      @if (sp.isAdmin()) {
+        <button class="btn btn-green" data-cta style="padding:10px 26px;border-radius:9px" (click)="openAdd()">+ Add Product</button>
+      }
       <div style="display:flex;gap:10px">
         <button class="btn btn-green" data-cta style="padding:10px 26px;border-radius:9px" (click)="search()">Search</button>
         <button class="btn btn-ghost" style="padding:10px 24px;border-radius:9px" (click)="clear()">Clear</button>
@@ -58,7 +60,9 @@
             {{ p.active ? 'Active' : 'Inactive' }}
           </span>
           <span class="acts" style="justify-content:flex-end;position:relative">
-            <button class="act" data-tip="Edit" style="font-size:14px" (click)="openEdit(p)">✎</button>
+            @if (sp.isAdmin()) {
+              <button class="act" data-tip="Edit" style="font-size:14px" (click)="openEdit(p)">✎</button>
+            }
             <button class="act" data-tip="Lagi" style="font-size:14px"
                     (click)="toggleMenu(p.id!)">⋯</button>
 
@@ -81,12 +85,14 @@
                 <button class="more-item" (click)="bukaPelanggan(p)">
                   👥&nbsp; View Account
                 </button>
-                <button class="more-item" (click)="bukaAdd(p)">
-                  ＋&nbsp; Add Account
-                </button>
-                <button class="more-item" (click)="bukaStatus(p)">
-                  {{ p.active ? '⏻&nbsp; Nyah Aktif' : '✓&nbsp; Aktifkan' }}
-                </button>
+                @if (sp.isAdmin()) {
+                  <button class="more-item" (click)="bukaAdd(p)">
+                    ＋&nbsp; Add Account
+                  </button>
+                  <button class="more-item" (click)="bukaStatus(p)">
+                    {{ p.active ? '⏻&nbsp; Nyah Aktif' : '✓&nbsp; Aktifkan' }}
+                  </button>
+                }
               </div>
             }
           </span>

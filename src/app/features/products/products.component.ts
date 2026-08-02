@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Product } from '../../core/models/product.model';
 import { ProductsService, ProductCategory, Subscriber, BulkLine } from './products.service';
 import { AccountsService } from '../accounts/accounts.service';
+import { SpContextService } from '../../core/services/sp-context.service';
 import { Account } from '../../core/models/account.model';
 import { binaCsv, muatTurunCsv } from '../../core/csv';
 import { tarikhIso } from '../../core/tarikh';
@@ -23,6 +24,14 @@ export class ProductsComponent {
    * di sana, dan dua laluan ke senarai akaun yang sama akan menyimpang.
    */
   private accounts = inject(AccountsService);
+  /**
+   * Peranan untuk menyembunyikan butang yang backend akan tolak.
+   *
+   * Menyembunyikan BUKAN keselamatan — peraturan sebenar hidup pada
+   * setiap endpoint. Tetapi VIEWER yang menekan butang dan mendapat
+   * ralat ialah pengalaman yang buruk.
+   */
+  readonly sp = inject(SpContextService);
 
   /** grid columns — sama dengan prototaip */
   readonly cols = '0.6fr 1fr 1.1fr 1.4fr 0.8fr 0.9fr 0.7fr 150px';

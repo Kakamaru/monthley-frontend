@@ -8,6 +8,7 @@ import { AccountsService, StatementLine, StatementResponse, PaymentReportRow, Pa
 import { InvoicingService } from '../invoicing/invoicing.service';
 import { ProductsService, ProductCategory } from '../products/products.service';
 import { Product } from '../../core/models/product.model';
+import { SpContextService } from '../../core/services/sp-context.service';
 
 @Component({
   selector: 'app-accounts',
@@ -18,6 +19,8 @@ import { Product } from '../../core/models/product.model';
 })
 export class AccountsComponent {
   private api = inject(AccountsService);
+  /** Sembunyikan butang yang backend akan tolak — bukan keselamatan. */
+  readonly sp = inject(SpContextService);
 
   // Penyata akaun (modal)
   readonly stmtOpen = signal(false);

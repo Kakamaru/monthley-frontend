@@ -45,6 +45,24 @@ export class SpContextService {
 
   readonly hasMultipleSp = computed(() => this.uniqueSps().length > 1);
 
+  /**
+   * Ada peranan ini dalam SP semasa?
+   *
+   * Backend menguatkuasakan peranan pada setiap endpoint; ini
+   * menyembunyikan butang yang akan ditolak. Menyembunyikan bukan
+   * keselamatan — peraturan sebenar hidup di backend — tetapi VIEWER
+   * yang menekan butang dan mendapat ralat ialah pengalaman yang buruk.
+   *
+   * Satu kaedah, bukan currentRoles().includes(...) di sepuluh tempat:
+   * sepuluh peluang untuk tersilap eja nama peranan.
+   */
+  hasRole(role: string): boolean {
+    return this.currentRoles().includes(role);
+  }
+
+  /** SP_ADMIN — mencipta, mengemas kini, melanggan. */
+  readonly isAdmin = computed(() => this.currentRoles().includes('SP_ADMIN'));
+
   constructor() {
     effect(() => {
       const c = this.currentSp();

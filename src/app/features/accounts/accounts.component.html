@@ -59,7 +59,9 @@
     }
 
     <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px">
-      <button class="btn btn-green" data-cta (click)="openAdd()">+ Add Account</button>
+      @if (sp.isAdmin()) {
+        <button class="btn btn-green" data-cta (click)="openAdd()">+ Add Account</button>
+      }
       <div style="display:flex;gap:10px;align-items:center">
         <button class="btn btn-navy" (click)="search()">Search</button>
         <button class="btn btn-ghost" (click)="clear()">Clear</button>
