@@ -44,7 +44,7 @@
     } @else if (rows().length === 0) {
       <div class="empty">Tiada produk dijumpai.</div>
     } @else {
-      @for (p of rows(); track p.id) {
+      @for (p of rows(); track p.id; let i = $index) {
         <div class="grid-row" data-row [style.grid-template-columns]="cols" style="padding:15px 20px">
           <span style="font-weight:700;color:var(--green)">{{ p.code }}</span>
           <span style="color:var(--muted)">{{ p.subscriptionCode || '—' }}</span>
@@ -69,12 +69,20 @@
               <!-- .pop-card + .more-item — corak yang sama seperti menu
                    tindakan Dokumen Kewangan. Draf pertama saya mencipta
                    .pop-menu, kelas KEDUA untuk perkara yang sama. -->
+              <!-- Dua baris terakhir buka ke ATAS: menu tiga item
+                   kehabisan ruang di bawah dan item ketiga terpotong.
+                   Corak sama seperti menu tindakan Dokumen Kewangan. -->
               <div class="pop-card more-menu"
-                   style="position:absolute;top:100%;right:0;margin-top:6px;z-index:60;
+                   [style.top]="i >= rows().length - 2 ? 'auto' : 'calc(100% + 6px)'"
+                   [style.bottom]="i >= rows().length - 2 ? 'calc(100% + 6px)' : 'auto'"
+                   style="position:absolute;right:0;z-index:60;
                           border:1px solid var(--line-soft);border-radius:10px;
                           box-shadow:0 8px 30px rgba(0,0,0,.2);min-width:200px;overflow:hidden">
                 <button class="more-item" (click)="bukaPelanggan(p)">
                   👥&nbsp; View Account
+                </button>
+                <button class="more-item" (click)="bukaAdd(p)">
+                  ＋&nbsp; Add Account
                 </button>
                 <button class="more-item" (click)="bukaStatus(p)">
                   {{ p.active ? '⏻&nbsp; Nyah Aktif' : '✓&nbsp; Aktifkan' }}
@@ -96,6 +104,168 @@
       <button class="pg-nav" [disabled]="page() >= totalPages() - 1" (click)="goPage(page() + 1)">›</button>
     </div>
   </div>
+
+  <!-- Add Account: dua langkah -->
+  @if (addOpen()) {
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;
+                align-items:center;justify-content:center;z-index:1050"
+         (click)="tutupAdd()">
+      <div class="m-modal" style="width:min(860px,94vw);max-height:90vh;overflow:auto"
+           (click)="$event.stopPropagation()">
+
+        <div class="m-modal-head">
+          <div>
+            <h3>{{ addStep() === 1 ? 'Add Account to Product' : 'Sahkan Langganan' }}</h3>
+            <div style="color:var(--muted);font-size:13.5px;margin-top:4px">
+              @if (addStep() === 1) {
+                Langgan <strong>{{ addProduct()?.name }}</strong>
+                ({{ addProduct()?.code }}) untuk akaun aktif secara pukal.
+                <br>
+                <!-- Akaun yang sudah melanggan tidak muncul; View Account
+                     wujud untuk menyemaknya. -->
+                <span style="font-size:12.5px">
+                  Hanya akaun yang belum melanggan produk ini dipaparkan.
+                </span>
+              } @else {
+                Semak dan laraskan sebelum simpan.
+                <strong>{{ addLines().length }}</strong> akaun dipilih.
+              }
+            </div>
+          </div>
+          <button class="m-close" (click)="tutupAdd()">✕</button>
+        </div>
+
+        @if (addStep() === 1) {
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+            <input class="fld" placeholder="Nama" [(ngModel)]="addNama"
+                   (keyup.enter)="addCari()" />
+            <input class="fld" placeholder="No. Akaun" [(ngModel)]="addNoAkaun"
+                   (keyup.enter)="addCari()" />
+            <!-- Kategori AKAUN. categories() dalam komponen ini memegang
+                 kategori PRODUK — kita menapis akaun di sini. -->
+            <select class="fld" [(ngModel)]="addKategori" (ngModelChange)="addCari()">
+              <option [ngValue]="null">Semua Kategori</option>
+              @for (c of akaunCategories(); track c.id) {
+                <option [ngValue]="c.id">{{ c.name }}</option>
+              }
+            </select>
+          </div>
+
+          <div style="display:flex;gap:10px;align-items:center;margin-top:12px">
+            <button class="btn btn-navy" (click)="addCari()"
+                    style="padding:9px 20px;font-size:13px">Search</button>
+            <button class="btn btn-ghost" (click)="addPilihSemua()"
+                    style="padding:9px 16px;font-size:13px">Pilih Semua (hasil carian)</button>
+            @if (addPicked().size > 0) {
+              <button class="btn btn-ghost" (click)="addBuangSemua()"
+                      style="padding:9px 16px;font-size:13px">Kosongkan</button>
+            }
+            <span style="margin-left:auto;font-size:13px;color:var(--muted)">
+              <strong style="color:var(--green)">{{ addPicked().size }}</strong> akaun dipilih
+            </span>
+          </div>
+
+          <div class="card" style="margin-top:14px">
+            <div class="grid-head" style="grid-template-columns:44px 1fr 2fr 1fr">
+              <span></span><span>Akaun</span><span>Nama</span><span>Kategori</span>
+            </div>
+            @if (addLoading()) {
+              <div class="empty">Memuatkan…</div>
+            } @else if (addRows().length === 0) {
+              <div class="empty">Tiada akaun yang belum melanggan produk ini.</div>
+            } @else {
+              @for (a of addRows(); track a.id) {
+                <div class="grid-row" style="grid-template-columns:44px 1fr 2fr 1fr;padding:11px 20px;cursor:pointer"
+                     (click)="addToggle(a)">
+                  <span><input type="checkbox" [checked]="addDipilih(a.id!)"
+                               (click)="$event.stopPropagation(); addToggle(a)" /></span>
+                  <span style="font-weight:700;color:var(--green)">{{ a.no }}</span>
+                  <span>{{ a.name }}</span>
+                  <span style="color:var(--muted)">{{ namaKategoriAkaun(a.categoryId) }}</span>
+                </div>
+              }
+            }
+            @if (addTotalPages() > 1) {
+              <div class="pager">
+                <button class="pg-nav" [disabled]="addPage() === 0"
+                        (click)="addGoPage(addPage() - 1)">‹</button>
+                <span class="pager-label">{{ addPage() + 1 }} / {{ addTotalPages() }}</span>
+                <button class="pg-nav" [disabled]="addPage() >= addTotalPages() - 1"
+                        (click)="addGoPage(addPage() + 1)">›</button>
+              </div>
+            }
+          </div>
+
+          <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">
+            <button class="btn btn-ghost" (click)="tutupAdd()">Close</button>
+            <button class="btn btn-green" [disabled]="addPicked().size === 0"
+                    (click)="addSeterusnya()">Seterusnya →</button>
+          </div>
+
+        } @else {
+          <!-- Set semua: tanpa ini, lima puluh akaun bermakna menaip
+               tarikh lima puluh kali dan ciri pukal tidak lagi pukal.
+               Baris tertentu masih boleh ditukar selepasnya. -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;
+                      align-items:end;padding:14px;border-radius:12px;
+                      background:var(--surface-alt);border:1px solid var(--line)">
+            <div>
+              <label style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">Kuantiti</label>
+              <input class="fld" type="number" min="1" step="1" [(ngModel)]="semuaQty" />
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">Start Date</label>
+              <input class="fld" type="date" [(ngModel)]="semuaStart" />
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">End Date</label>
+              <input class="fld" type="date" [(ngModel)]="semuaEnd" />
+            </div>
+            <button class="btn btn-navy" (click)="addSetSemua()"
+                    style="padding:11px 18px;font-size:13px;white-space:nowrap">Set Semua</button>
+          </div>
+
+          <div style="font-size:12.5px;color:var(--muted);margin-top:10px">
+            Start Date kosong bermakna kitaran semasa dicaj <strong>penuh</strong>,
+            tanpa prorata.
+          </div>
+
+          <div class="card" style="margin-top:14px">
+            <div class="grid-head" style="grid-template-columns:1fr 1.8fr .7fr 1fr 1fr">
+              <span>Akaun</span><span>Nama</span><span class="r">Qty</span>
+              <span>Start</span><span>End</span>
+            </div>
+            @for (l of addLines(); track l.accountId) {
+              <div class="grid-row" style="grid-template-columns:1fr 1.8fr .7fr 1fr 1fr;padding:9px 20px">
+                <span style="font-weight:700;color:var(--green)">{{ noAkaun(l.accountId) }}</span>
+                <span>{{ namaAkaun(l.accountId) }}</span>
+                <span><input class="fld" type="number" min="1" step="1"
+                             [(ngModel)]="l.quantity" style="padding:6px 8px" /></span>
+                <span><input class="fld" type="date"
+                             [(ngModel)]="l.startDate" style="padding:6px 8px" /></span>
+                <span><input class="fld" type="date"
+                             [(ngModel)]="l.endDate" style="padding:6px 8px" /></span>
+              </div>
+            }
+          </div>
+
+          @if (addResult()) {
+            <div style="margin-top:14px;padding:12px 14px;border-radius:12px;
+                        background:var(--green-tint);border:1px solid var(--green-line);
+                        font-size:13.5px;color:var(--ink)">{{ addResult() }}</div>
+          }
+
+          <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">
+            <button class="btn btn-ghost" (click)="addKembali()"
+                    [disabled]="addBusy()">← Kembali</button>
+            <button class="btn btn-green" (click)="addSimpan()" [disabled]="addBusy()">
+              {{ addBusy() ? 'Menyimpan…' : 'Ya, Langgan' }}
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  }
 
   <!-- Dialog: sahkan tukar status -->
   @if (statusOpen()) {

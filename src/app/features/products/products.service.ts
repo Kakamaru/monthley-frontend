@@ -36,6 +36,21 @@ export interface ProductQuery {
   size: number;
 }
 
+/** Satu baris dalam langganan pukal — kuantiti dan tarikh per akaun. */
+export interface BulkLine {
+  accountId: number;
+  quantity: number | null;
+  startDate: string | null;
+  endDate: string | null;
+}
+
+export interface BulkSubscribeResult {
+  ditambah: number;
+  /** Akaun yang sudah melanggan — dilangkau, bukan menggagalkan kelompok. */
+  dilangkau: number;
+  sebab: string[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class ProductsService {
   private http = inject(HttpClient);
@@ -64,6 +79,17 @@ export class ProductsService {
   }
 
   /** Tukar status sahaja — bukan update penuh (medan lain tidak disentuh). */
+  /**
+   * Langgan satu produk untuk banyak akaun.
+   *
+   * Endpoint duduk di bawah /accounts: ia menulis account_subscription,
+   * dan modul catalog tidak boleh menyentuhnya.
+   */
+  bulkSubscribe(productId: number, lines: BulkLine[]): Observable<BulkSubscribeResult> {
+    return this.http.post<BulkSubscribeResult>(
+      '/api/v1/accounts/bulk-subscribe', { productId, lines });
+  }
+
   setStatus(id: number, active: boolean): Observable<Product> {
     return this.http.put<Product>(`${this.base}/${id}/status`, { active });
   }

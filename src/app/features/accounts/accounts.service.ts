@@ -7,8 +7,16 @@ import { Page } from '../../core/models/product.model';
 export interface AccountQuery {
   active: boolean;
   category?: number | null;
-  /** Akaun yang ada BARIS dokumen produk ini — bukan langganan aktif. */
+  /** Akaun yang MELANGGAN produk ini (baris langganan wujud). */
   product?: number | null;
+  /**
+   * Songsang: akaun yang BELUM melanggan produk ini.
+   *
+   * Langganan TAMAT dikira sebagai belum melanggan — guard CASE-007
+   * hanya menyekat langganan ACTIVE, jadi akaun yang berhenti boleh
+   * melanggan semula.
+   */
+  excludeProduct?: number | null;
   linked?: boolean | null;
   q?: string | null;
   page: number;
@@ -28,6 +36,8 @@ export class AccountsService {
 
     if (query.category != null) params = params.set('category', String(query.category));
     if (query.product != null)  params = params.set('product', String(query.product));
+    if (query.excludeProduct != null)
+      params = params.set('excludeProduct', String(query.excludeProduct));
     if (query.linked != null)   params = params.set('linked', String(query.linked));
     if (query.q)                params = params.set('q', query.q);
 

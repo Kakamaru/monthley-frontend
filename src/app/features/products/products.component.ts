@@ -2,7 +2,9 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Product } from '../../core/models/product.model';
-import { ProductsService, ProductCategory, Subscriber } from './products.service';
+import { ProductsService, ProductCategory, Subscriber, BulkLine } from './products.service';
+import { AccountsService } from '../accounts/accounts.service';
+import { Account } from '../../core/models/account.model';
 import { binaCsv, muatTurunCsv } from '../../core/csv';
 import { tarikhIso } from '../../core/tarikh';
 
@@ -15,6 +17,12 @@ import { tarikhIso } from '../../core/tarikh';
 })
 export class ProductsComponent {
   private api = inject(ProductsService);
+  /**
+   * Senarai akaun datang daripada AccountsService, bukan salinan dalam
+   * ProductsService: carian nama, nombor akaun dan kategori sudah wujud
+   * di sana, dan dua laluan ke senarai akaun yang sama akan menyimpang.
+   */
+  private accounts = inject(AccountsService);
 
   /** grid columns — sama dengan prototaip */
   readonly cols = '0.6fr 1fr 1.1fr 1.4fr 0.8fr 0.9fr 0.7fr 150px';
@@ -50,6 +58,50 @@ export class ProductsComponent {
 
   readonly subsExporting = signal(false);
 
+  // ── Add Account: dua langkah ─────────────────────────────────────
+  //
+  // Langkah 1 memilih akaun; langkah 2 mengesahkan dengan kuantiti dan
+  // tarikh boleh sunting per baris. Menggabungkannya bermakna kerani
+  // menetapkan tarikh pada akaun yang mungkin tidak jadi dipilih.
+
+  /**
+   * Kategori AKAUN, bukan kategori produk.
+   *
+   * categories() dalam komponen ini memegang kategori PRODUK, dan
+   * kedua-dua servis mempunyai kaedah bernama categories() — jadual
+   * berbeza, konsep berbeza, nama sama. Draf pertama dialog ini
+   * menggunakan yang salah.
+   */
+  readonly akaunCategories = signal<{ id: number; name: string }[]>([]);
+
+  readonly addOpen = signal(false);
+  readonly addProduct = signal<Product | null>(null);
+  readonly addStep = signal<1 | 2>(1);
+
+  readonly addRows = signal<Account[]>([]);
+  readonly addTotal = signal(0);
+  readonly addPage = signal(0);
+  readonly addLoading = signal(false);
+  readonly addSize = 10;
+
+  /** Akaun dipilih — kekal merentas halaman dan carian. */
+  readonly addPicked = signal<Map<number, Account>>(new Map());
+  readonly addLines = signal<BulkLine[]>([]);
+  readonly addBusy = signal(false);
+  readonly addResult = signal<string | null>(null);
+
+  addNama = '';
+  addNoAkaun = '';
+  addKategori: number | null = null;
+
+  /** Set semua — kuantiti dan tarikh dipakai pada setiap baris. */
+  semuaQty: number | null = 1;
+  semuaStart = '';
+  semuaEnd = '';
+
+  readonly addTotalPages = computed(
+    () => Math.max(1, Math.ceil(this.addTotal() / this.addSize)));
+
   // ── Nyahaktif / aktifkan ─────────────────────────────────────────
 
   readonly statusOpen = signal(false);
@@ -76,6 +128,150 @@ export class ProductsComponent {
 
   toggleMenu(id: number) {
     this.menuOpen.set(this.menuOpen() === id ? null : id);
+  }
+
+  // ── Add Account ──────────────────────────────────────────────────
+
+  /** Nama kategori AKAUN — bukan categoryName() yang untuk produk. */
+  namaKategoriAkaun(id?: number | null): string {
+    if (id == null) return '—';
+    return this.akaunCategories().find(c => c.id === id)?.name ?? '—';
+  }
+
+  bukaAdd(p: Product) {
+    this.menuOpen.set(null);
+    if (this.akaunCategories().length === 0) {
+      this.accounts.categories().subscribe({
+        next: c => this.akaunCategories.set(c), error: () => {}
+      });
+    }
+    this.addProduct.set(p);
+    this.addStep.set(1);
+    this.addPicked.set(new Map());
+    this.addLines.set([]);
+    this.addResult.set(null);
+    this.addNama = ''; this.addNoAkaun = ''; this.addKategori = null;
+    this.semuaQty = 1; this.semuaStart = ''; this.semuaEnd = '';
+    this.addPage.set(0);
+    this.addOpen.set(true);
+    this.muatAkaun();
+  }
+
+  tutupAdd() {
+    this.addOpen.set(false);
+    this.addProduct.set(null);
+  }
+
+  addCari() { this.addPage.set(0); this.muatAkaun(); }
+
+  addGoPage(n: number) {
+    if (n < 0 || n >= this.addTotalPages()) return;
+    this.addPage.set(n);
+    this.muatAkaun();
+  }
+
+  private soalan(page: number, size: number) {
+    const p = this.addProduct();
+    const q = [this.addNama, this.addNoAkaun].filter(Boolean).join(' ').trim();
+    return {
+      active: true,
+      category: this.addKategori,
+      // Senarai = "siapa boleh ditambah". Akaun yang sudah melanggan
+      // tidak muncul; View Account wujud untuk menyemaknya.
+      excludeProduct: p?.id ?? null,
+      q: q || null,
+      page, size
+    };
+  }
+
+  private muatAkaun() {
+    if (!this.addProduct()) return;
+    this.addLoading.set(true);
+    this.accounts.list(this.soalan(this.addPage(), this.addSize)).subscribe({
+      next: r => {
+        this.addRows.set(r.items);
+        this.addTotal.set(r.total);
+        this.addLoading.set(false);
+      },
+      error: () => { this.addRows.set([]); this.addLoading.set(false); }
+    });
+  }
+
+  addDipilih(id: number) { return this.addPicked().has(id); }
+
+  addToggle(a: Account) {
+    const m = new Map(this.addPicked());
+    if (m.has(a.id!)) m.delete(a.id!); else m.set(a.id!, a);
+    this.addPicked.set(m);
+  }
+
+  /**
+   * Pilih SEMUA hasil carian, bukan halaman semasa.
+   *
+   * Label mengatakan "hasil carian", dan memilih sepuluh daripada
+   * seratus dua puluh lapan menjadikan ciri pukal tidak pukal.
+   */
+  addPilihSemua() {
+    this.addLoading.set(true);
+    this.accounts.list(this.soalan(0, 5000)).subscribe({
+      next: r => {
+        const m = new Map(this.addPicked());
+        r.items.forEach(a => m.set(a.id!, a));
+        this.addPicked.set(m);
+        this.addLoading.set(false);
+      },
+      error: () => this.addLoading.set(false)
+    });
+  }
+
+  addBuangSemua() { this.addPicked.set(new Map()); }
+
+  addSeterusnya() {
+    if (this.addPicked().size === 0) return;
+    this.addLines.set([...this.addPicked().values()].map(a => ({
+      accountId: a.id!,
+      quantity: 1,
+      startDate: null,
+      endDate: null
+    })));
+    this.addStep.set(2);
+  }
+
+  addKembali() { this.addStep.set(1); }
+
+  namaAkaun(id: number) { return this.addPicked().get(id)?.name ?? ''; }
+  noAkaun(id: number) { return this.addPicked().get(id)?.no ?? ''; }
+
+  /** Set semua — kerani masih boleh menukar baris tertentu selepasnya. */
+  addSetSemua() {
+    this.addLines.set(this.addLines().map(l => ({
+      ...l,
+      quantity: this.semuaQty,
+      startDate: this.semuaStart || null,
+      endDate: this.semuaEnd || null
+    })));
+  }
+
+  addSimpan() {
+    const p = this.addProduct();
+    if (!p || this.addBusy()) return;
+
+    this.addBusy.set(true);
+    this.api.bulkSubscribe(p.id!, this.addLines()).subscribe({
+      next: r => {
+        this.addBusy.set(false);
+        if (r.dilangkau > 0) {
+          // Dilangkau bukan ralat — senarai boleh basi antara memuat
+          // dan menyimpan. Kerani perlu tahu berapa dan mengapa.
+          this.addResult.set(`${r.ditambah} ditambah, ${r.dilangkau} dilangkau. `
+            + r.sebab.slice(0, 3).join(' '));
+        } else {
+          this.tutupAdd();
+        }
+        this.load();
+      },
+      error: () => this.addBusy.set(false)
+    });
   }
 
   // ── Nyahaktif / aktifkan ─────────────────────────────────────────
