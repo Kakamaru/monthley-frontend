@@ -1,0 +1,115 @@
+<div class="m-fade">
+  <h1 style="font-family:'Sora',sans-serif;font-weight:800;font-size:28px;margin:0 0 6px">
+    Penyata Akaun SP
+  </h1>
+  <p style="color:var(--muted);margin:0 0 22px;font-size:15px">
+    Setiap transaksi merentas semua akaun pelanggan.
+  </p>
+
+  <!-- Invois MENURUNKAN baki SP: caj telah dikeluarkan tetapi belum
+       dikutip. Tanpa ayat ini, SP yang melihat baki negatif menyangka
+       ada sesuatu yang salah. -->
+  <div style="background:var(--surface-alt);border:1px solid var(--line);
+              border-radius:12px;padding:12px 16px;margin-bottom:16px;
+              font-size:13px;color:var(--muted-2)">
+    Baki menunjukkan kedudukan <strong>SP</strong>: invois menurunkannya
+    (caj dikeluarkan, belum dikutip), resit menaikkannya. Ia cerminan
+    tunggakan pelanggan.
+  </div>
+
+  <div class="card" style="padding:18px 20px;margin-bottom:16px">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+      <input class="fld" placeholder="No. Dokumen" [(ngModel)]="fDocNo"
+             (keyup.enter)="cari()" />
+      <select class="fld" [(ngModel)]="fProductId">
+        <option [ngValue]="null">Semua Produk</option>
+        @for (p of produk(); track p.id) {
+          <option [ngValue]="p.id">{{ p.name }}</option>
+        }
+      </select>
+      <select class="fld" [(ngModel)]="fDocType">
+        <option [ngValue]="null">Semua Jenis Dokumen</option>
+        <option value="INVOICE">Invois</option>
+        <option value="RECEIPT">Resit</option>
+        <option value="CREDIT_NOTE">Nota Kredit</option>
+        <option value="DEBIT_NOTE">Nota Debit</option>
+      </select>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px">
+      <!-- Tempoh LIPUTAN, bukan tarikh transaksi: invois dijana pada
+           Ogos boleh meliputi Julai. -->
+      <select class="fld" [(ngModel)]="fPeriodId">
+        <option [ngValue]="null">Semua Tempoh</option>
+        @for (p of periods(); track p.periodId) {
+          <option [ngValue]="p.periodId">{{ p.name }}</option>
+        }
+      </select>
+      <input class="fld" type="date" [(ngModel)]="fFrom" />
+      <input class="fld" type="date" [(ngModel)]="fTo" />
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px">
+      <button class="btn btn-ghost" (click)="eksport()"
+              [disabled]="exporting() || total() === 0" style="font-size:13px">
+        {{ exporting() ? 'Menyediakan…' : '⬇ Muat Turun' }}
+      </button>
+      <button class="btn btn-navy" (click)="cari()" style="font-size:13px">Search</button>
+      <button class="btn btn-ghost" (click)="clear()" style="font-size:13px">Clear</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="grid-head" style="grid-template-columns:1.3fr .9fr .8fr 1fr 1.6fr 1fr .9fr 1fr">
+      <span>Tarikh</span><span>Akaun</span><span>Dokumen</span><span>No. Dokumen</span>
+      <span>Item</span><span>Tempoh</span><span class="r">Amaun</span><span class="r">Baki</span>
+    </div>
+
+    @if (loading()) {
+      <div class="empty">Memuatkan…</div>
+    } @else if (rows().length === 0) {
+      <div class="empty">Tiada transaksi untuk carian ini.</div>
+    } @else {
+      @for (r of rows(); track r.docNo + '-' + $index) {
+        <div class="grid-row"
+             style="grid-template-columns:1.3fr .9fr .8fr 1fr 1.6fr 1fr .9fr 1fr;padding:11px 20px"
+             [style.opacity]="r.cancelled ? '.5' : '1'">
+          <span style="color:var(--muted);font-size:13px">{{ r.txnAt }}</span>
+          <span style="font-weight:700;color:var(--green)">{{ r.accountNo }}</span>
+          <span>{{ jenisLabel(r.docType) }}</span>
+          <span style="font-weight:600">{{ r.docNo }}</span>
+          <span>
+            {{ r.item }}
+            @if (r.remarks) {
+              <div style="font-style:italic;font-size:11.5px;color:var(--muted);margin-top:2px">
+                {{ r.remarks }}
+              </div>
+            }
+            @if (r.cancelled) {
+              <div style="font-size:11.5px;color:var(--muted);margin-top:2px">Dibatalkan</div>
+            }
+          </span>
+          <span style="color:var(--muted)">{{ r.period || '—' }}</span>
+          <span class="r">{{ r.amount | number:'1.2-2' }}</span>
+          <!-- Baki merentas SEMUA akaun, dikira sebelum tapisan:
+               menapis 'Resit' menyembunyikan baris, bukan mengubah
+               nombor. -->
+          <span class="r" style="font-weight:700"
+                [style.color]="r.balance < 0 ? 'var(--red, #c0392b)' : 'var(--ink)'">
+            {{ r.balance | number:'1.2-2' }}
+          </span>
+        </div>
+      }
+
+      <div class="pager">
+        <span class="pager-label">{{ label() }}</span>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button class="pg-nav" [disabled]="page() === 0" (click)="pergi(page() - 1)">‹</button>
+          <span class="pager-label">{{ page() + 1 }} / {{ totalPages() }}</span>
+          <button class="pg-nav" [disabled]="page() >= totalPages() - 1"
+                  (click)="pergi(page() + 1)">›</button>
+        </div>
+      </div>
+    }
+  </div>
+</div>

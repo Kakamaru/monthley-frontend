@@ -82,6 +82,11 @@ export const routes: Routes = [
         // yang boleh memuat naik meter tidak sepatutnya boleh menjana
         // bil untuk semua akaun. Kalau kerani perlu memuat naik, Caj
         // Penggunaan memerlukan skrinnya sendiri.
+        path: 'sp-ledger',
+        loadComponent: () =>
+          import('./features/sp-ledger/sp-ledger.component').then(m => m.SpLedgerComponent)
+      },
+      {
         path: 'tools', canActivate: [spAdminGuard],
         loadComponent: () =>
           import('./features/tools/tools.component').then(m => m.ToolsComponent)

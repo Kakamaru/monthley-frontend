@@ -54,7 +54,9 @@ export class PortalShellComponent {
     { id: 'adhoc',        icon: '⚡',  label: 'Adhoc Invois', route: '/portal/adhoc-invoice' },
     { id: 'reports',      icon: '📈',  label: 'Laporan' },
     { id: 'tools',        icon: '🛠️', label: 'Alat' },
-    { id: 'spStatement',  icon: '📑',  label: 'SP Account Statement' },
+    // VIEWER termasuk: pengawal pondok jaga tidak memerlukannya, tetapi
+    // lejar ialah bacaan sahaja dan endpoint membenarkan ketiga-tiga.
+    { id: 'spStatement',  icon: '📑',  label: 'SP Account Statement', route: '/portal/sp-ledger' },
     { id: 'expenses',     icon: '💸',  label: 'Perbelanjaan' },
     { id: 'complaints',   icon: '🗣️', label: 'Aduan' },
     { id: 'memo',         icon: '📝',  label: 'Memo' },
