@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Product } from '../../core/models/product.model';
@@ -134,6 +134,23 @@ export class ProductsComponent {
   }
 
   // ── Menu tindakan ────────────────────────────────────────────────
+
+
+  /**
+   * Escape menutup SATU lapisan, bukan semua.
+   *
+   * Susunan mengikut z-index: dialog di atas ditutup dahulu. Menutup
+   * semuanya sekali gus bermakna kerani yang menekan Escape untuk
+   * membatalkan satu dialog kehilangan konteks di belakangnya juga.
+   */
+  @HostListener('document:keydown.escape')
+  onEscape() {
+    if (this.statusOpen()) { this.tutupStatus(); return; }
+    if (this.addOpen()) { this.tutupAdd(); return; }
+    if (this.subsOpen()) { this.tutupPelanggan(); return; }
+    if (this.formOpen()) { this.closeForm(); return; }
+    if (this.menuOpen() !== null) this.menuOpen.set(null);
+  }
 
   toggleMenu(id: number) {
     this.menuOpen.set(this.menuOpen() === id ? null : id);

@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -156,6 +156,19 @@ export class ToolsComponent implements OnInit {
   readonly ubSah = computed(() => this.ubBaris().filter(b => !b.masalah));
   readonly ubJumlah = computed(
     () => this.ubSah().reduce((t, b) => t + (b.amount ?? 0), 0));
+
+
+  /**
+   * Escape menutup SATU lapisan, bukan semua.
+   *
+   * Susunan mengikut z-index: dialog di atas ditutup dahulu. Menutup
+   * semuanya sekali gus bermakna kerani yang menekan Escape untuk
+   * membatalkan satu dialog kehilangan konteks di belakangnya juga.
+   */
+  @HostListener('document:keydown.escape')
+  onEscape() {
+    if (this.ubOpen()) this.tutupUpload();
+  }
 
   muatTurunTemplat() {
     if (this.ubMuatTurunBusy()) return;

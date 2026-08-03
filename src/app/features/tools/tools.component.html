@@ -9,7 +9,7 @@
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
 
     <!-- ===== Kad 1: Jana Bil Automatik ===== -->
-    <div data-card style="background:#fff;border:1px solid var(--line);border-radius:16px;padding:24px">
+    <div data-card style="background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
         <span style="font-size:20px">⚡</span>
         <h3 style="font-family:'Sora',sans-serif;font-weight:700;font-size:18px;margin:0">
@@ -44,7 +44,7 @@
     </div>
 
     <!-- ===== Kad 2: Jana Manual ===== -->
-    <div data-card style="background:#fff;border:1px solid var(--line);border-radius:16px;padding:24px">
+    <div data-card style="background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
         <span style="font-size:20px">🖐️</span>
         <h3 style="font-family:'Sora',sans-serif;font-weight:700;font-size:18px;margin:0">
@@ -70,9 +70,9 @@
             </span>
           </div>
         } @else {
-          <div style="display:flex;align-items:flex-start;gap:8px;margin-top:14px;background:#fff8e6;border:1px solid #f5e2b8;border-radius:10px;padding:11px 14px">
+          <div style="display:flex;align-items:flex-start;gap:8px;margin-top:14px;background:var(--amber-soft);border:1px solid var(--amber);border-radius:10px;padding:11px 14px">
             <span style="color:var(--orange);font-weight:800">ℹ</span>
-            <span style="font-size:13px;color:#8a6d2f;font-weight:600;line-height:1.5">
+            <span style="font-size:13px;color:var(--ink);font-weight:600;line-height:1.5">
               <strong>Tiada bil baharu.</strong> {{ noBillReason(result()!) }}
             </span>
           </div>

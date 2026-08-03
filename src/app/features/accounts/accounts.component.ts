@@ -4,7 +4,7 @@ import { periodRange } from '../../core/ui/period-range';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Account } from '../../core/models/account.model';
-import { AccountsService, StatementLine, StatementResponse, PaymentReportRow, PaymentReportResponse, AdjInvoiceOption } from './accounts.service';
+import { AccountsService, StatementLine, StatementResponse, PaymentReportRow, PaymentReportResponse, AdjInvoiceOption, UsageCharge } from './accounts.service';
 import { InvoicingService } from '../invoicing/invoicing.service';
 import { ProductsService, ProductCategory } from '../products/products.service';
 import { Product } from '../../core/models/product.model';
@@ -188,6 +188,22 @@ export class AccountsComponent {
   fBalFrom = '';
   fBalTo = '';
   fLinked: '' | 'true' | 'false' = '';
+  // ── Caj penggunaan (Per-use Transaction) ─────────────────────────
+  //
+  // Dalam menu tindakan, bukan tab dalam modal Edit: modal itu ialah
+  // BORANG dengan butang Save, dan tab yang memadam bersebelahan tab
+  // yang menyimpan bermakna kerani yang padam lalu tekan Cancel
+  // menyangka pemadaman dibatalkan — sedangkan ia sudah berlaku.
+
+  readonly usageOpen = signal(false);
+  readonly usageAccount = signal<Account | null>(null);
+  readonly usageRows = signal<UsageCharge[]>([]);
+  readonly usageLoading = signal(false);
+  readonly usageBusy = signal<number | null>(null);
+
+  readonly usageBelum = computed(() => this.usageRows().filter(u => u.pending));
+  readonly usageSudah = computed(() => this.usageRows().filter(u => !u.pending));
+
   fProdCategory: number | null = null;
   fProduct: number | null = null;
 
@@ -631,8 +647,16 @@ export class AccountsComponent {
 
   closeForm() { this.formOpen.set(false); this.editingId.set(null); }
 
+  /**
+   * Escape menutup SATU lapisan, bukan semua.
+   *
+   * Susunan mengikut z-index: dialog di atas ditutup dahulu. Menutup
+   * semuanya sekali gus bermakna kerani yang menekan Escape untuk
+   * membatalkan satu dialog kehilangan konteks di belakangnya juga.
+   */
   @HostListener('document:keydown.escape')
   onEscape() {
+    if (this.usageOpen()) { this.tutupUsage(); return; }
     if (this.adjOpen()) { this.closeAdjustment(); return; }
     if (this.repOpen()) { this.closePaymentReport(); return; }
     if (this.stmtOpen()) { this.closeStatement(); return; }
@@ -864,6 +888,62 @@ export class AccountsComponent {
         this.error.set('Gagal memuatkan akaun. Pastikan backend berjalan di :8080.');
         this.loading.set(false);
         console.error(e);
+      }
+    });
+  }
+
+  // ── Caj penggunaan ───────────────────────────────────────────────
+
+  bukaUsage(a: Account) {
+    this.moreMenuFor.set(null);
+    this.usageAccount.set(a);
+    this.usageRows.set([]);
+    this.usageOpen.set(true);
+    this.muatUsage();
+  }
+
+  tutupUsage() {
+    this.usageOpen.set(false);
+    this.usageAccount.set(null);
+  }
+
+  private muatUsage() {
+    const a = this.usageAccount();
+    if (!a) return;
+    this.usageLoading.set(true);
+    this.api.usage(a.id!).subscribe({
+      next: r => { this.usageRows.set(r); this.usageLoading.set(false); },
+      error: () => { this.usageRows.set([]); this.usageLoading.set(false); }
+    });
+  }
+
+  /**
+   * Padam caj yang belum dibil.
+   *
+   * Tiada dialog pengesahan: caj boleh dimuat naik semula dalam beberapa
+   * saat, dan kerani yang menyemak senarai ini SEDANG membuang yang
+   * tersilap. Pengesahan untuk setiap baris menjadikan kerja itu
+   * menjengkelkan tanpa melindungi apa-apa.
+   */
+  padamUsage(u: UsageCharge) {
+    const a = this.usageAccount();
+    if (!a || this.usageBusy() !== null) return;
+
+    this.usageBusy.set(u.id);
+    this.api.padamUsage(a.id!, u.id).subscribe({
+      next: () => {
+        this.usageBusy.set(null);
+        // Komponen ini menggunakan signal toast dengan setTimeout,
+        // bukan ToastService. Corak lebih lama; mengubahnya di sini
+        // sahaja bermakna dua gaya notifikasi dalam satu skrin.
+        this.toast.set(`Caj ${u.productName} · ${u.periodName} dipadam.`);
+        setTimeout(() => this.toast.set(null), 4000);
+        this.muatUsage();
+      },
+      error: e => {
+        this.usageBusy.set(null);
+        this.toast.set(e?.error?.message ?? 'Gagal padam caj.');
+        setTimeout(() => this.toast.set(null), 4000);
       }
     });
   }

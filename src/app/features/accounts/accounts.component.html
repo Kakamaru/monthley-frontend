@@ -125,6 +125,7 @@
                   <button (click)="onAddSubscription(a)" class="more-item">Add Subscription</button>
                   <button (click)="onViewReportPayment(a)" class="more-item">View Report Payment</button>
                   <button (click)="onGenerateInvoice(a)" class="more-item">Generate Single Invoice</button>
+                  <button (click)="bukaUsage(a)" class="more-item">Per-use Transaction</button>
                 </div>
               }
             </span>
@@ -225,6 +226,94 @@
       <span class="per-page">{{ size() }} / page</span>
     </div>
   </div>
+
+  <!-- Per-use Transaction: semak dan padam sebelum bil dijana -->
+  @if (usageOpen()) {
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;
+                align-items:center;justify-content:center;z-index:1000"
+         (click)="tutupUsage()">
+      <div class="m-modal" style="width:min(820px,94vw);max-height:88vh;overflow:auto"
+           (click)="$event.stopPropagation()">
+
+        <div class="m-modal-head">
+          <div>
+            <h3>Per-use Transaction</h3>
+            <div style="color:var(--muted);font-size:13.5px;margin-top:4px">
+              Akaun <strong>{{ usageAccount()?.no }}</strong> — {{ usageAccount()?.name }}
+            </div>
+          </div>
+          <button class="m-close" (click)="tutupUsage()">✕</button>
+        </div>
+
+        @if (usageLoading()) {
+          <div class="empty">Memuatkan…</div>
+        } @else if (usageRows().length === 0) {
+          <div class="empty">Tiada caj penggunaan untuk akaun ini.</div>
+        } @else {
+
+          <!-- Belum dibil: boleh dipadam. Kerani menyemak di sini
+               sebelum menjana bil. -->
+          @if (usageBelum().length > 0) {
+            <div style="font-family:'Sora',sans-serif;font-weight:700;font-size:16px;margin:6px 0 10px">
+              Belum Dibil
+            </div>
+            <div class="card">
+              <div class="grid-head" style="grid-template-columns:1.6fr 1fr .6fr .9fr 1.2fr 60px">
+                <span>Produk</span><span>Tempoh</span><span class="r">Qty</span>
+                <span class="r">Amaun</span><span>Catatan</span><span></span>
+              </div>
+              @for (u of usageBelum(); track u.id) {
+                <div class="grid-row" style="grid-template-columns:1.6fr 1fr .6fr .9fr 1.2fr 60px;padding:11px 20px">
+                  <span style="font-weight:700;color:var(--green)">{{ u.productName }}</span>
+                  <span>{{ u.periodName }}</span>
+                  <span class="r">{{ u.quantity | number:'1.0-2' }}</span>
+                  <span class="r" style="font-weight:700">{{ u.amount | number:'1.2-2' }}</span>
+                  <span style="color:var(--muted)">{{ u.remarks || '—' }}</span>
+                  <span class="r">
+                    <button class="act" data-tip="Padam" style="font-size:14px"
+                            [disabled]="usageBusy() === u.id"
+                            (click)="padamUsage(u)">🗑</button>
+                  </span>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Sudah dibil: kekal sebagai jejak, tidak boleh dipadam.
+               Baris ini sudah menjadi baris invois; memadamnya
+               meninggalkan invois tanpa asal. -->
+          @if (usageSudah().length > 0) {
+            <div style="font-family:'Sora',sans-serif;font-weight:700;font-size:16px;margin:20px 0 10px">
+              Sudah Dibil
+            </div>
+            <div class="card">
+              <div class="grid-head" style="grid-template-columns:1.6fr 1fr .6fr .9fr 1.2fr 1fr">
+                <span>Produk</span><span>Tempoh</span><span class="r">Qty</span>
+                <span class="r">Amaun</span><span>Catatan</span><span>Invois</span>
+              </div>
+              @for (u of usageSudah(); track u.id) {
+                <div class="grid-row" style="grid-template-columns:1.6fr 1fr .6fr .9fr 1.2fr 1fr;padding:11px 20px">
+                  <span>{{ u.productName }}</span>
+                  <span>{{ u.periodName }}</span>
+                  <span class="r">{{ u.quantity | number:'1.0-2' }}</span>
+                  <span class="r">{{ u.amount | number:'1.2-2' }}</span>
+                  <!-- Catatan kekal selepas dibil: kerani yang menyemak
+                       sejarah memerlukan konteks yang sama seperti
+                       semasa memuat naik. -->
+                  <span style="color:var(--muted)">{{ u.remarks || '—' }}</span>
+                  <span style="font-weight:700;color:var(--green)">{{ u.invoiceNo || '—' }}</span>
+                </div>
+              }
+            </div>
+          }
+        }
+
+        <div style="display:flex;justify-content:flex-end;margin-top:18px">
+          <button class="btn btn-ghost" (click)="tutupUsage()">Tutup</button>
+        </div>
+      </div>
+    </div>
+  }
 
   <!-- Modal Add Account -->
   @if (formOpen()) {
@@ -531,6 +620,12 @@
                 @if (l.remark) {
                   <div style="font-style:italic;font-size:11.5px;color:var(--muted);margin-top:2px">{{ l.remark }}</div>
                 }
+                <!-- Catatan baris — caj penggunaan membawa apa yang
+                     kerani taip semasa memuat naik. Berasingan daripada
+                     remark, yang memegang sebab pembatalan. -->
+                @if (l.lineRemarks) {
+                  <div style="font-style:italic;font-size:11.5px;color:var(--muted);margin-top:2px">{{ l.lineRemarks }}</div>
+                }
               </span>
               <span style="text-align:center" [title]="l.cancelled ? 'Dibatalkan' : 'Aktif'">
                 {{ l.cancelled ? '✕' : '✓' }}
@@ -552,6 +647,9 @@
                 <span style="padding-left:12px">{{ m.docNo ? '↳ ' + m.docNo : '' }}</span>
                 <span>
                   {{ m.item }}
+                  @if (m.remarks) {
+                    <div style="font-style:italic;margin-top:1px">{{ m.remarks }}</div>
+                  }
                   <!-- Tempoh sudah diformat oleh backend: peraturan bulan-penuh lawan
                        sebahagian-bulan hidup di SATU tempat (guard 6). Memformat
                        semula di sini akan menyimpang. -->
@@ -687,7 +785,12 @@
               <select [(ngModel)]="adjInvoiceId" style="width:100%;margin-top:6px;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;background:var(--surface-alt);color:var(--ink);box-sizing:border-box">
                 <option [ngValue]="null">Sila Pilih Invois</option>
                 @for (iv of adjInvoices(); track iv.id) {
-                  <option [ngValue]="iv.id">{{ iv.docNo }} — baki MYR {{ iv.outstanding | number:'1.2-2' }}</option>
+                  <!-- Keterangan disisip antara nombor dan baki: kerani
+                       yang melihat 'I2600119 — baki MYR 8.67' tidak tahu
+                       itu invois apa. -->
+                  <option [ngValue]="iv.id">
+                    {{ iv.docNo }}{{ iv.description ? ' — ' + iv.description : '' }} — baki MYR {{ iv.outstanding | number:'1.2-2' }}
+                  </option>
                 }
               </select>
               <p style="font-size:12px;color:#6b7f86;margin:6px 0 0">Pelarasan dikenakan ke atas invois yang dipilih.</p>

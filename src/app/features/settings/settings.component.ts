@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, HostListener, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -64,6 +64,12 @@ export class SettingsComponent {
 
   // borang tambah
   readonly addOpen = signal(false);
+
+  /** Escape menutup modal — sama seperti mengklik latar atau butang ✕. */
+  @HostListener('document:keydown.escape')
+  onEscape() {
+    if (this.addOpen()) this.addOpen.set(false);
+  }
   newEmail = ''; newRole = 'CLERK';
   lkCode = ''; lkName = ''; lkAddress = '';
   exPeriod = ''; exRemarks = '';

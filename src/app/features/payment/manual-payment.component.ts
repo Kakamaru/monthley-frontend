@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { balanceColor } from '../../core/ui/balance';
 import { tarikhIso } from '../../core/tarikh';
 import { CommonModule } from '@angular/common';
@@ -183,6 +183,19 @@ export class ManualPaymentComponent implements OnInit {
   kategoriBerubah() {
     this.fProduct = null;
     this.muatProduk();
+  }
+
+
+  /**
+   * Escape menutup SATU lapisan, bukan semua.
+   *
+   * Susunan mengikut z-index: dialog di atas ditutup dahulu.
+   */
+  @HostListener('document:keydown.escape')
+  onEscape() {
+    // payMode ialah HALAMAN, bukan modal: Escape tidak sepatutnya
+    // membuang borang bayaran yang kerani sedang isi.
+    if (this.showConfirm()) this.showConfirm.set(false);
   }
 
   search() {

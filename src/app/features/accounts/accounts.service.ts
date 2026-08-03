@@ -23,6 +23,22 @@ export interface AccountQuery {
   size: number;
 }
 
+/** Caj berasaskan penggunaan bagi satu akaun. */
+export interface UsageCharge {
+  id: number;
+  productCode: string;
+  productName: string;
+  quantity: number;
+  amount: number;
+  remarks: string | null;
+  /** Nama tempoh, bukan id — 'July, 2026'. */
+  periodName: string;
+  createdAt: string | null;
+  /** Belum dibil: boleh dipadam. */
+  pending: boolean;
+  invoiceNo: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AccountsService {
   private http = inject(HttpClient);
@@ -142,6 +158,21 @@ export class AccountsService {
     return this.http.post<{ added: number; message: string }>(`${this.base}/${id}/subscriptions`, { subscriptions });
   }
 
+  usage(accountId: number): Observable<UsageCharge[]> {
+    return this.http.get<UsageCharge[]>(`${this.base}/${accountId}/usage`);
+  }
+
+  /**
+   * Padam caj yang BELUM dibil.
+   *
+   * Caj yang sudah dibil ditolak oleh backend — ia menjadi baris
+   * invois, dan memadamnya meninggalkan invois tanpa asal.
+   */
+  padamUsage(accountId: number, usageId: number): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(
+      `${this.base}/${accountId}/usage/${usageId}`);
+  }
+
   categories(): Observable<{ id: number; code: string; name: string }[]> {
     return this.http.get<{ id: number; code: string; name: string }[]>('/api/v1/settings/account-categories');
   }
@@ -163,6 +194,8 @@ export class AccountsService {
  */
 export interface StatementMatch {
   docNo: string; item: string | null;
+  /** Catatan baris — caj penggunaan sahaja; null untuk langganan. */
+  remarks: string | null;
   period: string | null; amount: number;
 }
 
@@ -175,7 +208,14 @@ export interface StatementMatch {
  */
 export interface StatementLine {
   date: string; docNo: string; docType: string; item: string;
-  remark: string | null; cancelled: boolean;
+  remark: string | null;
+  /**
+   * Catatan baris — BERASINGAN daripada remark, yang memegang sebab
+   * pembatalan. Hanya untuk dokumen satu baris; invois berbilang baris
+   * membawa catatan pada sub-barisnya.
+   */
+  lineRemarks: string | null;
+  cancelled: boolean;
   amount: number; balance: number;
   matches: StatementMatch[];
 }
@@ -214,4 +254,11 @@ export interface HistoryResponse {
 
 export interface AdjInvoiceOption {
   id: number; docNo: string; outstanding: number;
+  /**
+   * Keterangan invois SATU baris; null kalau berbilang.
+   *
+   * Kerani yang melihat 'I2600119 — baki MYR 8.67' tidak tahu itu
+   * invois apa, dan penyata di sebelahnya menamakannya.
+   */
+  description: string | null;
 }
