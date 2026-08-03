@@ -1,0 +1,93 @@
+import { Component, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+
+import { binaCsv, muatTurunCsv } from '../../core/csv';
+import { tarikhIso } from '../../core/tarikh';
+import { ReportsService, TrialBalance, ProfitLoss } from './reports.service';
+
+/**
+ * Laporan kewangan.
+ *
+ * Dua tab berfungsi; selebihnya dipaparkan dilumpuhkan supaya SP
+ * melihat apa yang akan datang, dan supaya rangka wujud untuk
+ * menambahnya satu demi satu.
+ *
+ * Balance Sheet SENGAJA tiada dalam senarai: ia memerlukan baki
+ * pembukaan yang sistem belum ada, dan kunci kira-kira tanpa baki
+ * pembukaan bukan kosong — ia salah.
+ */
+@Component({
+  selector: 'app-reports',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './reports.component.html'
+})
+export class ReportsComponent {
+
+  private api = inject(ReportsService);
+
+  readonly tab = signal<'trial' | 'pnl'>('trial');
+  readonly busy = signal(false);
+
+  readonly trial = signal<TrialBalance | null>(null);
+  readonly pnl = signal<ProfitLoss | null>(null);
+
+  tAsAt = tarikhIso();
+  pFrom = tarikhIso().slice(0, 4) + '-01-01';
+  pTo = tarikhIso();
+
+  readonly belumDibina = [
+    'Account List', 'List Of Collection', 'List Of Arrears', 'Print Invoice',
+    'Monthly Statistic', 'Expenses', 'Ageing', 'Customer Account Statement',
+    'Daily Collection & Bank Recon', 'Tax Summary (SST)'
+  ];
+
+  pilihTab(t: 'trial' | 'pnl') {
+    this.tab.set(t);
+    this.trial.set(null);
+    this.pnl.set(null);
+  }
+
+  jana() {
+    if (this.busy()) return;
+    this.busy.set(true);
+
+    if (this.tab() === 'trial') {
+      this.api.trialBalance(this.tAsAt || null).subscribe({
+        next: r => { this.trial.set(r); this.busy.set(false); },
+        error: () => this.busy.set(false)
+      });
+    } else {
+      this.api.profitLoss(this.pFrom || null, this.pTo || null).subscribe({
+        next: r => { this.pnl.set(r); this.busy.set(false); },
+        error: () => this.busy.set(false)
+      });
+    }
+  }
+
+  eksportTrial() {
+    const t = this.trial();
+    if (!t) return;
+    const csv = binaCsv(['Kod', 'Akaun', 'Jenis', 'Debit', 'Kredit'],
+      [...t.rows.map(r => [r.code, r.name, r.accountType,
+                           r.debit.toFixed(2), r.credit.toFixed(2)]),
+       ['', 'JUMLAH', '', t.totalDebit.toFixed(2), t.totalCredit.toFixed(2)]]);
+    muatTurunCsv(`imbangan-duga-${t.asAt}.csv`, csv);
+  }
+
+  eksportPnl() {
+    const p = this.pnl();
+    if (!p) return;
+    const baris: string[][] = [];
+    baris.push(['HASIL', '', '']);
+    p.income.forEach(r => baris.push([r.code, r.name, r.amount.toFixed(2)]));
+    baris.push(['', 'Jumlah Hasil', p.totalIncome.toFixed(2)]);
+    baris.push(['PERBELANJAAN', '', '']);
+    p.expense.forEach(r => baris.push([r.code, r.name, r.amount.toFixed(2)]));
+    baris.push(['', 'Jumlah Perbelanjaan', p.totalExpense.toFixed(2)]);
+    baris.push(['', 'UNTUNG / (RUGI) BERSIH', p.net.toFixed(2)]);
+    muatTurunCsv(`untung-rugi-${p.from}-${p.to}.csv`,
+                 binaCsv(['Kod', 'Akaun', 'Amaun'], baris));
+  }
+}

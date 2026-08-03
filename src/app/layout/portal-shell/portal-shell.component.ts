@@ -52,7 +52,7 @@ export class PortalShellComponent {
     { id: 'manualPay',    icon: '💵',  label: 'Manual Payment', route: '/portal/manual-payment', roles: ['CLERK'] },
     { id: 'finance',      icon: '📁',  label: 'Dokumen Kewangan', route: '/portal/finance-documents' },
     { id: 'adhoc',        icon: '⚡',  label: 'Adhoc Invois', route: '/portal/adhoc-invoice' },
-    { id: 'reports',      icon: '📈',  label: 'Laporan' },
+    { id: 'reports',      icon: '📈',  label: 'Laporan', route: '/portal/reports' },
     { id: 'tools',        icon: '🛠️', label: 'Alat' },
     // VIEWER termasuk: pengawal pondok jaga tidak memerlukannya, tetapi
     // lejar ialah bacaan sahaja dan endpoint membenarkan ketiga-tiga.
