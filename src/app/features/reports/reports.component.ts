@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 
 import { binaCsv, muatTurunCsv } from '../../core/csv';
 import { tarikhIso } from '../../core/tarikh';
-import { ReportsService, TrialBalance, ProfitLoss, Collection, AccountList, SubList } from './reports.service';
+import { ReportsService, TrialBalance, ProfitLoss, Collection, AccountList, SubList, ArrearList } from './reports.service';
 import { ProductsService } from '../products/products.service';
 import { SettingsService } from '../settings/settings.service';
 import { Product } from '../../core/models/product.model';
@@ -32,7 +32,7 @@ export class ReportsComponent {
   private catalog = inject(ProductsService);
   private settings = inject(SettingsService);
 
-  readonly tab = signal<'trial' | 'pnl' | 'collection' | 'accounts' | 'subs'>('trial');
+  readonly tab = signal<'trial' | 'pnl' | 'collection' | 'accounts' | 'subs' | 'arrears'>('trial');
   readonly busy = signal(false);
 
   readonly trial = signal<TrialBalance | null>(null);
@@ -43,7 +43,7 @@ export class ReportsComponent {
   pTo = tarikhIso();
 
   readonly belumDibina = [
-    'List Of Arrears', 'Print Invoice',
+    'Print Invoice',
     'Monthly Statistic', 'Expenses', 'Ageing', 'Customer Account Statement',
     'Daily Collection & Bank Recon', 'Tax Summary (SST)'
   ];
@@ -171,7 +171,45 @@ export class ReportsComponent {
     muatTurunCsv(`senarai-langganan-${tarikhIso()}.csv`, csv);
   }
 
-  pilihTab(t: 'trial' | 'pnl' | 'collection' | 'accounts' | 'subs') {
+  // ── Senarai Tunggakan ────────────────────────────────────────────
+
+  readonly arrears = signal<ArrearList | null>(null);
+
+  arAsAt = tarikhIso();
+  arOnly = true;
+
+  clearArrears() {
+    this.arAsAt = tarikhIso();
+    this.arOnly = true;
+    this.arrears.set(null);
+  }
+
+  cetakArrearsPdf() {
+    if (this.pdfBusy()) return;
+    this.pdfBusy.set(true);
+    this.api.arrearsPdf(this.arAsAt, this.arOnly).subscribe({
+      next: res => {
+        this.pdfBusy.set(false);
+        const blob = res.body;
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      },
+      error: () => this.pdfBusy.set(false)
+    });
+  }
+
+  eksportArrears() {
+    const a = this.arrears();
+    if (!a) return;
+    const csv = binaCsv(['No. Akaun', 'Nama', 'E-mel', 'Tempoh', 'Amaun'],
+      a.rows.map(r => [r.accountNo, r.accountName, r.email, r.period,
+                       r.amount.toFixed(2)]));
+    muatTurunCsv(`tunggakan-${a.asAt}.csv`, csv);
+  }
+
+  pilihTab(t: 'trial' | 'pnl' | 'collection' | 'accounts' | 'subs' | 'arrears') {
     this.tab.set(t);
     this.trial.set(null);
     this.pnl.set(null);
@@ -182,6 +220,7 @@ export class ReportsComponent {
     this.clearCollection();
     this.clearAccounts();
     this.clearSubs();
+    this.clearArrears();
 
     if (t === 'subs') {
       if (this.produk().length === 0) {
@@ -258,6 +297,11 @@ export class ReportsComponent {
     } else if (this.tab() === 'pnl') {
       this.api.profitLoss(this.pFrom || null, this.pTo || null).subscribe({
         next: r => { this.pnl.set(r); this.busy.set(false); },
+        error: () => this.busy.set(false)
+      });
+    } else if (this.tab() === 'arrears') {
+      this.api.arrears(this.arAsAt, this.arOnly).subscribe({
+        next: r => { this.arrears.set(r); this.busy.set(false); },
         error: () => this.busy.set(false)
       });
     } else if (this.tab() === 'subs') {

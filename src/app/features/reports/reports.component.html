@@ -19,6 +19,8 @@
               (click)="pilihTab('accounts')">Senarai Akaun</button>
       <button class="tab-pill" [class.on]="tab() === 'subs'"
               (click)="pilihTab('subs')">Senarai Langganan</button>
+      <button class="tab-pill" [class.on]="tab() === 'arrears'"
+              (click)="pilihTab('arrears')">Senarai Tunggakan</button>
 
       <!-- Dipaparkan dilumpuhkan: SP melihat apa yang akan datang, dan
            rangka wujud untuk menambahnya satu demi satu. -->
@@ -91,6 +93,79 @@
               dibetulkan.
             </div>
           }
+        }
+
+      } @else if (tab() === 'arrears') {
+        <div style="display:grid;grid-template-columns:220px 220px auto;gap:14px;align-items:end">
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">Sehingga Tarikh</label>
+            <input class="fld" type="date" [(ngModel)]="arAsAt" />
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">Papar</label>
+            <select class="fld" [(ngModel)]="arOnly">
+              <option [ngValue]="true">Tunggakan sahaja</option>
+              <option [ngValue]="false">Semua (termasuk kredit)</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-green" (click)="jana()" [disabled]="busy()">
+              {{ busy() ? 'Menjana…' : 'View Report' }}
+            </button>
+            <button class="btn btn-ghost" (click)="clearArrears()">Clear</button>
+            @if (arrears()) {
+              <button class="btn btn-ghost" (click)="cetakArrearsPdf()" [disabled]="pdfBusy()">
+                {{ pdfBusy() ? 'Menyediakan…' : '🖨 PDF' }}
+              </button>
+              <button class="btn btn-ghost" (click)="eksportArrears()">⬇ Excel</button>
+            }
+          </div>
+        </div>
+
+        <!-- POTRET: dokumen DAN bayaran ditapis pada tarikh yang sama,
+             jadi laporan yang sama memberi nombor yang sama setiap kali
+             dijana semula. -->
+        <div style="font-size:12.5px;color:var(--muted);margin-top:10px">
+          Kedudukan pada tarikh dipilih — bayaran selepasnya tidak dikira.
+        </div>
+
+        @if (arrears(); as a) {
+          <div class="card" style="margin-top:16px">
+            <div class="grid-head" style="grid-template-columns:1.2fr 2fr 1.4fr 1fr">
+              <span>No. Akaun</span><span>Nama</span>
+              <span class="c">Tempoh</span><span class="r">Amaun</span>
+            </div>
+
+            @if (a.rows.length === 0) {
+              <div class="empty">Tiada tunggakan pada tarikh ini.</div>
+            } @else {
+              @for (r of a.rows; track r.accountNo) {
+                <div class="grid-row" style="grid-template-columns:1.2fr 2fr 1.4fr 1fr;padding:11px 20px">
+                  <span style="font-weight:700;color:var(--green)">{{ r.accountNo }}</span>
+                  <span>
+                    <div>{{ r.accountName }}</div>
+                    @if (r.email) {
+                      <div style="font-size:12px;color:var(--muted);font-style:italic">{{ r.email }}</div>
+                    }
+                  </span>
+                  <span class="c" style="font-size:13px;color:var(--muted)">{{ r.period || '—' }}</span>
+                  <!-- Negatif bermakna pelanggan BERKREDIT pada tarikh
+                       itu — dia membayar sesuatu yang belum dibil. -->
+                  <span class="r" style="font-weight:700"
+                        [style.color]="r.amount < 0 ? 'var(--green)' : 'var(--ink)'">
+                    {{ r.amount < 0
+                        ? '(' + (-r.amount | number:'1.2-2') + ')'
+                        : (r.amount | number:'1.2-2') }}
+                  </span>
+                </div>
+              }
+              <div style="display:flex;justify-content:flex-end;gap:20px;padding:14px 20px;
+                          border-top:2px solid var(--line);font-weight:800;font-size:15px">
+                <span>JUMLAH</span>
+                <span>{{ a.total | number:'1.2-2' }}</span>
+              </div>
+            }
+          </div>
         }
 
       } @else if (tab() === 'subs') {

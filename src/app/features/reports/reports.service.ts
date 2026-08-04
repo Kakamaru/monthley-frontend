@@ -82,6 +82,19 @@ export interface SubList {
   endedCount: number;
 }
 
+export interface ArrearRow {
+  accountNo: string; accountName: string; email: string;
+  period: string;
+  /** Negatif bermakna pelanggan BERKREDIT pada tarikh itu. */
+  amount: number;
+}
+
+export interface ArrearList {
+  asAt: string;
+  rows: ArrearRow[];
+  total: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ReportsService {
   private http = inject(HttpClient);
@@ -166,6 +179,19 @@ export class ReportsService {
     if (q.status != null)            p = p.set('status', String(q.status));
     return this.http.get(`${this.base}/account-list/subscriptions/pdf`,
       { params: p, responseType: 'blob', observe: 'response' as const });
+  }
+
+  arrears(asAt: string, arrearsOnly: boolean): Observable<ArrearList> {
+    return this.http.get<ArrearList>(`${this.base}/account-list/arrears`,
+      { params: new HttpParams().set('asAt', asAt)
+                                .set('arrearsOnly', String(arrearsOnly)) });
+  }
+
+  arrearsPdf(asAt: string, arrearsOnly: boolean) {
+    return this.http.get(`${this.base}/account-list/arrears/pdf`,
+      { params: new HttpParams().set('asAt', asAt)
+                                .set('arrearsOnly', String(arrearsOnly)),
+        responseType: 'blob', observe: 'response' as const });
   }
 
   profitLoss(from: string | null, to: string | null): Observable<ProfitLoss> {
