@@ -21,6 +21,8 @@
               (click)="pilihTab('subs')">Senarai Langganan</button>
       <button class="tab-pill" [class.on]="tab() === 'arrears'"
               (click)="pilihTab('arrears')">Senarai Tunggakan</button>
+      <button class="tab-pill" [class.on]="tab() === 'ageing'"
+              (click)="pilihTab('ageing')">Ageing</button>
 
       <!-- Dipaparkan dilumpuhkan: SP melihat apa yang akan datang, dan
            rangka wujud untuk menambahnya satu demi satu. -->
@@ -93,6 +95,122 @@
               dibetulkan.
             </div>
           }
+        }
+
+      } @else if (tab() === 'ageing') {
+        <div style="display:grid;grid-template-columns:220px 220px auto;gap:14px;align-items:end">
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">Pada Tarikh</label>
+            <input class="fld" type="date" [(ngModel)]="agAsAt" />
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">Kategori</label>
+            <select class="fld" [(ngModel)]="agCategoryId">
+              <option [ngValue]="null">Semua Kategori</option>
+              @for (c of akaunCategories(); track c.id) {
+                <option [ngValue]="c.id">{{ c.name }}</option>
+              }
+            </select>
+          </div>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-green" (click)="jana()" [disabled]="busy()">
+              {{ busy() ? 'Menjana…' : 'View Report' }}
+            </button>
+            <button class="btn btn-ghost" (click)="clearAgeing()">Clear</button>
+            @if (ageing()) {
+              <button class="btn btn-ghost" (click)="cetakAgeingPdf()" [disabled]="pdfBusy()">
+                {{ pdfBusy() ? 'Menyediakan…' : '🖨 PDF' }}
+              </button>
+              <button class="btn btn-ghost" (click)="eksportAgeing()">⬇ Excel</button>
+            }
+          </div>
+        </div>
+
+        <!-- Bucket SEBENAR: jumlah keenam-enam lajur sama dengan Jumlah.
+             Laporan legacy mengulang nombor merentas lajur dan
+             menghasilkan bucket yang melebihi jumlah keseluruhan. -->
+        <div style="font-size:12.5px;color:var(--muted);margin-top:10px">
+          Umur dikira daripada tarikh akhir bayaran. Invois yang belum matang
+          diasingkan — pelanggan itu belum lewat.
+        </div>
+
+        @if (ageing(); as a) {
+          <div class="card" style="margin-top:16px;overflow-x:auto">
+            <!-- Kepala boleh diklik: kerani yang menyemak baris demi
+                 baris mahu susunan akaun, yang menilai risiko mahu
+                 jumlah terbesar. Satu susunan tetap memaksa separuh
+                 daripada mereka mengimbas. -->
+            <div class="grid-head" style="grid-template-columns:1fr 1.6fr .9fr .9fr .8fr .8fr .8fr .8fr .8fr;min-width:900px">
+              <span (click)="agSusun('akaun')" style="cursor:pointer;user-select:none">
+                Akaun
+                <!-- Hijau untuk lajur yang SEDANG menyusun; opacity
+                     sahaja terlalu halus untuk dilihat sekali imbas. -->
+                <span [style.color]="agSort() === 'akaun' ? 'var(--green)' : null"
+                      [style.opacity]="agSort() === 'akaun' ? '1' : '.3'">
+                  {{ agSort() === 'akaun' && !agAsc() ? '▼' : '▲' }}
+                </span>
+              </span>
+              <span (click)="agSusun('nama')" style="cursor:pointer;user-select:none">
+                Nama
+                <span [style.color]="agSort() === 'nama' ? 'var(--green)' : null"
+                      [style.opacity]="agSort() === 'nama' ? '1' : '.3'">
+                  {{ agSort() === 'nama' && !agAsc() ? '▼' : '▲' }}
+                </span>
+              </span>
+              <span class="r" (click)="agSusun('jumlah')" style="cursor:pointer;user-select:none">
+                <span [style.color]="agSort() === 'jumlah' ? 'var(--green)' : null"
+                      [style.opacity]="agSort() === 'jumlah' ? '1' : '.3'">
+                  {{ agSort() === 'jumlah' && agAsc() ? '▲' : '▼' }}
+                </span>
+                Jumlah
+              </span>
+              <span class="r">Belum Matang</span>
+              <span class="r">0-30</span><span class="r">31-60</span>
+              <span class="r">61-90</span><span class="r">91-180</span><span class="r">180+</span>
+            </div>
+
+            @if (a.rows.length === 0) {
+              <div class="empty">Tiada tunggakan pada tarikh ini.</div>
+            } @else {
+              @for (r of agRows(); track r.accountNo) {
+                <!-- Nombor 14px: kerani membaca lajur ini sepanjang hari,
+                     dan saiz warisan 13px terlalu kecil untuk dibaca sekali
+                     imbas. -->
+                <div class="grid-row"
+                     style="grid-template-columns:1fr 1.6fr .9fr .9fr .8fr .8fr .8fr .8fr .8fr;padding:12px 20px;min-width:900px;font-size:14px">
+                  <span style="font-weight:700;color:var(--green)">{{ r.accountNo }}</span>
+                  <span>{{ r.accountName }}</span>
+                  <span class="r" style="font-weight:700">{{ r.total | number:'1.2-2' }}</span>
+                  <!-- Sifar dipudarkan: mata mencari nombor yang BUKAN
+                       sifar, dan lajur penuh 0.00 menyembunyikannya. -->
+                  <span class="r" [style.color]="r.notDue ? null : 'var(--muted)'">
+                    {{ r.notDue | number:'1.2-2' }}</span>
+                  <span class="r" [style.color]="r.d30 ? null : 'var(--muted)'">
+                    {{ r.d30 | number:'1.2-2' }}</span>
+                  <span class="r" [style.color]="r.d60 ? null : 'var(--muted)'">
+                    {{ r.d60 | number:'1.2-2' }}</span>
+                  <span class="r" [style.color]="r.d90 ? null : 'var(--muted)'">
+                    {{ r.d90 | number:'1.2-2' }}</span>
+                  <span class="r" [style.color]="r.d180 ? null : 'var(--muted)'">
+                    {{ r.d180 | number:'1.2-2' }}</span>
+                  <span class="r" [style.color]="r.over180 ? null : 'var(--muted)'"
+                        [style.font-weight]="r.over180 ? '700' : null">
+                    {{ r.over180 | number:'1.2-2' }}</span>
+                </div>
+              }
+              <div class="grid-row"
+                   style="grid-template-columns:1fr 1.6fr .9fr .9fr .8fr .8fr .8fr .8fr .8fr;padding:14px 20px;border-top:2px solid var(--line);font-weight:800;min-width:900px">
+                <span></span><span>JUMLAH</span>
+                <span class="r">{{ a.total | number:'1.2-2' }}</span>
+                <span class="r">{{ a.notDue | number:'1.2-2' }}</span>
+                <span class="r">{{ a.d30 | number:'1.2-2' }}</span>
+                <span class="r">{{ a.d60 | number:'1.2-2' }}</span>
+                <span class="r">{{ a.d90 | number:'1.2-2' }}</span>
+                <span class="r">{{ a.d180 | number:'1.2-2' }}</span>
+                <span class="r">{{ a.over180 | number:'1.2-2' }}</span>
+              </div>
+            }
+          </div>
         }
 
       } @else if (tab() === 'arrears') {

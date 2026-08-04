@@ -95,6 +95,21 @@ export interface ArrearList {
   total: number;
 }
 
+export interface AgeRow {
+  accountNo: string; accountName: string;
+  total: number;
+  /** Invois yang belum sampai tarikh akhir bayaran. */
+  notDue: number;
+  d30: number; d60: number; d90: number; d180: number; over180: number;
+}
+
+export interface AgeList {
+  asAt: string;
+  rows: AgeRow[];
+  total: number; notDue: number;
+  d30: number; d60: number; d90: number; d180: number; over180: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ReportsService {
   private http = inject(HttpClient);
@@ -192,6 +207,28 @@ export class ReportsService {
       { params: new HttpParams().set('asAt', asAt)
                                 .set('arrearsOnly', String(arrearsOnly)),
         responseType: 'blob', observe: 'response' as const });
+  }
+
+  ageing(asAt: string, categoryId: number | null): Observable<AgeList> {
+    let p = new HttpParams().set('asAt', asAt);
+    if (categoryId != null) p = p.set('categoryId', String(categoryId));
+    return this.http.get<AgeList>(`${this.base}/account-list/ageing`, { params: p });
+  }
+
+  /**
+   * Susunan dihantar supaya PDF SEPADAN dengan skrin.
+   *
+   * Tanpa ia, kerani menyusun ikut jumlah, menekan cetak, dan mendapat
+   * kertas dalam susunan berbeza daripada yang dilihatnya.
+   */
+  ageingPdf(asAt: string, categoryId: number | null,
+            sortBy: string, asc: boolean) {
+    let p = new HttpParams().set('asAt', asAt)
+                            .set('sortBy', sortBy)
+                            .set('asc', String(asc));
+    if (categoryId != null) p = p.set('categoryId', String(categoryId));
+    return this.http.get(`${this.base}/account-list/ageing/pdf`,
+      { params: p, responseType: 'blob', observe: 'response' as const });
   }
 
   profitLoss(from: string | null, to: string | null): Observable<ProfitLoss> {

@@ -1,10 +1,10 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { binaCsv, muatTurunCsv } from '../../core/csv';
 import { tarikhIso } from '../../core/tarikh';
-import { ReportsService, TrialBalance, ProfitLoss, Collection, AccountList, SubList, ArrearList } from './reports.service';
+import { ReportsService, TrialBalance, ProfitLoss, Collection, AccountList, SubList, ArrearList, AgeList } from './reports.service';
 import { ProductsService } from '../products/products.service';
 import { SettingsService } from '../settings/settings.service';
 import { Product } from '../../core/models/product.model';
@@ -32,7 +32,7 @@ export class ReportsComponent {
   private catalog = inject(ProductsService);
   private settings = inject(SettingsService);
 
-  readonly tab = signal<'trial' | 'pnl' | 'collection' | 'accounts' | 'subs' | 'arrears'>('trial');
+  readonly tab = signal<'trial' | 'pnl' | 'collection' | 'accounts' | 'subs' | 'arrears' | 'ageing'>('trial');
   readonly busy = signal(false);
 
   readonly trial = signal<TrialBalance | null>(null);
@@ -44,7 +44,7 @@ export class ReportsComponent {
 
   readonly belumDibina = [
     'Print Invoice',
-    'Monthly Statistic', 'Expenses', 'Ageing', 'Customer Account Statement',
+    'Monthly Statistic', 'Expenses', 'Customer Account Statement',
     'Daily Collection & Bank Recon', 'Tax Summary (SST)'
   ];
 
@@ -209,7 +209,88 @@ export class ReportsComponent {
     muatTurunCsv(`tunggakan-${a.asAt}.csv`, csv);
   }
 
-  pilihTab(t: 'trial' | 'pnl' | 'collection' | 'accounts' | 'subs' | 'arrears') {
+  // ── Ageing ───────────────────────────────────────────────────────
+
+  readonly ageing = signal<AgeList | null>(null);
+
+  /**
+   * Susunan dipilih pengguna.
+   *
+   * Kerani yang menyemak baris demi baris terhadap rekodnya mahu susunan
+   * akaun; yang menilai risiko mahu jumlah terbesar dahulu. Satu susunan
+   * tetap memaksa separuh daripada mereka mengimbas.
+   *
+   * Disusun dalam MEMORI: Ageing memulangkan semua baris sekali gus,
+   * tiada paginasi. Menghantarnya ke DB bermakna perjalanan tambahan
+   * untuk data yang sudah ada.
+   */
+  readonly agSort = signal<'akaun' | 'nama' | 'jumlah'>('akaun');
+  readonly agAsc = signal(true);
+
+  agSusun(k: 'akaun' | 'nama' | 'jumlah') {
+    if (this.agSort() === k) {
+      this.agAsc.set(!this.agAsc());
+    } else {
+      this.agSort.set(k);
+      // Nombor bermula MENURUN: sesiapa yang menyusun ikut jumlah mahu
+      // yang terbesar, bukan yang paling kecil.
+      this.agAsc.set(k !== 'jumlah');
+    }
+  }
+
+  readonly agRows = computed(() => {
+    const a = this.ageing();
+    if (!a) return [];
+    const k = this.agSort();
+    const arah = this.agAsc() ? 1 : -1;
+    return [...a.rows].sort((x, y) => {
+      if (k === 'jumlah') return (x.total - y.total) * arah;
+      const v = k === 'akaun'
+        ? x.accountNo.localeCompare(y.accountNo)
+        : x.accountName.localeCompare(y.accountName);
+      return v * arah;
+    });
+  });
+
+  agAsAt = tarikhIso();
+  agCategoryId: number | null = null;
+
+  clearAgeing() {
+    this.agAsAt = tarikhIso();
+    this.agCategoryId = null;
+    this.ageing.set(null);
+  }
+
+  cetakAgeingPdf() {
+    if (this.pdfBusy()) return;
+    this.pdfBusy.set(true);
+    this.api.ageingPdf(this.agAsAt, this.agCategoryId,
+                       this.agSort(), this.agAsc()).subscribe({
+      next: res => {
+        this.pdfBusy.set(false);
+        const blob = res.body;
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      },
+      error: () => this.pdfBusy.set(false)
+    });
+  }
+
+  eksportAgeing() {
+    const a = this.ageing();
+    if (!a) return;
+    const csv = binaCsv(
+      ['No. Akaun', 'Nama', 'Jumlah', 'Belum Matang', '0-30', '31-60',
+       '61-90', '91-180', '180+'],
+      this.agRows().map(r => [r.accountNo, r.accountName, r.total.toFixed(2),
+                       r.notDue.toFixed(2), r.d30.toFixed(2), r.d60.toFixed(2),
+                       r.d90.toFixed(2), r.d180.toFixed(2), r.over180.toFixed(2)]));
+    muatTurunCsv(`ageing-${a.asAt}.csv`, csv);
+  }
+
+  pilihTab(t: 'trial' | 'pnl' | 'collection' | 'accounts' | 'subs' | 'arrears' | 'ageing') {
     this.tab.set(t);
     this.trial.set(null);
     this.pnl.set(null);
@@ -221,6 +302,13 @@ export class ReportsComponent {
     this.clearAccounts();
     this.clearSubs();
     this.clearArrears();
+    this.clearAgeing();
+
+    if (t === 'ageing' && this.akaunCategories().length === 0) {
+      this.settings.accountCategories().subscribe({
+        next: c => this.akaunCategories.set(c), error: () => {}
+      });
+    }
 
     if (t === 'subs') {
       if (this.produk().length === 0) {
@@ -297,6 +385,11 @@ export class ReportsComponent {
     } else if (this.tab() === 'pnl') {
       this.api.profitLoss(this.pFrom || null, this.pTo || null).subscribe({
         next: r => { this.pnl.set(r); this.busy.set(false); },
+        error: () => this.busy.set(false)
+      });
+    } else if (this.tab() === 'ageing') {
+      this.api.ageing(this.agAsAt, this.agCategoryId).subscribe({
+        next: r => { this.ageing.set(r); this.busy.set(false); },
         error: () => this.busy.set(false)
       });
     } else if (this.tab() === 'arrears') {
