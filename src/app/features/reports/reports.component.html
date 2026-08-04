@@ -157,6 +157,7 @@
           <button class="btn btn-green" (click)="jana()" [disabled]="busy()">
             {{ busy() ? 'Menjana…' : 'View Report' }}
           </button>
+          <button class="btn btn-ghost" (click)="clearCollection()">Clear</button>
           @if (collection()) {
             <button class="btn btn-ghost" (click)="cetakPdf()" [disabled]="pdfBusy()">
               {{ pdfBusy() ? 'Menyediakan…' : '🖨 PDF' }}
@@ -194,21 +195,31 @@
               <div class="empty">Tiada kutipan untuk kriteria ini.</div>
             } @else {
               @for (r of c.rows; track $index) {
+                <!-- Baris batal MERAH, bukan pudar sahaja: ia kekal
+                     dikira dalam jumlah, jadi ia mesti kelihatan.
+                     Kerani yang memerlukan nombor yang sepadan dengan
+                     bank menapis Status = Aktif. -->
                 <div class="grid-row"
                      [style.grid-template-columns]="c.byProduct
                         ? '1fr 1.5fr 1fr 1fr 1.5fr .8fr .9fr 1fr'
                         : '1fr 1fr 1fr 1.5fr 1.5fr .8fr .9fr 1fr'"
                      style="padding:11px 20px"
-                     [style.opacity]="r.status === 'CANCELLED' ? '.5' : '1'">
+                     [style.color]="r.status === 'CANCELLED' ? '#c0392b' : null">
                   <span style="color:var(--muted);font-size:13px">{{ r.date }}</span>
                   @if (c.byProduct) {
                     <span>{{ r.productName }}</span>
                   }
-                  <span style="font-weight:700;color:var(--green)">{{ r.receiptNo }}</span>
+                  <span style="font-weight:700"
+                        [style.color]="r.status === 'CANCELLED' ? '#c0392b' : 'var(--green)'">
+                    {{ r.receiptNo }}
+                  </span>
                   <span>{{ r.accountNo }}</span>
                   <span>{{ r.issuedTo }}</span>
                   @if (!c.byProduct) {
-                    <span style="color:var(--muted);font-size:13px">{{ r.description }}</span>
+                    <span style="font-size:13px"
+                          [style.color]="r.status === 'CANCELLED' ? '#c0392b' : 'var(--muted)'">
+                      {{ r.description }}
+                    </span>
                   }
                   <span style="font-size:13px">{{ r.status === 'CANCELLED' ? 'Batal' : 'Aktif' }}</span>
                   <span style="font-size:13px">{{ r.paymentType || '—' }}</span>

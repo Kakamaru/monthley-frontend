@@ -61,11 +61,27 @@ export class ReportsComponent {
 
   readonly kaedahBayaran = ['CASH', 'FPX', 'CHEQUE', 'TRANSFER', 'ADJUSTMENT'];
 
+  /** Kosongkan kriteria kutipan kepada lalai. */
+  clearCollection() {
+    this.cFrom = tarikhIso().slice(0, 8) + '01';
+    this.cTo = tarikhIso();
+    this.cStatus = null;
+    this.cPaymentType = null;
+    this.cByProduct = false;
+    this.cMonthly = false;
+    this.cProductId = null;
+    this.collection.set(null);
+  }
+
   pilihTab(t: 'trial' | 'pnl' | 'collection') {
     this.tab.set(t);
     this.trial.set(null);
     this.pnl.set(null);
-    this.collection.set(null);
+
+    // Kriteria dikosongkan bersama hasil. Kembali ke tab dan mendapati
+    // julat tarikh lama masih terisi bermakna kerani menekan View Report
+    // dan mendapat laporan bulan lepas tanpa menyedarinya.
+    this.clearCollection();
 
     if (t === 'collection' && this.produk().length === 0) {
       this.catalog.list({ active: true, page: 0, size: 500 }).subscribe({

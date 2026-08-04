@@ -104,8 +104,11 @@ import { binaCsv, muatTurunCsv } from '../../core/csv';
   }
 
   <!-- ── jadual dokumen (mod lalai) ── -->
+  <!-- TIADA overflow:hidden: menu tindakan mesti boleh keluar sempadan
+       kad. Dengan hidden, item yang melimpah dipotong dan kerani tidak
+       dapat menekan Cancel Document langsung. -->
   @if (!modBaris()) {
-  <div style="background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden">
+  <div style="background:var(--surface);border:1px solid var(--line);border-radius:16px">
     <div [style.grid-template-columns]="cols"
          style="display:grid;gap:8px;padding:13px 18px;background:var(--surface-alt);font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">
       <span>No. Dokumen</span><span>Title</span><span>Akaun</span>
@@ -157,8 +160,8 @@ import { binaCsv, muatTurunCsv } from '../../core/csv';
 
             @if (menuFor() === d.id) {
               <div class="pop-card more-menu"
-                   [style.top]="i >= rows().length - 2 ? 'auto' : 'calc(100% + 4px)'"
-                   [style.bottom]="i >= rows().length - 2 ? 'calc(100% + 4px)' : 'auto'"
+                   [style.top]="i >= 2 && i >= rows().length - 2 ? 'auto' : 'calc(100% + 4px)'"
+                   [style.bottom]="i >= 2 && i >= rows().length - 2 ? 'calc(100% + 4px)' : 'auto'"
                    style="position:absolute;right:0;z-index:60;border:1px solid var(--line-soft);border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.2);min-width:200px;overflow:hidden"
                    (click)="$event.stopPropagation()">
                 <button class="more-item" [disabled]="d.status === 'CANCELLED'"
