@@ -68,6 +68,20 @@ export interface AccountList {
   inactiveCount: number;
 }
 
+export interface SubRow {
+  accountNo: string; accountName: string;
+  productCode: string; productName: string; productCategory: string;
+  quantity: number; startDate: string | null; endDate: string | null;
+  /** status ACTIVE DAN end_date belum lepas. */
+  active: boolean;
+}
+
+export interface SubList {
+  rows: SubRow[];
+  activeCount: number;
+  endedCount: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ReportsService {
   private http = inject(HttpClient);
@@ -132,6 +146,25 @@ export class ReportsService {
     if (q.categoryId != null) p = p.set('categoryId', String(q.categoryId));
     if (q.search)             p = p.set('search', q.search);
     return this.http.get(`${this.base}/account-list/pdf`,
+      { params: p, responseType: 'blob', observe: 'response' as const });
+  }
+
+  subscriptions(q: { productCategoryId?: number | null; productId?: number | null;
+                     status?: boolean | null }): Observable<SubList> {
+    let p = new HttpParams();
+    if (q.productCategoryId != null) p = p.set('productCategoryId', String(q.productCategoryId));
+    if (q.productId != null)         p = p.set('productId', String(q.productId));
+    if (q.status != null)            p = p.set('status', String(q.status));
+    return this.http.get<SubList>(`${this.base}/account-list/subscriptions`, { params: p });
+  }
+
+  subscriptionsPdf(q: { productCategoryId?: number | null; productId?: number | null;
+                        status?: boolean | null }) {
+    let p = new HttpParams();
+    if (q.productCategoryId != null) p = p.set('productCategoryId', String(q.productCategoryId));
+    if (q.productId != null)         p = p.set('productId', String(q.productId));
+    if (q.status != null)            p = p.set('status', String(q.status));
+    return this.http.get(`${this.base}/account-list/subscriptions/pdf`,
       { params: p, responseType: 'blob', observe: 'response' as const });
   }
 

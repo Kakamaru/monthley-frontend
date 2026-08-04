@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 
 import { binaCsv, muatTurunCsv } from '../../core/csv';
 import { tarikhIso } from '../../core/tarikh';
-import { ReportsService, TrialBalance, ProfitLoss, Collection, AccountList } from './reports.service';
+import { ReportsService, TrialBalance, ProfitLoss, Collection, AccountList, SubList } from './reports.service';
 import { ProductsService } from '../products/products.service';
 import { SettingsService } from '../settings/settings.service';
 import { Product } from '../../core/models/product.model';
@@ -32,7 +32,7 @@ export class ReportsComponent {
   private catalog = inject(ProductsService);
   private settings = inject(SettingsService);
 
-  readonly tab = signal<'trial' | 'pnl' | 'collection' | 'accounts'>('trial');
+  readonly tab = signal<'trial' | 'pnl' | 'collection' | 'accounts' | 'subs'>('trial');
   readonly busy = signal(false);
 
   readonly trial = signal<TrialBalance | null>(null);
@@ -123,7 +123,55 @@ export class ReportsComponent {
     muatTurunCsv(`senarai-akaun-${tarikhIso()}.csv`, csv);
   }
 
-  pilihTab(t: 'trial' | 'pnl' | 'collection' | 'accounts') {
+  // ── Senarai Langganan ────────────────────────────────────────────
+
+  readonly subs = signal<SubList | null>(null);
+  readonly prodCategories = signal<{ id: number; name: string }[]>([]);
+
+  sCategoryId: number | null = null;
+  sProductId: number | null = null;
+  sStatus: boolean | null = true;
+
+  clearSubs() {
+    this.sCategoryId = null;
+    this.sProductId = null;
+    this.sStatus = true;
+    this.subs.set(null);
+  }
+
+  cetakSubsPdf() {
+    if (this.pdfBusy()) return;
+    this.pdfBusy.set(true);
+    this.api.subscriptionsPdf({
+      productCategoryId: this.sCategoryId, productId: this.sProductId,
+      status: this.sStatus
+    }).subscribe({
+      next: res => {
+        this.pdfBusy.set(false);
+        const blob = res.body;
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      },
+      error: () => this.pdfBusy.set(false)
+    });
+  }
+
+  eksportSubs() {
+    const s = this.subs();
+    if (!s) return;
+    const csv = binaCsv(
+      ['No. Akaun', 'Nama Akaun', 'Kod Produk', 'Produk', 'Kategori Produk',
+       'Kuantiti', 'Mula', 'Tamat', 'Status'],
+      s.rows.map(r => [r.accountNo, r.accountName, r.productCode, r.productName,
+                       r.productCategory, String(r.quantity),
+                       r.startDate ?? '', r.endDate ?? '',
+                       r.active ? 'Aktif' : 'Tamat']));
+    muatTurunCsv(`senarai-langganan-${tarikhIso()}.csv`, csv);
+  }
+
+  pilihTab(t: 'trial' | 'pnl' | 'collection' | 'accounts' | 'subs') {
     this.tab.set(t);
     this.trial.set(null);
     this.pnl.set(null);
@@ -133,6 +181,20 @@ export class ReportsComponent {
     // dan mendapat laporan bulan lepas tanpa menyedarinya.
     this.clearCollection();
     this.clearAccounts();
+    this.clearSubs();
+
+    if (t === 'subs') {
+      if (this.produk().length === 0) {
+        this.catalog.list({ active: true, page: 0, size: 500 }).subscribe({
+          next: r => this.produk.set(r.items), error: () => {}
+        });
+      }
+      if (this.prodCategories().length === 0) {
+        this.catalog.categories().subscribe({
+          next: c => this.prodCategories.set(c), error: () => {}
+        });
+      }
+    }
 
     if (t === 'accounts' && this.akaunCategories().length === 0) {
       this.settings.accountCategories().subscribe({
@@ -196,6 +258,14 @@ export class ReportsComponent {
     } else if (this.tab() === 'pnl') {
       this.api.profitLoss(this.pFrom || null, this.pTo || null).subscribe({
         next: r => { this.pnl.set(r); this.busy.set(false); },
+        error: () => this.busy.set(false)
+      });
+    } else if (this.tab() === 'subs') {
+      this.api.subscriptions({
+        productCategoryId: this.sCategoryId, productId: this.sProductId,
+        status: this.sStatus
+      }).subscribe({
+        next: r => { this.subs.set(r); this.busy.set(false); },
         error: () => this.busy.set(false)
       });
     } else if (this.tab() === 'accounts') {
