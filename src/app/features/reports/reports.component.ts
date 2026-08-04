@@ -4,7 +4,9 @@ import { FormsModule } from '@angular/forms';
 
 import { binaCsv, muatTurunCsv } from '../../core/csv';
 import { tarikhIso } from '../../core/tarikh';
-import { ReportsService, TrialBalance, ProfitLoss } from './reports.service';
+import { ReportsService, TrialBalance, ProfitLoss, Collection } from './reports.service';
+import { ProductsService } from '../products/products.service';
+import { Product } from '../../core/models/product.model';
 
 /**
  * Laporan kewangan.
@@ -26,8 +28,9 @@ import { ReportsService, TrialBalance, ProfitLoss } from './reports.service';
 export class ReportsComponent {
 
   private api = inject(ReportsService);
+  private catalog = inject(ProductsService);
 
-  readonly tab = signal<'trial' | 'pnl'>('trial');
+  readonly tab = signal<'trial' | 'pnl' | 'collection'>('trial');
   readonly busy = signal(false);
 
   readonly trial = signal<TrialBalance | null>(null);
@@ -38,15 +41,74 @@ export class ReportsComponent {
   pTo = tarikhIso();
 
   readonly belumDibina = [
-    'Account List', 'List Of Collection', 'List Of Arrears', 'Print Invoice',
+    'Account List', 'List Of Arrears', 'Print Invoice',
     'Monthly Statistic', 'Expenses', 'Ageing', 'Customer Account Statement',
     'Daily Collection & Bank Recon', 'Tax Summary (SST)'
   ];
 
-  pilihTab(t: 'trial' | 'pnl') {
+  // ── Senarai Kutipan ──────────────────────────────────────────────
+
+  readonly collection = signal<Collection | null>(null);
+  readonly produk = signal<Product[]>([]);
+
+  cFrom = tarikhIso().slice(0, 8) + '01';
+  cTo = tarikhIso();
+  cStatus: string | null = null;
+  cPaymentType: string | null = null;
+  cByProduct = false;
+  cMonthly = false;
+  cProductId: number | null = null;
+
+  readonly kaedahBayaran = ['CASH', 'FPX', 'CHEQUE', 'TRANSFER', 'ADJUSTMENT'];
+
+  pilihTab(t: 'trial' | 'pnl' | 'collection') {
     this.tab.set(t);
     this.trial.set(null);
     this.pnl.set(null);
+    this.collection.set(null);
+
+    if (t === 'collection' && this.produk().length === 0) {
+      this.catalog.list({ active: true, page: 0, size: 500 }).subscribe({
+        next: r => this.produk.set(r.items), error: () => {}
+      });
+    }
+  }
+
+  readonly pdfBusy = signal(false);
+
+  cetakPdf() {
+    if (this.pdfBusy()) return;
+    this.pdfBusy.set(true);
+    this.api.collectionPdf({
+      from: this.cFrom, to: this.cTo,
+      byProduct: this.cByProduct, monthlyBasis: this.cMonthly,
+      status: this.cStatus, paymentType: this.cPaymentType,
+      productId: this.cByProduct ? this.cProductId : null
+    }).subscribe({
+      next: res => {
+        this.pdfBusy.set(false);
+        const blob = res.body;
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      },
+      error: () => this.pdfBusy.set(false)
+    });
+  }
+
+  eksportCollection() {
+    const c = this.collection();
+    if (!c) return;
+    const kepala = c.byProduct
+      ? ['Tarikh', 'Produk', 'No. Resit', 'Akaun', 'Terima Daripada', 'Status', 'Jenis Bayaran', 'Amaun']
+      : ['Tarikh', 'No. Resit', 'Akaun', 'Terima Daripada', 'Keterangan', 'Status', 'Jenis Bayaran', 'Amaun'];
+    const baris = c.rows.map(r => c.byProduct
+      ? [r.date ?? '', r.productName ?? '', r.receiptNo, r.accountNo,
+         r.issuedTo, r.status, r.paymentType ?? '', r.amount.toFixed(2)]
+      : [r.date ?? '', r.receiptNo, r.accountNo, r.issuedTo,
+         r.description, r.status, r.paymentType ?? '', r.amount.toFixed(2)]);
+    muatTurunCsv(`kutipan-${c.from}-${c.to}.csv`, binaCsv(kepala, baris));
   }
 
   jana() {
@@ -58,9 +120,19 @@ export class ReportsComponent {
         next: r => { this.trial.set(r); this.busy.set(false); },
         error: () => this.busy.set(false)
       });
-    } else {
+    } else if (this.tab() === 'pnl') {
       this.api.profitLoss(this.pFrom || null, this.pTo || null).subscribe({
         next: r => { this.pnl.set(r); this.busy.set(false); },
+        error: () => this.busy.set(false)
+      });
+    } else {
+      this.api.collection({
+        from: this.cFrom, to: this.cTo,
+        byProduct: this.cByProduct, monthlyBasis: this.cMonthly,
+        status: this.cStatus, paymentType: this.cPaymentType,
+        productId: this.cByProduct ? this.cProductId : null
+      }).subscribe({
+        next: r => { this.collection.set(r); this.busy.set(false); },
         error: () => this.busy.set(false)
       });
     }

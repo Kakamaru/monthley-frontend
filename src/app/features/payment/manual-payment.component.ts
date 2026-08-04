@@ -524,7 +524,15 @@ export class ManualPaymentComponent implements OnInit {
     this.result.set(null);
     this.payMode.set(false);
     this.payAccount.set(null);
-    this.load();   // refresh listing
+
+    // Muat semula tab yang AKTIF, bukan sentiasa senarai invois.
+    //
+    // Sebelum ini hanya load() dipanggil, yang menyegarkan rows() — tab
+    // Search Invoice. Kerani yang bekerja dalam tab Search Account
+    // melihat baki LAMA selepas menerima bayaran, dan hanya refresh
+    // penuh membetulkannya.
+    if (this.tab() === 'account') this.loadAccounts();
+    else this.load();
   }
 
   fmt(v: number): string {

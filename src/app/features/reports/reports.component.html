@@ -13,6 +13,8 @@
               (click)="pilihTab('trial')">Imbangan Duga</button>
       <button class="tab-pill" [class.on]="tab() === 'pnl'"
               (click)="pilihTab('pnl')">Untung Rugi</button>
+      <button class="tab-pill" [class.on]="tab() === 'collection'"
+              (click)="pilihTab('collection')">Senarai Kutipan</button>
 
       <!-- Dipaparkan dilumpuhkan: SP melihat apa yang akan datang, dan
            rangka wujud untuk menambahnya satu demi satu. -->
@@ -83,6 +85,163 @@
               {{ (t.totalDebit - t.totalCredit) | number:'1.2-2' }}.
               Hubungi sokongan — laporan lain tidak boleh dipercayai sehingga ini
               dibetulkan.
+            </div>
+          }
+        }
+
+      } @else if (tab() === 'collection') {
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">Dari</label>
+            <input class="fld" type="date" [(ngModel)]="cFrom" />
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">Hingga</label>
+            <input class="fld" type="date" [(ngModel)]="cTo" />
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">Status</label>
+            <select class="fld" [(ngModel)]="cStatus">
+              <option [ngValue]="null">Semua</option>
+              <option value="ACTIVE">Aktif</option>
+              <option value="CANCELLED">Batal</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:12px">
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">Jenis Bayaran</label>
+            <select class="fld" [(ngModel)]="cPaymentType">
+              <option [ngValue]="null">Semua</option>
+              @for (m of kaedahBayaran; track m) {
+                <option [value]="m">{{ m }}</option>
+              }
+            </select>
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">Ikut Produk?</label>
+            <select class="fld" [(ngModel)]="cByProduct">
+              <option [ngValue]="false">Tidak</option>
+              <option [ngValue]="true">Ya</option>
+            </select>
+          </div>
+          @if (cByProduct) {
+            <div>
+              <label style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">Produk</label>
+              <select class="fld" [(ngModel)]="cProductId">
+                <option [ngValue]="null">Semua Produk</option>
+                @for (p of produk(); track p.id) {
+                  <option [ngValue]="p.id">{{ p.name }}</option>
+                }
+              </select>
+            </div>
+          } @else {
+            <div></div>
+          }
+        </div>
+
+        <!-- Monthly Basis menapis mengikut tempoh INVOIS, bukan tarikh
+             bayaran: daripada yang dikutip, berapa untuk bil bulan ini
+             dan berapa untuk tunggakan lama. -->
+        <label style="display:flex;align-items:center;gap:8px;margin-top:14px;
+                      font-size:13.5px;cursor:pointer">
+          <input type="checkbox" [(ngModel)]="cMonthly" />
+          Kutipan untuk tempoh ini sahaja
+          <span style="color:var(--muted);font-size:12.5px">
+            — kecualikan bayaran kepada tunggakan lama
+          </span>
+        </label>
+
+        <div style="display:flex;gap:10px;margin-top:14px">
+          <button class="btn btn-green" (click)="jana()" [disabled]="busy()">
+            {{ busy() ? 'Menjana…' : 'View Report' }}
+          </button>
+          @if (collection()) {
+            <button class="btn btn-ghost" (click)="cetakPdf()" [disabled]="pdfBusy()">
+              {{ pdfBusy() ? 'Menyediakan…' : '🖨 PDF' }}
+            </button>
+            <button class="btn btn-ghost" (click)="eksportCollection()">⬇ Excel</button>
+          }
+        </div>
+
+        @if (collection(); as c) {
+          @if (c.monthlyBasis) {
+            <div style="margin-top:16px;padding:11px 15px;border-radius:12px;
+                        background:var(--amber-soft);border:1px solid var(--amber);
+                        font-size:13px;color:var(--ink)">
+              Menunjukkan bahagian kutipan untuk tempoh ini sahaja —
+              jumlah tidak sama dengan jumlah resit yang diterima.
+            </div>
+          }
+
+          <div class="card" style="margin-top:16px">
+            @if (c.byProduct) {
+              <div class="grid-head" style="grid-template-columns:1fr 1.5fr 1fr 1fr 1.5fr .8fr .9fr 1fr">
+                <span>Tarikh</span><span>Produk</span><span>No. Resit</span><span>Akaun</span>
+                <span>Terima Daripada</span><span>Status</span><span>Bayaran</span>
+                <span class="r">Amaun</span>
+              </div>
+            } @else {
+              <div class="grid-head" style="grid-template-columns:1fr 1fr 1fr 1.5fr 1.5fr .8fr .9fr 1fr">
+                <span>Tarikh</span><span>No. Resit</span><span>Akaun</span>
+                <span>Terima Daripada</span><span>Keterangan</span><span>Status</span>
+                <span>Bayaran</span><span class="r">Amaun</span>
+              </div>
+            }
+
+            @if (c.rows.length === 0) {
+              <div class="empty">Tiada kutipan untuk kriteria ini.</div>
+            } @else {
+              @for (r of c.rows; track $index) {
+                <div class="grid-row"
+                     [style.grid-template-columns]="c.byProduct
+                        ? '1fr 1.5fr 1fr 1fr 1.5fr .8fr .9fr 1fr'
+                        : '1fr 1fr 1fr 1.5fr 1.5fr .8fr .9fr 1fr'"
+                     style="padding:11px 20px"
+                     [style.opacity]="r.status === 'CANCELLED' ? '.5' : '1'">
+                  <span style="color:var(--muted);font-size:13px">{{ r.date }}</span>
+                  @if (c.byProduct) {
+                    <span>{{ r.productName }}</span>
+                  }
+                  <span style="font-weight:700;color:var(--green)">{{ r.receiptNo }}</span>
+                  <span>{{ r.accountNo }}</span>
+                  <span>{{ r.issuedTo }}</span>
+                  @if (!c.byProduct) {
+                    <span style="color:var(--muted);font-size:13px">{{ r.description }}</span>
+                  }
+                  <span style="font-size:13px">{{ r.status === 'CANCELLED' ? 'Batal' : 'Aktif' }}</span>
+                  <span style="font-size:13px">{{ r.paymentType || '—' }}</span>
+                  <span class="r" style="font-weight:700">{{ r.amount | number:'1.2-2' }}</span>
+                </div>
+              }
+              <div style="display:flex;justify-content:flex-end;gap:20px;padding:14px 20px;
+                          border-top:2px solid var(--line);font-weight:800">
+                <span>JUMLAH</span>
+                <span>{{ c.total | number:'1.2-2' }}</span>
+              </div>
+            }
+          </div>
+
+          @if (c.summary.length > 0) {
+            <div class="card" style="margin-top:16px;max-width:520px">
+              <div class="grid-head" style="grid-template-columns:2fr .8fr 1.2fr">
+                <span>{{ c.byProduct ? 'Produk' : 'Jenis Bayaran' }}</span>
+                <span class="r">Bil</span><span class="r">Amaun</span>
+              </div>
+              @for (s of c.summary; track s.label) {
+                <div class="grid-row" style="grid-template-columns:2fr .8fr 1.2fr;padding:10px 20px">
+                  <span>{{ s.label }}</span>
+                  <span class="r">{{ s.count }}</span>
+                  <span class="r">{{ s.amount | number:'1.2-2' }}</span>
+                </div>
+              }
+              <div class="grid-row" style="grid-template-columns:2fr .8fr 1.2fr;padding:12px 20px;
+                          border-top:2px solid var(--line);font-weight:800">
+                <span>Jumlah</span>
+                <span class="r">{{ c.rows.length }}</span>
+                <span class="r">{{ c.total | number:'1.2-2' }}</span>
+              </div>
             </div>
           }
         }
