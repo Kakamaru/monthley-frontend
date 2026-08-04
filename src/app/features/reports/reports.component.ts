@@ -4,8 +4,9 @@ import { FormsModule } from '@angular/forms';
 
 import { binaCsv, muatTurunCsv } from '../../core/csv';
 import { tarikhIso } from '../../core/tarikh';
-import { ReportsService, TrialBalance, ProfitLoss, Collection } from './reports.service';
+import { ReportsService, TrialBalance, ProfitLoss, Collection, AccountList } from './reports.service';
 import { ProductsService } from '../products/products.service';
+import { SettingsService } from '../settings/settings.service';
 import { Product } from '../../core/models/product.model';
 
 /**
@@ -29,8 +30,9 @@ export class ReportsComponent {
 
   private api = inject(ReportsService);
   private catalog = inject(ProductsService);
+  private settings = inject(SettingsService);
 
-  readonly tab = signal<'trial' | 'pnl' | 'collection'>('trial');
+  readonly tab = signal<'trial' | 'pnl' | 'collection' | 'accounts'>('trial');
   readonly busy = signal(false);
 
   readonly trial = signal<TrialBalance | null>(null);
@@ -41,7 +43,7 @@ export class ReportsComponent {
   pTo = tarikhIso();
 
   readonly belumDibina = [
-    'Account List', 'List Of Arrears', 'Print Invoice',
+    'List Of Arrears', 'Print Invoice',
     'Monthly Statistic', 'Expenses', 'Ageing', 'Customer Account Statement',
     'Daily Collection & Bank Recon', 'Tax Summary (SST)'
   ];
@@ -73,7 +75,55 @@ export class ReportsComponent {
     this.collection.set(null);
   }
 
-  pilihTab(t: 'trial' | 'pnl' | 'collection') {
+  // ── Senarai Akaun ────────────────────────────────────────────────
+
+  readonly accounts = signal<AccountList | null>(null);
+  readonly akaunCategories = signal<{ id: number; name: string }[]>([]);
+
+  aActive: boolean | null = true;
+  aCategoryId: number | null = null;
+  aSearch = '';
+
+  clearAccounts() {
+    this.aActive = true;
+    this.aCategoryId = null;
+    this.aSearch = '';
+    this.accounts.set(null);
+  }
+
+  cetakAccountsPdf() {
+    if (this.pdfBusy()) return;
+    this.pdfBusy.set(true);
+    this.api.accountListPdf({
+      active: this.aActive, categoryId: this.aCategoryId, search: this.aSearch || null
+    }).subscribe({
+      next: res => {
+        this.pdfBusy.set(false);
+        const blob = res.body;
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      },
+      error: () => this.pdfBusy.set(false)
+    });
+  }
+
+  /** Excel mendapat SEMUA medan — di situ tempatnya data mentah. */
+  eksportAccounts() {
+    const a = this.accounts();
+    if (!a) return;
+    const csv = binaCsv(
+      ['No. Akaun', 'Nama Akaun', 'No. KP', 'Terima Bil', 'Telefon', 'E-mel',
+       'Alamat', 'Poskod', 'Negeri', 'Kategori', 'Status', 'Baki'],
+      a.rows.map(r => [r.accountNo, r.accountName, r.idNo, r.issueTo, r.phone, r.email,
+                       r.address, r.postcode, r.state, r.categoryName,
+                       r.status === 'ACTIVE' ? 'Aktif' : 'Tidak Aktif',
+                       r.balance.toFixed(2)]));
+    muatTurunCsv(`senarai-akaun-${tarikhIso()}.csv`, csv);
+  }
+
+  pilihTab(t: 'trial' | 'pnl' | 'collection' | 'accounts') {
     this.tab.set(t);
     this.trial.set(null);
     this.pnl.set(null);
@@ -82,6 +132,13 @@ export class ReportsComponent {
     // julat tarikh lama masih terisi bermakna kerani menekan View Report
     // dan mendapat laporan bulan lepas tanpa menyedarinya.
     this.clearCollection();
+    this.clearAccounts();
+
+    if (t === 'accounts' && this.akaunCategories().length === 0) {
+      this.settings.accountCategories().subscribe({
+        next: c => this.akaunCategories.set(c), error: () => {}
+      });
+    }
 
     if (t === 'collection' && this.produk().length === 0) {
       this.catalog.list({ active: true, page: 0, size: 500 }).subscribe({
@@ -139,6 +196,14 @@ export class ReportsComponent {
     } else if (this.tab() === 'pnl') {
       this.api.profitLoss(this.pFrom || null, this.pTo || null).subscribe({
         next: r => { this.pnl.set(r); this.busy.set(false); },
+        error: () => this.busy.set(false)
+      });
+    } else if (this.tab() === 'accounts') {
+      this.api.accountList({
+        active: this.aActive, categoryId: this.aCategoryId,
+        search: this.aSearch || null
+      }).subscribe({
+        next: r => { this.accounts.set(r); this.busy.set(false); },
         error: () => this.busy.set(false)
       });
     } else {

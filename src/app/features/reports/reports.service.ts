@@ -50,6 +50,24 @@ export interface Collection {
   total: number;
 }
 
+export interface AccountRow {
+  accountNo: string; accountName: string;
+  /** No. KP/pendaftaran — Excel sahaja; PDF tiada ruang. */
+  idNo: string;
+  issueTo: string; phone: string; email: string;
+  address: string; postcode: string; state: string;
+  categoryName: string; status: string;
+  /** Negatif bermakna pelanggan ada KREDIT. */
+  balance: number;
+}
+
+export interface AccountList {
+  rows: AccountRow[];
+  totalBalance: number;
+  activeCount: number;
+  inactiveCount: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ReportsService {
   private http = inject(HttpClient);
@@ -95,6 +113,25 @@ export class ReportsService {
     if (q.paymentType) p = p.set('paymentType', q.paymentType);
     if (q.productId != null) p = p.set('productId', String(q.productId));
     return this.http.get(`${this.base}/collection/pdf`,
+      { params: p, responseType: 'blob', observe: 'response' as const });
+  }
+
+  accountList(q: { active?: boolean | null; categoryId?: number | null;
+                   search?: string | null }): Observable<AccountList> {
+    let p = new HttpParams();
+    if (q.active != null)     p = p.set('active', String(q.active));
+    if (q.categoryId != null) p = p.set('categoryId', String(q.categoryId));
+    if (q.search)             p = p.set('search', q.search);
+    return this.http.get<AccountList>(`${this.base}/account-list`, { params: p });
+  }
+
+  accountListPdf(q: { active?: boolean | null; categoryId?: number | null;
+                      search?: string | null }) {
+    let p = new HttpParams();
+    if (q.active != null)     p = p.set('active', String(q.active));
+    if (q.categoryId != null) p = p.set('categoryId', String(q.categoryId));
+    if (q.search)             p = p.set('search', q.search);
+    return this.http.get(`${this.base}/account-list/pdf`,
       { params: p, responseType: 'blob', observe: 'response' as const });
   }
 

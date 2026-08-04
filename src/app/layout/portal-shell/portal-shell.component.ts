@@ -45,15 +45,14 @@ export class PortalShellComponent {
   /** Service Provider — navMain + navSP dari prototaip */
   readonly navSP: NavItem[] = [
     { id: 'dashboard',    icon: '📊',  label: 'Panel Utama', route: '/portal/dashboard' },
-    { id: 'settings',     icon: '⚙️', label: 'Tetapan', route: '/portal/settings', roles: ['SP_ADMIN'] },
     { id: 'products',     icon: '📦',  label: 'Produk', route: '/portal/products', roles: ['SP_ADMIN'] },
     { id: 'accounts',     icon: '👥',  label: 'Akaun', route: '/portal/accounts' },
-    { id: 'tools',        icon: '🧾',  label: 'Alat', route: '/portal/tools', roles: ['SP_ADMIN'] },
     { id: 'manualPay',    icon: '💵',  label: 'Manual Payment', route: '/portal/manual-payment', roles: ['CLERK'] },
     { id: 'finance',      icon: '📁',  label: 'Dokumen Kewangan', route: '/portal/finance-documents' },
     { id: 'adhoc',        icon: '⚡',  label: 'Adhoc Invois', route: '/portal/adhoc-invoice' },
     { id: 'reports',      icon: '📈',  label: 'Laporan', route: '/portal/reports' },
-    { id: 'tools',        icon: '🛠️', label: 'Alat' },
+    { id: 'tools',        icon: '🛠️', label: 'Alat', route: '/portal/tools', roles: ['SP_ADMIN'] },
+    { id: 'settings',     icon: '⚙️', label: 'Tetapan', route: '/portal/settings', roles: ['SP_ADMIN'] },
     // VIEWER termasuk: pengawal pondok jaga tidak memerlukannya, tetapi
     // lejar ialah bacaan sahaja dan endpoint membenarkan ketiga-tiga.
     { id: 'spStatement',  icon: '📑',  label: 'SP Account Statement', route: '/portal/sp-ledger' },

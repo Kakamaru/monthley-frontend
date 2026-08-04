@@ -15,6 +15,8 @@
               (click)="pilihTab('pnl')">Untung Rugi</button>
       <button class="tab-pill" [class.on]="tab() === 'collection'"
               (click)="pilihTab('collection')">Senarai Kutipan</button>
+      <button class="tab-pill" [class.on]="tab() === 'accounts'"
+              (click)="pilihTab('accounts')">Senarai Akaun</button>
 
       <!-- Dipaparkan dilumpuhkan: SP melihat apa yang akan datang, dan
            rangka wujud untuk menambahnya satu demi satu. -->
@@ -87,6 +89,110 @@
               dibetulkan.
             </div>
           }
+        }
+
+      } @else if (tab() === 'accounts') {
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">Status</label>
+            <select class="fld" [(ngModel)]="aActive">
+              <option [ngValue]="null">Semua</option>
+              <option [ngValue]="true">Aktif</option>
+              <option [ngValue]="false">Tidak Aktif</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">Kategori</label>
+            <select class="fld" [(ngModel)]="aCategoryId">
+              <option [ngValue]="null">Semua Kategori</option>
+              @for (c of akaunCategories(); track c.id) {
+                <option [ngValue]="c.id">{{ c.name }}</option>
+              }
+            </select>
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">Cari</label>
+            <input class="fld" placeholder="No. akaun atau nama"
+                   [(ngModel)]="aSearch" (keyup.enter)="jana()" />
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:14px">
+          <button class="btn btn-green" (click)="jana()" [disabled]="busy()">
+            {{ busy() ? 'Menjana…' : 'View Report' }}
+          </button>
+          <button class="btn btn-ghost" (click)="clearAccounts()">Clear</button>
+          @if (accounts()) {
+            <button class="btn btn-ghost" (click)="cetakAccountsPdf()" [disabled]="pdfBusy()">
+              {{ pdfBusy() ? 'Menyediakan…' : '🖨 PDF' }}
+            </button>
+            <button class="btn btn-ghost" (click)="eksportAccounts()">⬇ Excel</button>
+          }
+        </div>
+
+        @if (accounts(); as a) {
+          <div style="display:flex;gap:22px;margin-top:16px;font-size:14px">
+            <span><strong style="color:var(--green)">{{ a.activeCount }}</strong> aktif</span>
+            @if (a.inactiveCount > 0) {
+              <span style="color:var(--muted)">{{ a.inactiveCount }} tidak aktif</span>
+            }
+            <span style="margin-left:auto">
+              Jumlah baki <strong>{{ a.totalBalance | number:'1.2-2' }}</strong>
+            </span>
+          </div>
+
+          <div class="card" style="margin-top:12px">
+            <div class="grid-head" style="grid-template-columns:1.1fr 1.6fr 2fr 1fr .8fr 1fr">
+              <span>Akaun</span><span>Terima Bil</span><span>Alamat</span>
+              <span>Kategori</span><span class="c">Status</span><span class="r">Baki</span>
+            </div>
+
+            @if (a.rows.length === 0) {
+              <div class="empty">Tiada akaun untuk kriteria ini.</div>
+            } @else {
+              @for (r of a.rows; track r.accountNo) {
+                <div class="grid-row" style="grid-template-columns:1.1fr 1.6fr 2fr 1fr .8fr 1fr;padding:11px 20px">
+                  <span>
+                    <div style="font-weight:700;color:var(--green)">{{ r.accountNo }}</div>
+                    @if (r.accountName !== r.issueTo) {
+                      <div style="font-size:12px;color:var(--muted)">{{ r.accountName }}</div>
+                    }
+                  </span>
+                  <!-- Nama, telefon dan e-mel dikumpulkan: tiga lajur
+                       berasingan menghasilkan tiga lajur kosong untuk
+                       kebanyakan akaun. -->
+                  <span>
+                    <div>{{ r.issueTo }}</div>
+                    @if (r.phone || r.email) {
+                      <div style="font-size:12px;color:var(--muted)">
+                        {{ r.phone }}{{ r.phone && r.email ? ' · ' : '' }}{{ r.email }}
+                      </div>
+                    }
+                  </span>
+                  <span style="font-size:12.5px;color:var(--muted)">
+                    {{ r.address }}{{ r.postcode ? ' ' + r.postcode : '' }}{{ r.state ? ' ' + r.state : '' }}
+                  </span>
+                  <span style="font-size:13px;color:var(--muted)">{{ r.categoryName || '—' }}</span>
+                  <span class="c" style="font-size:13px"
+                        [style.color]="r.status === 'ACTIVE' ? null : 'var(--muted)'">
+                    {{ r.status === 'ACTIVE' ? 'Aktif' : 'Tidak Aktif' }}
+                  </span>
+                  <!-- Baki negatif bermakna pelanggan ada KREDIT. -->
+                  <span class="r" style="font-weight:700"
+                        [style.color]="r.balance < 0 ? 'var(--green)' : 'var(--ink)'">
+                    {{ r.balance < 0
+                        ? '(' + (-r.balance | number:'1.2-2') + ')'
+                        : (r.balance | number:'1.2-2') }}
+                  </span>
+                </div>
+              }
+              <div style="display:flex;justify-content:flex-end;gap:20px;padding:14px 20px;
+                          border-top:2px solid var(--line);font-weight:800">
+                <span>JUMLAH BAKI</span>
+                <span>{{ a.totalBalance | number:'1.2-2' }}</span>
+              </div>
+            }
+          </div>
         }
 
       } @else if (tab() === 'collection') {
