@@ -110,6 +110,38 @@ export interface AgeList {
   d30: number; d60: number; d90: number; d180: number; over180: number;
 }
 
+export interface MonthPoint { label: string; billed: number; collected: number; }
+export interface Slice { label: string; amount: number; }
+export interface TopAccount {
+  accountNo: string; accountName: string; amount: number; note: string | null;
+}
+
+export interface Stats {
+  periodName: string;
+  from: string; to: string; asAt: string;
+  invoiceCount: number; billed: number;
+  receiptCount: number; collected: number;
+  /** Bahagian kutipan yang melangsaikan invois tempoh INI. */
+  collectedThisPeriod: number;
+  collectedArrears: number;
+  collectionRate: number;
+  arrears: number; arrearsPrevious: number;
+  activeAccounts: number; accountsWithBalance: number;
+  trend: MonthPoint[];
+  byPaymentType: Slice[];
+  byProduct: Slice[];
+  topArrears: TopAccount[];
+  longestSilent: TopAccount[];
+}
+
+export interface StatsResponse {
+  stats: Stats;
+  /** Carta dijana di backend — skrin dan PDF berkongsi lukisan sama. */
+  trendSvg: string;
+  paymentSvg: string;
+  productSvg: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ReportsService {
   private http = inject(HttpClient);
@@ -229,6 +261,19 @@ export class ReportsService {
     if (categoryId != null) p = p.set('categoryId', String(categoryId));
     return this.http.get(`${this.base}/account-list/ageing/pdf`,
       { params: p, responseType: 'blob', observe: 'response' as const });
+  }
+
+  monthlyStats(year: number, month: number): Observable<StatsResponse> {
+    return this.http.get<StatsResponse>(`${this.base}/monthly-stats`,
+      { params: new HttpParams().set('year', String(year))
+                                .set('month', String(month)) });
+  }
+
+  monthlyStatsPdf(year: number, month: number) {
+    return this.http.get(`${this.base}/monthly-stats/pdf`,
+      { params: new HttpParams().set('year', String(year))
+                                .set('month', String(month)),
+        responseType: 'blob', observe: 'response' as const });
   }
 
   profitLoss(from: string | null, to: string | null): Observable<ProfitLoss> {

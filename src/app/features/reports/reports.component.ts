@@ -1,10 +1,11 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { binaCsv, muatTurunCsv } from '../../core/csv';
 import { tarikhIso } from '../../core/tarikh';
-import { ReportsService, TrialBalance, ProfitLoss, Collection, AccountList, SubList, ArrearList, AgeList } from './reports.service';
+import { ReportsService, TrialBalance, ProfitLoss, Collection, AccountList, SubList, ArrearList, AgeList, StatsResponse } from './reports.service';
 import { ProductsService } from '../products/products.service';
 import { SettingsService } from '../settings/settings.service';
 import { Product } from '../../core/models/product.model';
@@ -31,8 +32,9 @@ export class ReportsComponent {
   private api = inject(ReportsService);
   private catalog = inject(ProductsService);
   private settings = inject(SettingsService);
+  private sanitizer = inject(DomSanitizer);
 
-  readonly tab = signal<'trial' | 'pnl' | 'collection' | 'accounts' | 'subs' | 'arrears' | 'ageing'>('trial');
+  readonly tab = signal<'trial' | 'pnl' | 'collection' | 'accounts' | 'subs' | 'arrears' | 'ageing' | 'stats'>('trial');
   readonly busy = signal(false);
 
   readonly trial = signal<TrialBalance | null>(null);
@@ -44,7 +46,7 @@ export class ReportsComponent {
 
   readonly belumDibina = [
     'Print Invoice',
-    'Monthly Statistic', 'Expenses', 'Customer Account Statement',
+    'Expenses', 'Customer Account Statement',
     'Daily Collection & Bank Recon', 'Tax Summary (SST)'
   ];
 
@@ -290,7 +292,53 @@ export class ReportsComponent {
     muatTurunCsv(`ageing-${a.asAt}.csv`, csv);
   }
 
-  pilihTab(t: 'trial' | 'pnl' | 'collection' | 'accounts' | 'subs' | 'arrears' | 'ageing') {
+  // ── Statistik Bulanan ────────────────────────────────────────────
+
+  readonly stats = signal<StatsResponse | null>(null);
+
+  stYear = new Date().getFullYear();
+  stMonth = new Date().getMonth() + 1;
+
+  readonly tahunPilihan = Array.from({ length: 6 },
+    (_, i) => new Date().getFullYear() - i);
+
+  readonly namaBulan = ['Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun',
+    'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'];
+
+  /**
+   * SVG datang daripada backend, bukan input pengguna.
+   *
+   * Angular membuang <svg> daripada innerHTML biasa. ChartSvg sudah
+   * meng-escape nama produk, jadi menandakannya dipercayai selamat di
+   * sini — dan ia bermakna skrin dan PDF berkongsi lukisan yang SAMA.
+   */
+  svg(kod: string | undefined): SafeHtml {
+    return this.sanitizer.bypassSecurityTrustHtml(kod ?? '');
+  }
+
+  clearStats() {
+    this.stYear = new Date().getFullYear();
+    this.stMonth = new Date().getMonth() + 1;
+    this.stats.set(null);
+  }
+
+  cetakStatsPdf() {
+    if (this.pdfBusy()) return;
+    this.pdfBusy.set(true);
+    this.api.monthlyStatsPdf(this.stYear, this.stMonth).subscribe({
+      next: res => {
+        this.pdfBusy.set(false);
+        const blob = res.body;
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      },
+      error: () => this.pdfBusy.set(false)
+    });
+  }
+
+  pilihTab(t: 'trial' | 'pnl' | 'collection' | 'accounts' | 'subs' | 'arrears' | 'ageing' | 'stats') {
     this.tab.set(t);
     this.trial.set(null);
     this.pnl.set(null);
@@ -303,6 +351,7 @@ export class ReportsComponent {
     this.clearSubs();
     this.clearArrears();
     this.clearAgeing();
+    this.clearStats();
 
     if (t === 'ageing' && this.akaunCategories().length === 0) {
       this.settings.accountCategories().subscribe({
@@ -385,6 +434,11 @@ export class ReportsComponent {
     } else if (this.tab() === 'pnl') {
       this.api.profitLoss(this.pFrom || null, this.pTo || null).subscribe({
         next: r => { this.pnl.set(r); this.busy.set(false); },
+        error: () => this.busy.set(false)
+      });
+    } else if (this.tab() === 'stats') {
+      this.api.monthlyStats(this.stYear, this.stMonth).subscribe({
+        next: r => { this.stats.set(r); this.busy.set(false); },
         error: () => this.busy.set(false)
       });
     } else if (this.tab() === 'ageing') {
