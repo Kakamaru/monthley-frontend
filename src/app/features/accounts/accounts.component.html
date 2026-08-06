@@ -706,7 +706,7 @@
         <div style="font-family:'Sora',sans-serif;font-weight:800;font-size:20px;color:var(--ink)">Invoice Vs Receipt</div>
         <div style="display:flex;gap:8px;align-items:center">
           <select class="fld" style="min-width:120px" [ngModel]="repYear()" (ngModelChange)="onRepYearChange($event)">
-            @for (y of repYears; track y) { <option [value]="y">{{ y }}</option> }
+            @for (y of repYears(); track y) { <option [value]="y">{{ y }}</option> }
           </select>
         </div>
       </div>

@@ -98,6 +98,16 @@ export class AccountsService {
       { params: new HttpParams().set('accountId', String(accountId)).set('year', year).set('page', '0').set('size', '200') });
   }
 
+  /**
+   * Tahun yang benar-benar ada invois untuk akaun ini.
+   * Bukan julat tetap: caj tahunan prepaid dibil awal, jadi period tahun
+   * hadapan wujud pada tahun semasa. Julat tetap menyembunyikannya terus.
+   */
+  paymentReportYears(accountId: number): Observable<string[]> {
+    return this.http.get<string[]>('/api/v1/payments/payment-report/years',
+      { params: new HttpParams().set('accountId', String(accountId)) });
+  }
+
   myAccounts(): Observable<MyAccountRow[]> {
     return this.http.get<MyAccountRow[]>(`${this.base}/my`);
   }

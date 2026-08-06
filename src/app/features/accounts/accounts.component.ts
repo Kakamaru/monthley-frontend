@@ -147,12 +147,26 @@ export class AccountsComponent {
   readonly repLoading = signal(false);
   readonly repYear = signal(String(new Date().getFullYear()));
   private repAccountId = 0;
-  readonly repYears = Array.from({ length: 10 }, (_, i) => String(new Date().getFullYear() - i));
+  /** Diisi dari backend bila modal dibuka — tahun yang ada invois sahaja. */
+  readonly repYears = signal<string[]>([]);
 
   openPaymentReport(a: { id: number }) {
     this.repAccountId = a.id;
     this.repOpen.set(true);
-    this.loadPaymentReport();
+    this.rep.set(null);
+    this.repYears.set([]);
+    this.repLoading.set(true);
+    // Tahun dahulu, baru laporan: repYear mesti wujud dalam senarai,
+    // kalau tidak <select> papar kosong sebab nilainya tiada <option>.
+    this.api.paymentReportYears(this.repAccountId).subscribe({
+      next: ys => {
+        this.repYears.set(ys);
+        const semasa = String(new Date().getFullYear());
+        this.repYear.set(ys.includes(semasa) ? semasa : (ys[0] ?? semasa));
+        this.loadPaymentReport();
+      },
+      error: () => this.repLoading.set(false)
+    });
   }
   loadPaymentReport() {
     this.rep.set(null);
