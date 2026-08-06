@@ -111,9 +111,18 @@ export interface AgeList {
 }
 
 export interface MonthPoint { label: string; billed: number; collected: number; }
+export interface DayPoint { day: number; amount: number; cumulative: number; }
+export interface DailySummary {
+  total: number; average: number;
+  busiestDay: number; busiestAmount: number;
+  transactions: number;
+}
 export interface Slice { label: string; amount: number; }
 export interface TopAccount {
   accountNo: string; accountName: string; amount: number; note: string | null;
+  /** Bilangan invois belum lunas — RM5,000 daripada satu bil besar
+   *  berbeza sama sekali daripada dua belas bil kecil. */
+  invoiceCount: number;
 }
 
 export interface Stats {
@@ -128,6 +137,10 @@ export interface Stats {
   arrears: number; arrearsPrevious: number;
   activeAccounts: number; accountsWithBalance: number;
   trend: MonthPoint[];
+  daily: DayPoint[];
+  dailySummary: DailySummary;
+  billedPrevious: number;
+  collectedPrevious: number;
   byPaymentType: Slice[];
   byProduct: Slice[];
   topArrears: TopAccount[];
@@ -137,6 +150,8 @@ export interface Stats {
 export interface StatsResponse {
   stats: Stats;
   /** Carta dijana di backend — skrin dan PDF berkongsi lukisan sama. */
+  dailySvg: string;
+  splitSvg: string;
   trendSvg: string;
   paymentSvg: string;
   productSvg: string;

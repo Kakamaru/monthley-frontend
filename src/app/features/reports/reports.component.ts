@@ -316,6 +316,12 @@ export class ReportsComponent {
     return this.sanitizer.bypassSecurityTrustHtml(kod ?? '');
   }
 
+  /** Beza peratus antara dua nilai, untuk badge delta. */
+  peratusBeza(kini: number, lepas: number): string {
+    if (!lepas) return '0';
+    return Math.abs(((kini - lepas) / lepas) * 100).toFixed(0);
+  }
+
   clearStats() {
     this.stYear = new Date().getFullYear();
     this.stMonth = new Date().getMonth() + 1;
