@@ -157,6 +157,17 @@ export interface StatsResponse {
   productSvg: string;
 }
 
+export interface InvoiceRow {
+  documentId: number; docNo: string;
+  accountNo: string; accountName: string;
+  docDate: string | null; period: string;
+  amount: number; status: string;
+}
+
+export interface InvoicePreview {
+  count: number; total: number; rows: InvoiceRow[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class ReportsService {
   private http = inject(HttpClient);
@@ -289,6 +300,26 @@ export class ReportsService {
       { params: new HttpParams().set('year', String(year))
                                 .set('month', String(month)),
         responseType: 'blob', observe: 'response' as const });
+  }
+
+  printInvoices(q: { year: number; month: number;
+                     categoryId?: number | null; unpaidOnly: boolean
+                   }): Observable<InvoicePreview> {
+    let p = new HttpParams()
+      .set('year', String(q.year)).set('month', String(q.month))
+      .set('unpaidOnly', String(q.unpaidOnly));
+    if (q.categoryId != null) p = p.set('categoryId', String(q.categoryId));
+    return this.http.get<InvoicePreview>(`${this.base}/print-invoice`, { params: p });
+  }
+
+  printInvoicesPdf(q: { year: number; month: number;
+                        categoryId?: number | null; unpaidOnly: boolean }) {
+    let p = new HttpParams()
+      .set('year', String(q.year)).set('month', String(q.month))
+      .set('unpaidOnly', String(q.unpaidOnly));
+    if (q.categoryId != null) p = p.set('categoryId', String(q.categoryId));
+    return this.http.get(`${this.base}/print-invoice/pdf`,
+      { params: p, responseType: 'blob', observe: 'response' as const });
   }
 
   profitLoss(from: string | null, to: string | null): Observable<ProfitLoss> {

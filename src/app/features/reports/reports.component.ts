@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 
 import { binaCsv, muatTurunCsv } from '../../core/csv';
 import { tarikhIso } from '../../core/tarikh';
-import { ReportsService, TrialBalance, ProfitLoss, Collection, AccountList, SubList, ArrearList, AgeList, StatsResponse } from './reports.service';
+import { ReportsService, TrialBalance, ProfitLoss, Collection, AccountList, SubList, ArrearList, AgeList, StatsResponse, InvoicePreview } from './reports.service';
 import { ProductsService } from '../products/products.service';
 import { SettingsService } from '../settings/settings.service';
 import { Product } from '../../core/models/product.model';
@@ -34,7 +34,7 @@ export class ReportsComponent {
   private settings = inject(SettingsService);
   private sanitizer = inject(DomSanitizer);
 
-  readonly tab = signal<'trial' | 'pnl' | 'collection' | 'accounts' | 'subs' | 'arrears' | 'ageing' | 'stats'>('trial');
+  readonly tab = signal<'trial' | 'pnl' | 'collection' | 'accounts' | 'subs' | 'arrears' | 'ageing' | 'stats' | 'printinv'>('trial');
   readonly busy = signal(false);
 
   readonly trial = signal<TrialBalance | null>(null);
@@ -45,7 +45,6 @@ export class ReportsComponent {
   pTo = tarikhIso();
 
   readonly belumDibina = [
-    'Print Invoice',
     'Expenses', 'Customer Account Statement',
     'Daily Collection & Bank Recon', 'Tax Summary (SST)'
   ];
@@ -344,7 +343,43 @@ export class ReportsComponent {
     });
   }
 
-  pilihTab(t: 'trial' | 'pnl' | 'collection' | 'accounts' | 'subs' | 'arrears' | 'ageing' | 'stats') {
+  // ── Cetak Invois Pukal ───────────────────────────────────────────
+
+  readonly invoices = signal<InvoicePreview | null>(null);
+
+  piYear = new Date().getFullYear();
+  piMonth = new Date().getMonth() + 1;
+  piCategoryId: number | null = null;
+  piUnpaidOnly = false;
+
+  clearPrintInv() {
+    this.piYear = new Date().getFullYear();
+    this.piMonth = new Date().getMonth() + 1;
+    this.piCategoryId = null;
+    this.piUnpaidOnly = false;
+    this.invoices.set(null);
+  }
+
+  cetakInvoisPukal() {
+    if (this.pdfBusy()) return;
+    this.pdfBusy.set(true);
+    this.api.printInvoicesPdf({
+      year: this.piYear, month: this.piMonth,
+      categoryId: this.piCategoryId, unpaidOnly: this.piUnpaidOnly
+    }).subscribe({
+      next: res => {
+        this.pdfBusy.set(false);
+        const blob = res.body;
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 120_000);
+      },
+      error: () => this.pdfBusy.set(false)
+    });
+  }
+
+  pilihTab(t: 'trial' | 'pnl' | 'collection' | 'accounts' | 'subs' | 'arrears' | 'ageing' | 'stats' | 'printinv') {
     this.tab.set(t);
     this.trial.set(null);
     this.pnl.set(null);
@@ -358,6 +393,13 @@ export class ReportsComponent {
     this.clearArrears();
     this.clearAgeing();
     this.clearStats();
+    this.clearPrintInv();
+
+    if (t === 'printinv' && this.akaunCategories().length === 0) {
+      this.settings.accountCategories().subscribe({
+        next: c => this.akaunCategories.set(c), error: () => {}
+      });
+    }
 
     if (t === 'ageing' && this.akaunCategories().length === 0) {
       this.settings.accountCategories().subscribe({
@@ -440,6 +482,14 @@ export class ReportsComponent {
     } else if (this.tab() === 'pnl') {
       this.api.profitLoss(this.pFrom || null, this.pTo || null).subscribe({
         next: r => { this.pnl.set(r); this.busy.set(false); },
+        error: () => this.busy.set(false)
+      });
+    } else if (this.tab() === 'printinv') {
+      this.api.printInvoices({
+        year: this.piYear, month: this.piMonth,
+        categoryId: this.piCategoryId, unpaidOnly: this.piUnpaidOnly
+      }).subscribe({
+        next: r => { this.invoices.set(r); this.busy.set(false); },
         error: () => this.busy.set(false)
       });
     } else if (this.tab() === 'stats') {

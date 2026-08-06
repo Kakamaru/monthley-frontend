@@ -25,6 +25,8 @@
               (click)="pilihTab('ageing')">Ageing</button>
       <button class="tab-pill" [class.on]="tab() === 'stats'"
               (click)="pilihTab('stats')">Statistik Bulanan</button>
+      <button class="tab-pill" [class.on]="tab() === 'printinv'"
+              (click)="pilihTab('printinv')">Cetak Invois</button>
 
       <!-- Dipaparkan dilumpuhkan: SP melihat apa yang akan datang, dan
            rangka wujud untuk menambahnya satu demi satu. -->
@@ -97,6 +99,99 @@
               dibetulkan.
             </div>
           }
+        }
+
+      } @else if (tab() === 'printinv') {
+        <div style="display:grid;grid-template-columns:140px 180px 1fr;gap:14px;align-items:end">
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">Tahun</label>
+            <select class="fld" [(ngModel)]="piYear">
+              @for (y of tahunPilihan; track y) {
+                <option [ngValue]="y">{{ y }}</option>
+              }
+            </select>
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">Tempoh</label>
+            <select class="fld" [(ngModel)]="piMonth">
+              @for (m of namaBulan; track $index) {
+                <option [ngValue]="$index + 1">{{ m }}</option>
+              }
+            </select>
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">Kategori</label>
+            <select class="fld" [(ngModel)]="piCategoryId">
+              <option [ngValue]="null">Semua Kategori</option>
+              @for (c of akaunCategories(); track c.id) {
+                <option [ngValue]="c.id">{{ c.name }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <label style="display:flex;align-items:center;gap:8px;margin-top:14px;font-size:13.5px;cursor:pointer">
+          <input type="checkbox" [(ngModel)]="piUnpaidOnly" />
+          Invois belum lunas sahaja
+        </label>
+
+        <!-- Tempoh LIPUTAN, bukan tarikh dokumen: invois yang dijana
+             pada Ogos boleh meliputi Julai, dan SP yang mencetak 'bil
+             Julai' mahukan yang meliputi Julai. -->
+        <div style="font-size:12.5px;color:var(--muted);margin-top:8px">
+          Ditapis mengikut tempoh liputan invois, bukan tarikh ia dijana.
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:14px">
+          <button class="btn btn-green" (click)="jana()" [disabled]="busy()">
+            {{ busy() ? 'Mencari…' : 'Papar Senarai' }}
+          </button>
+          <button class="btn btn-ghost" (click)="clearPrintInv()">Clear</button>
+          @if (invoices(); as v) {
+            @if (v.count > 0) {
+              <button class="btn btn-navy" (click)="cetakInvoisPukal()" [disabled]="pdfBusy()">
+                {{ pdfBusy() ? 'Menyediakan PDF…' : '🖨 Cetak ' + v.count + ' Invois' }}
+              </button>
+            }
+          }
+        </div>
+
+        @if (invoices(); as v) {
+          <!-- Kiraan sebelum cetak: 1,400 invois mengambil masa, dan SP
+               patut tahu berapa yang akan keluar sebelum menunggu. -->
+          <div style="display:flex;gap:22px;margin-top:16px;font-size:14px">
+            <span><strong style="color:var(--green)">{{ v.count }}</strong> invois</span>
+            <span style="margin-left:auto">Jumlah <strong>{{ v.total | number:'1.2-2' }}</strong></span>
+          </div>
+
+          @if (pdfBusy() && v.count > 200) {
+            <div style="margin-top:12px;padding:11px 15px;border-radius:12px;
+                        background:var(--amber-soft);border:1px solid var(--amber);font-size:13px">
+              Menjana {{ v.count }} invois — ini mengambil masa. Jangan tutup tab ini.
+            </div>
+          }
+
+          <div class="card" style="margin-top:12px">
+            <div class="grid-head" style="grid-template-columns:1.1fr 1fr 1.6fr 1fr 1fr .9fr">
+              <span>No. Invois</span><span>Akaun</span><span>Nama</span>
+              <span>Tarikh</span><span>Tempoh</span><span class="r">Amaun</span>
+            </div>
+
+            @if (v.rows.length === 0) {
+              <div class="empty">Tiada invois untuk kriteria ini.</div>
+            } @else {
+              @for (r of v.rows; track r.documentId) {
+                <div class="grid-row" style="grid-template-columns:1.1fr 1fr 1.6fr 1fr 1fr .9fr;padding:11px 20px">
+                  <span style="font-weight:700;color:var(--green)">{{ r.docNo }}</span>
+                  <span>{{ r.accountNo }}</span>
+                  <span>{{ r.accountName }}</span>
+                  <span style="font-size:13px;color:var(--muted)">{{ r.docDate }}</span>
+                  <span style="font-size:13px;color:var(--muted)">{{ r.period }}</span>
+                  <span class="r" style="font-weight:700">{{ r.amount | number:'1.2-2' }}</span>
+                </div>
+              }
+            }
+          </div>
         }
 
       } @else if (tab() === 'stats') {
