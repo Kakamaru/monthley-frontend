@@ -5,9 +5,11 @@ import { FormsModule } from '@angular/forms';
 
 import { binaCsv, muatTurunCsv } from '../../core/csv';
 import { tarikhIso } from '../../core/tarikh';
-import { ReportsService, TrialBalance, ProfitLoss, Collection, AccountList, SubList, ArrearList, AgeList, StatsResponse, InvoicePreview } from './reports.service';
+import { ReportsService, TrialBalance, ProfitLoss, Collection, AccountList, SubList, ArrearList, AgeList, StatsResponse, InvoicePreview, AccountRow } from './reports.service';
 import { ProductsService } from '../products/products.service';
 import { SettingsService } from '../settings/settings.service';
+import { AccountsService } from '../accounts/accounts.service';
+import { Account } from '../../core/models/account.model';
 import { Product } from '../../core/models/product.model';
 
 /**
@@ -32,9 +34,10 @@ export class ReportsComponent {
   private api = inject(ReportsService);
   private catalog = inject(ProductsService);
   private settings = inject(SettingsService);
+  private accountsApi = inject(AccountsService);
   private sanitizer = inject(DomSanitizer);
 
-  readonly tab = signal<'trial' | 'pnl' | 'collection' | 'accounts' | 'subs' | 'arrears' | 'ageing' | 'stats' | 'printinv'>('trial');
+  readonly tab = signal<'trial' | 'pnl' | 'collection' | 'accounts' | 'subs' | 'arrears' | 'ageing' | 'stats' | 'printinv' | 'custstmt'>('trial');
   readonly busy = signal(false);
 
   readonly trial = signal<TrialBalance | null>(null);
@@ -45,7 +48,7 @@ export class ReportsComponent {
   pTo = tarikhIso();
 
   readonly belumDibina = [
-    'Expenses', 'Customer Account Statement',
+    'Expenses',
     'Daily Collection & Bank Recon', 'Tax Summary (SST)'
   ];
 
@@ -379,7 +382,133 @@ export class ReportsComponent {
     });
   }
 
-  pilihTab(t: 'trial' | 'pnl' | 'collection' | 'accounts' | 'subs' | 'arrears' | 'ageing' | 'stats' | 'printinv') {
+  // ── Penyata Akaun Pelanggan ──────────────────────────────────────
+
+  // Carian akaun menggunakan AccountsService, bukan laporan Senarai
+  // Akaun: carian mesti berkelakuan sama seperti modal kanta dalam
+  // Adhoc Invois, dan AccountListPort ialah laporan — bukan API carian
+  // umum.
+  readonly csResults = signal<Account[]>([]);
+  readonly csPilih = signal<Account | null>(null);
+  readonly csYears = signal<number[]>([]);
+  readonly csFirstYear = signal<number | null>(null);
+
+  /** null bermakna SEMUA sejak transaksi pertama. */
+  csYear: number | null = new Date().getFullYear();
+
+  // Modal carian, sama seperti kanta dalam Adhoc Invois: dua medan,
+  // tapisan kategori, paginasi. Carian sebaris memaksa SP mengingati
+  // nombor akaun; modal membenarkan dia melayari.
+  readonly csModal = signal(false);
+  readonly csBusy = signal(false);
+  readonly csPage = signal(0);
+  readonly csTotal = signal(0);
+  readonly csSaiz = 10;
+
+  csCariNo = '';
+  csCariNama = '';
+  csCariKategori: number | null = null;
+
+  readonly csTotalPages = computed(
+    () => Math.max(1, Math.ceil(this.csTotal() / this.csSaiz)));
+
+  bukaCarianAkaun() {
+    this.csModal.set(true);
+    if (this.akaunCategories().length === 0) {
+      this.settings.accountCategories().subscribe({
+        next: c => this.akaunCategories.set(c), error: () => {}
+      });
+    }
+    this.cariAkaunPenyata();
+  }
+
+  tutupCarianAkaun() { this.csModal.set(false); }
+
+  clearCustStmt() {
+    this.csCariNo = '';
+    this.csCariNama = '';
+    this.csCariKategori = null;
+    this.csModal.set(false);
+    this.csPage.set(0);
+    this.csTotal.set(0);
+    this.csYear = new Date().getFullYear();
+    this.csResults.set([]);
+    this.csPilih.set(null);
+    this.csYears.set([]);
+    this.csFirstYear.set(null);
+  }
+
+  cariAkaunPenyata(kekalHalaman = false) {
+    if (!kekalHalaman) this.csPage.set(0);
+    this.csBusy.set(true);
+    this.accountsApi.list({
+      active: true,
+      // Backend menerima satu 'q' yang memadankan no. akaun ATAU nama.
+      // Kalau kedua-duanya diisi, nombor menang kerana ia lebih tepat.
+      q: this.csCariNo.trim() || this.csCariNama.trim() || null,
+      category: this.csCariKategori,
+      page: this.csPage(), size: this.csSaiz
+    }).subscribe({
+      next: r => {
+        this.csResults.set(r.items);
+        this.csTotal.set(r.total);
+        this.csBusy.set(false);
+      },
+      error: () => { this.csResults.set([]); this.csBusy.set(false); }
+    });
+  }
+
+  csPergi(n: number) {
+    if (n < 0 || n >= this.csTotalPages()) return;
+    this.csPage.set(n);
+    this.cariAkaunPenyata(true);
+  }
+
+  pilihAkaunPenyata(a: Account) {
+    this.csPilih.set(a);
+    this.csModal.set(false);
+    this.csYears.set([]);
+    this.csFirstYear.set(null);
+
+    // Hanya tahun yang MEMPUNYAI transaksi disenaraikan: dropdown
+    // sepuluh tahun ke belakang memaksa SP mencuba satu-satu untuk
+    // mencari yang ada data.
+    this.api.statementYears(a.id).subscribe({
+      next: r => {
+        this.csYears.set(r.years);
+        this.csFirstYear.set(r.firstYear);
+        this.csYear = r.years.length ? r.years[0] : new Date().getFullYear();
+      },
+      error: () => {}
+    });
+  }
+
+  muatPenyata(xlsx: boolean) {
+    const a = this.csPilih();
+    if (!a || this.pdfBusy()) return;
+    this.pdfBusy.set(true);
+    this.api.statementFile(a.id, this.csYear, this.csFirstYear(), xlsx)
+      .subscribe({
+        next: res => {
+          this.pdfBusy.set(false);
+          const blob = res.body;
+          if (!blob) return;
+          const url = URL.createObjectURL(blob);
+          if (xlsx) {
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `penyata-${a.no}.xlsx`;
+            link.click();
+          } else {
+            window.open(url, '_blank');
+          }
+          setTimeout(() => URL.revokeObjectURL(url), 60_000);
+        },
+        error: () => this.pdfBusy.set(false)
+      });
+  }
+
+  pilihTab(t: 'trial' | 'pnl' | 'collection' | 'accounts' | 'subs' | 'arrears' | 'ageing' | 'stats' | 'printinv' | 'custstmt') {
     this.tab.set(t);
     this.trial.set(null);
     this.pnl.set(null);
@@ -394,6 +523,7 @@ export class ReportsComponent {
     this.clearAgeing();
     this.clearStats();
     this.clearPrintInv();
+    this.clearCustStmt();
 
     if (t === 'printinv' && this.akaunCategories().length === 0) {
       this.settings.accountCategories().subscribe({

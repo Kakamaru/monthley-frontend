@@ -27,6 +27,8 @@
               (click)="pilihTab('stats')">Statistik Bulanan</button>
       <button class="tab-pill" [class.on]="tab() === 'printinv'"
               (click)="pilihTab('printinv')">Cetak Invois</button>
+      <button class="tab-pill" [class.on]="tab() === 'custstmt'"
+              (click)="pilihTab('custstmt')">Penyata Pelanggan</button>
 
       <!-- Dipaparkan dilumpuhkan: SP melihat apa yang akan datang, dan
            rangka wujud untuk menambahnya satu demi satu. -->
@@ -99,6 +101,133 @@
               dibetulkan.
             </div>
           }
+        }
+
+      } @else if (tab() === 'custstmt') {
+        <!-- Butang kanta membuka modal carian, sama seperti Adhoc
+             Invois: carian sebaris memaksa SP mengingati nombor akaun,
+             modal membenarkan dia melayari dan menapis. -->
+        <div style="display:flex;gap:12px;align-items:end">
+          <div style="flex:1;max-width:460px">
+            <label style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">Akaun</label>
+            <div style="display:flex">
+              <input class="fld" readonly
+                     [value]="csPilih() ? (csPilih()!.no + ' · ' + csPilih()!.name) : ''"
+                     placeholder="Pilih akaun…"
+                     style="border-radius:9px 0 0 9px;cursor:pointer"
+                     (click)="bukaCarianAkaun()" />
+              <button (click)="bukaCarianAkaun()"
+                      style="width:46px;background:var(--green);color:#fff;border:none;border-radius:0 9px 9px 0;cursor:pointer;font-size:15px">🔍</button>
+            </div>
+          </div>
+          <button class="btn btn-ghost" (click)="clearCustStmt()">Clear</button>
+        </div>
+
+        @if (csPilih(); as a) {
+          <div class="card" style="margin-top:16px;padding:20px">
+            <div style="display:flex;gap:14px;align-items:end;flex-wrap:wrap">
+              <div>
+                <label style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">Tahun</label>
+                <select class="fld" style="width:250px" [(ngModel)]="csYear">
+                  @for (y of csYears(); track y) {
+                    <option [ngValue]="y">{{ y }}</option>
+                  }
+                  @if (csFirstYear()) {
+                    <option [ngValue]="null">Semua sejak {{ csFirstYear() }}</option>
+                  }
+                </select>
+              </div>
+              <button class="btn btn-green" (click)="muatPenyata(false)" [disabled]="pdfBusy()">
+                {{ pdfBusy() ? 'Menyediakan…' : '🖨 PDF' }}
+              </button>
+              <button class="btn btn-ghost" (click)="muatPenyata(true)" [disabled]="pdfBusy()">
+                ⬇ Excel
+              </button>
+            </div>
+
+            @if (csYears().length === 0) {
+              <div style="font-size:12.5px;color:var(--muted);margin-top:14px">
+                Akaun ini belum mempunyai sebarang transaksi.
+              </div>
+            } @else {
+              <!-- Hanya tahun yang MEMPUNYAI transaksi disenaraikan:
+                   dropdown sepuluh tahun ke belakang memaksa SP mencuba
+                   satu-satu untuk mencari yang ada data. -->
+              <div style="font-size:12.5px;color:var(--muted);margin-top:14px">
+                Hanya tahun yang mempunyai transaksi disenaraikan.
+                <span *ngIf="csFirstYear()">
+                  'Semua sejak {{ csFirstYear() }}' menjana penyata dari transaksi pertama.
+                </span>
+              </div>
+            }
+          </div>
+        }
+
+        @if (csModal()) {
+          <div style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:80;display:flex;align-items:center;justify-content:center;padding:24px"
+               (click)="tutupCarianAkaun()">
+            <div class="card" style="width:820px;max-width:100%;max-height:86vh;overflow:auto;padding:0"
+                 (click)="$event.stopPropagation()">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--line)">
+                <div style="font-family:'Sora',sans-serif;font-weight:800;font-size:17px">Cari Akaun</div>
+                <button class="btn btn-ghost" (click)="tutupCarianAkaun()" style="font-size:13px">Tutup</button>
+              </div>
+
+              <div style="padding:18px 22px">
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+                  <input class="fld" placeholder="No. Akaun"
+                         [(ngModel)]="csCariNo" (keyup.enter)="cariAkaunPenyata()" />
+                  <input class="fld" placeholder="Nama"
+                         [(ngModel)]="csCariNama" (keyup.enter)="cariAkaunPenyata()" />
+                  <select class="fld" [(ngModel)]="csCariKategori">
+                    <option [ngValue]="null">Semua Kategori</option>
+                    @for (c of akaunCategories(); track c.id) {
+                      <option [ngValue]="c.id">{{ c.name }}</option>
+                    }
+                  </select>
+                </div>
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px">
+                  <button class="btn btn-navy" (click)="cariAkaunPenyata()" [disabled]="csBusy()">
+                    {{ csBusy() ? 'Mencari…' : 'Search' }}
+                  </button>
+                  <button class="btn btn-ghost"
+                          (click)="csCariNo=''; csCariNama=''; csCariKategori=null; cariAkaunPenyata()">Clear</button>
+                </div>
+              </div>
+
+              <div class="grid-head" style="grid-template-columns:1.2fr 2.4fr 1fr">
+                <span>Akaun</span><span>Nama</span><span class="r">Baki</span>
+              </div>
+
+              @if (csBusy()) {
+                <div class="empty">Memuatkan…</div>
+              } @else if (csResults().length === 0) {
+                <div class="empty">Tiada akaun dijumpai.</div>
+              } @else {
+                @for (a of csResults(); track a.id) {
+                  <div class="grid-row" style="grid-template-columns:1.2fr 2.4fr 1fr;padding:11px 22px;cursor:pointer"
+                       (click)="pilihAkaunPenyata(a)">
+                    <span style="font-weight:700;color:var(--green)">{{ a.no }}</span>
+                    <span>
+                      {{ a.name }}
+                      @if (a.billTo && a.billTo !== a.name) {
+                        <div style="font-size:12px;color:var(--muted)">{{ a.billTo }}</div>
+                      }
+                    </span>
+                    <span class="r" style="font-weight:700">{{ a.balance | number:'1.2-2' }}</span>
+                  </div>
+                }
+
+                @if (csTotalPages() > 1) {
+                  <div class="pager" style="display:flex;justify-content:center;align-items:center;gap:8px;padding:14px">
+                    <button class="pg-nav" [disabled]="csPage() === 0" (click)="csPergi(csPage() - 1)">‹</button>
+                    <span class="pager-label">{{ csPage() + 1 }} / {{ csTotalPages() }}</span>
+                    <button class="pg-nav" [disabled]="csPage() >= csTotalPages() - 1" (click)="csPergi(csPage() + 1)">›</button>
+                  </div>
+                }
+              }
+            </div>
+          </div>
         }
 
       } @else if (tab() === 'printinv') {

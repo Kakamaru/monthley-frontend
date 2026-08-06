@@ -51,6 +51,8 @@ export interface Collection {
 }
 
 export interface AccountRow {
+  /** Diperlukan untuk memaut ke penyata. */
+  accountId: number;
   accountNo: string; accountName: string;
   /** No. KP/pendaftaran — Excel sahaja; PDF tiada ruang. */
   idNo: string;
@@ -166,6 +168,13 @@ export interface InvoiceRow {
 
 export interface InvoicePreview {
   count: number; total: number; rows: InvoiceRow[];
+}
+
+export interface TahunTersedia {
+  /** Hanya tahun yang MEMPUNYAI transaksi. */
+  years: number[];
+  /** Tahun transaksi pertama — asas untuk 'Semua sejak mula'. */
+  firstYear: number | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -319,6 +328,31 @@ export class ReportsService {
       .set('unpaidOnly', String(q.unpaidOnly));
     if (q.categoryId != null) p = p.set('categoryId', String(q.categoryId));
     return this.http.get(`${this.base}/print-invoice/pdf`,
+      { params: p, responseType: 'blob', observe: 'response' as const });
+  }
+
+  statementYears(accountId: number): Observable<TahunTersedia> {
+    return this.http.get<TahunTersedia>(
+      `/api/v1/statements/accounts/${accountId}/years`);
+  }
+
+  /**
+   * Penyata sebagai PDF atau XLSX.
+   *
+   * year = null bermakna SEMUA sejak mula: julat daripada 1 Januari
+   * tahun pertama hingga hari ini.
+   */
+  statementFile(accountId: number, year: number | null,
+                firstYear: number | null, xlsx: boolean) {
+    let p = new HttpParams();
+    if (year != null) {
+      p = p.set('year', String(year));
+    } else if (firstYear != null) {
+      p = p.set('from', `${firstYear}-01-01`)
+           .set('to', new Date().toISOString().slice(0, 10));
+    }
+    const url = `/api/v1/statements/accounts/${accountId}` + (xlsx ? '/xlsx' : '');
+    return this.http.get(url,
       { params: p, responseType: 'blob', observe: 'response' as const });
   }
 
