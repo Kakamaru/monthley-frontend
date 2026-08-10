@@ -109,7 +109,7 @@
             <div style="font-weight:600">{{ r.planName || '—' }}</div>
             @if (r.price) {
               <div style="font-size:12px;color:var(--muted)">
-                RM{{ r.price | number:'1.2-2' }}/{{ r.billingPlan === 'YEARLY' ? 'thn' : 'bln' }}
+                RM{{ r.price | number:'1.2-2' }}/bln
               </div>
             }
           </span>

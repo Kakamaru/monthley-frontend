@@ -414,7 +414,7 @@
               <div class="pb-label">Pelan Semasa</div>
               <div class="pb-value">{{ p.planName || 'Tiada pelan' }}</div>
               @if (p.price) {
-                <div class="pb-sub">RM{{ p.price | number:'1.2-2' }} / {{ p.billingPlan === 'YEARLY' ? 'tahun' : 'bulan' }}</div>
+                <div class="pb-sub">RM{{ p.price | number:'1.2-2' }} / bulan</div>
               }
             </div>
             <div class="plan-box" data-card>

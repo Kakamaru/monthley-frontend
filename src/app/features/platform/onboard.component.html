@@ -77,11 +77,8 @@
         </select>
       </div>
       <div>
-        <label>Pelan Bayaran</label>
-        <select class="fld" [(ngModel)]="billingPlan">
-          <option value="MONTHLY">Bulanan</option>
-          <option value="YEARLY">Tahunan</option>
-        </select>
+        <label>Anggaran Bil. Invois (sebulan)</label>
+        <input class="fld" type="number" [(ngModel)]="estInvoicesMonth" placeholder="cth: 120" />
       </div>
     </div>
 
@@ -95,13 +92,6 @@
       </div>
     }
 
-    <div class="g2">
-      <div>
-        <label>Anggaran Bil. Invois (sebulan)</label>
-        <input class="fld" type="number" [(ngModel)]="estInvoicesMonth" placeholder="cth: 120" />
-      </div>
-      <div></div>
-    </div>
   </div>
 
   <!-- ===== ORANG PERHUBUNGAN ===== -->

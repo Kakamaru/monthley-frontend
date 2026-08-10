@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 
 export interface ServicePlan {
   id: number; code: string; name: string;
-  accountLimit: number; priceMonthly: number; priceYearly: number;
+  accountLimit: number; priceMonthly: number;
 }
 
 export interface BusinessType { code: string; name: string; description?: string; }
@@ -15,7 +15,7 @@ export interface OnboardRequest {
   name: string; businessType?: string; registrationNo?: string; businessDesc?: string; website?: string;
   addrLine1?: string; addrLine2?: string; city?: string; postcode?: string;
   state?: string; country?: string; orgRegisteredDate?: string;
-  servicePlanId?: number | null; billingPlan?: 'MONTHLY' | 'YEARLY';
+  servicePlanId?: number | null;
   estInvoicesMonth?: number | null;
   contactName: string; adminEmail: string; contactPhone?: string;
   absorb: boolean; merchantId?: string; gatewayKey?: string;

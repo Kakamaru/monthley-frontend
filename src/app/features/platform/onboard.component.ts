@@ -24,7 +24,6 @@ export class OnboardComponent {
   addrLine1 = ''; addrLine2 = ''; city = ''; postcode = '';
   state = ''; country = 'Malaysia'; orgRegisteredDate = '';
   servicePlanId: number | null = null;
-  billingPlan: 'MONTHLY' | 'YEARLY' = 'MONTHLY';
   estInvoicesMonth: number | null = null;
 
   // orang perhubungan
@@ -47,9 +46,9 @@ export class OnboardComponent {
   readonly planPrice = computed(() => {
     const p = this.plans().find(x => x.id === this.servicePlanId);
     if (!p) return null;
-    return this.billingPlan === 'YEARLY'
-      ? { amount: p.priceYearly, unit: 'tahun', limit: p.accountLimit }
-      : { amount: p.priceMonthly, unit: 'bulan', limit: p.accountLimit };
+    // Semua pelan SP adalah bulanan (ADR 0016). SP yang mahu dibil setahun
+    // sekali diuruskan pada peringkat langganan, bukan di sini.
+    return { amount: p.priceMonthly, unit: 'bulan', limit: p.accountLimit };
   });
 
   constructor() {
@@ -86,7 +85,7 @@ export class OnboardComponent {
       addrLine1: this.addrLine1, addrLine2: this.addrLine2, city: this.city,
       postcode: this.postcode, state: this.state, country: this.country,
       orgRegisteredDate: this.orgRegisteredDate || undefined,
-      servicePlanId: this.servicePlanId, billingPlan: this.billingPlan,
+      servicePlanId: this.servicePlanId,
       estInvoicesMonth: this.estInvoicesMonth,
       contactName: this.contactName, adminEmail: this.adminEmail,
       contactPhone: this.contactPhone,
