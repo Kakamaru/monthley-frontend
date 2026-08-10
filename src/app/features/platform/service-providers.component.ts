@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { SpListService, SpRow, SpSummary } from './sp-list.service';
-import { OnboardService, ServicePlan, BusinessType } from './onboard.service';
+import { OnboardService, PlanOption, BusinessType } from './onboard.service';
 
 @Component({
   selector: 'app-service-providers',
@@ -20,7 +20,7 @@ export class ServiceProvidersComponent {
   readonly rows = signal<SpRow[]>([]);
   readonly summary = signal<SpSummary | null>(null);
   readonly bizTypes = signal<BusinessType[]>([]);
-  readonly plans = signal<ServicePlan[]>([]);
+  readonly plans = signal<PlanOption[]>([]);
   readonly total = signal(0);
   readonly page = signal(0);
   readonly size = signal(10);

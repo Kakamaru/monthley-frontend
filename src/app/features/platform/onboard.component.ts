@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { OnboardService, ServicePlan, OnboardResult, BusinessType } from './onboard.service';
+import { OnboardService, PlanOption, OnboardResult, BusinessType } from './onboard.service';
 
 @Component({
   selector: 'app-onboard',
@@ -12,7 +12,7 @@ import { OnboardService, ServicePlan, OnboardResult, BusinessType } from './onbo
 export class OnboardComponent {
   private api = inject(OnboardService);
 
-  readonly plans = signal<ServicePlan[]>([]);
+  readonly plans = signal<PlanOption[]>([]);
   readonly bizTypes = signal<BusinessType[]>([]);
   readonly busy = signal(false);
   readonly keyBusy = signal(false);
@@ -23,7 +23,7 @@ export class OnboardComponent {
   name = ''; businessType = ''; registrationNo = ''; businessDesc = ''; website = '';
   addrLine1 = ''; addrLine2 = ''; city = ''; postcode = '';
   state = ''; country = 'Malaysia'; orgRegisteredDate = '';
-  servicePlanId: number | null = null;
+  planProductId: number | null = null;
   estInvoicesMonth: number | null = null;
 
   // orang perhubungan
@@ -44,11 +44,11 @@ export class OnboardComponent {
 
   /** Harga pakej terpilih ikut pelan bayaran */
   readonly planPrice = computed(() => {
-    const p = this.plans().find(x => x.id === this.servicePlanId);
+    const p = this.plans().find(x => x.id === this.planProductId);
     if (!p) return null;
     // Semua pelan SP adalah bulanan (ADR 0016). SP yang mahu dibil setahun
     // sekali diuruskan pada peringkat langganan, bukan di sini.
-    return { amount: p.priceMonthly, unit: 'bulan', limit: p.accountLimit };
+    return { amount: p.price, unit: 'bulan', limit: p.accountLimit };
   });
 
   constructor() {
@@ -85,7 +85,7 @@ export class OnboardComponent {
       addrLine1: this.addrLine1, addrLine2: this.addrLine2, city: this.city,
       postcode: this.postcode, state: this.state, country: this.country,
       orgRegisteredDate: this.orgRegisteredDate || undefined,
-      servicePlanId: this.servicePlanId,
+      planProductId: this.planProductId,
       estInvoicesMonth: this.estInvoicesMonth,
       contactName: this.contactName, adminEmail: this.adminEmail,
       contactPhone: this.contactPhone,

@@ -2,9 +2,9 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
-export interface ServicePlan {
+export interface PlanOption {
   id: number; code: string; name: string;
-  accountLimit: number; priceMonthly: number;
+  accountLimit: number; price: number;
 }
 
 export interface BusinessType { code: string; name: string; description?: string; }
@@ -15,7 +15,7 @@ export interface OnboardRequest {
   name: string; businessType?: string; registrationNo?: string; businessDesc?: string; website?: string;
   addrLine1?: string; addrLine2?: string; city?: string; postcode?: string;
   state?: string; country?: string; orgRegisteredDate?: string;
-  servicePlanId?: number | null;
+  planProductId?: number | null;
   estInvoicesMonth?: number | null;
   contactName: string; adminEmail: string; contactPhone?: string;
   absorb: boolean; merchantId?: string; gatewayKey?: string;
@@ -31,8 +31,8 @@ export class OnboardService {
   private http = inject(HttpClient);
   private base = '/api/v1/platform';
 
-  plans(): Observable<ServicePlan[]> {
-    return this.http.get<ServicePlan[]>(`${this.base}/service-plans`);
+  plans(): Observable<PlanOption[]> {
+    return this.http.get<PlanOption[]>(`${this.base}/service-plans`);
   }
 
   businessTypes(): Observable<BusinessType[]> {

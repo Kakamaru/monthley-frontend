@@ -69,7 +69,7 @@
       <div><label>Negara</label><input class="fld" [(ngModel)]="country" /></div>
       <div>
         <label>Pelan Perkhidmatan</label>
-        <select class="fld" [(ngModel)]="servicePlanId">
+        <select class="fld" [(ngModel)]="planProductId">
           <option [ngValue]="null">Pilih pakej</option>
           @for (p of plans(); track p.id) {
             <option [ngValue]="p.id">{{ p.name }} — sehingga {{ p.accountLimit }} akaun</option>

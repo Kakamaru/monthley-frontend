@@ -8,7 +8,7 @@ export interface SpRow {
   bizType?: string; bizTypeName?: string;
   state?: string; city?: string; status: string;
   planName?: string; accountLimit?: number; accountCount: number;
-  billingPlan?: string; price?: number;
+  price?: number;
   adminEmail?: string; approvedAt?: string;
 }
 

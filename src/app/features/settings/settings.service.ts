@@ -61,7 +61,7 @@ export interface Penalty {
 
 export interface PlanInfo {
   planName?: string; accountLimit?: number; accountUsed: number;
-  billingPlan?: string; price?: number; estInvoicesMonth?: number;
+  price?: number; estInvoicesMonth?: number;
 }
 
 export interface Lookup { id: number; code: string; name: string; }
