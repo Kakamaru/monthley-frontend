@@ -1,5 +1,5 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZonelessChangeDetection } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withRouterConfig } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 
 import { routes } from './app.routes';
@@ -10,7 +10,10 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideZonelessChangeDetection(),
-    provideRouter(routes),
+    // onSameUrlNavigation 'reload' diperlukan supaya menukar SP boleh
+    // memuat semula skrin semasa. Tanpa ini, navigasi ke URL yang sama
+    // diabaikan dan komponen kekal memaparkan data SP sebelumnya.
+    provideRouter(routes, withRouterConfig({ onSameUrlNavigation: 'reload' })),
     provideHttpClient(withInterceptors([authInterceptor, spHeaderInterceptor]))
   ]
 };

@@ -1,6 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { SpContextService } from '../../core/services/sp-context.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { AuthService } from '../../core/auth/auth.service';
@@ -16,6 +16,7 @@ interface NavItem { id: string; icon: string; label: string; route?: string; rol
 })
 export class PortalShellComponent {
   readonly sp = inject(SpContextService);
+  private readonly router = inject(Router);
   readonly themeSvc = inject(ThemeService);
   readonly auth = inject(AuthService);
 
@@ -87,8 +88,26 @@ export class PortalShellComponent {
   toggleSP()   { this.spOpen.set(!this.spOpen()); }
   togglePlat() { this.platOpen.set(!this.platOpen()); }
 
+  /**
+   * Menukar SP mesti memuat semula skrin semasa.
+   *
+   * Menetapkan signal sahaja tidak memadai: komponen skrin tidak dicipta
+   * semula kerana laluan tidak berubah, jadi ia kekal memaparkan data SP
+   * sebelumnya sehingga pengguna pergi ke menu lain dan kembali.
+   *
+   * Diselesaikan di sini dan bukan dalam setiap komponen — kalau tidak,
+   * setiap skrin baharu perlu ingat melakukannya sendiri.
+   */
   switchSp(code: string) {
     this.sp.setSp(code);
     this.spSwitchOpen.set(false);
+
+    // navigateByUrl ke URL yang sama tidak memadai: RouteReuseStrategy lalai
+    // menggunakan semula komponen kerana konfigurasi laluan tidak berubah.
+    // Singgah sebentar ke laluan kosong memaksa komponen dimusnahkan dan
+    // dicipta semula, jadi ia memuat data dengan SP baharu.
+    const url = this.router.url;
+    this.router.navigateByUrl('/', { skipLocationChange: true })
+        .then(() => this.router.navigateByUrl(url));
   }
 }

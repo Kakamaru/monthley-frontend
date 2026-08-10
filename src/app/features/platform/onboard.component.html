@@ -21,9 +21,18 @@
 
   <!-- ===== MAKLUMAT SERVICE PROVIDER ===== -->
   <div class="card-filter" style="padding:24px;margin-bottom:16px">
-    <h3 class="sec-t">Maklumat Service Provider</h3>
+    <h3 class="sec-t" (click)="toggle('sp')"
+        style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;margin:0">
+      <span>Maklumat Service Provider</span>
+      <span style="font-size:13px;opacity:.55">{{ buka()['sp'] ? '▾' : '▸' }}</span>
+    </h3>
+    @if (buka()['sp']) {
 
     <div class="g3">
+      <div>
+        <label>No. Akaun SP *</label>
+        <input class="fld" [(ngModel)]="accountNo" placeholder="cth: JMB002" />
+      </div>
       <div><label>Nama SP *</label><input class="fld" [(ngModel)]="name" placeholder="cth: Perbadanan Pengurusan Seri Indah" /></div>
       <div>
         <label>Jenis Perniagaan</label>
@@ -68,35 +77,87 @@
     <div class="g3">
       <div><label>Negara</label><input class="fld" [(ngModel)]="country" /></div>
       <div>
-        <label>Pelan Perkhidmatan</label>
-        <select class="fld" [(ngModel)]="planProductId">
-          <option [ngValue]="null">Pilih pakej</option>
-          @for (p of plans(); track p.id) {
-            <option [ngValue]="p.id">{{ p.name }} — sehingga {{ p.accountLimit }} akaun</option>
-          }
-        </select>
-      </div>
-      <div>
         <label>Anggaran Bil. Invois (sebulan)</label>
         <input class="fld" type="number" [(ngModel)]="estInvoicesMonth" placeholder="cth: 120" />
       </div>
+      <div></div>
     </div>
 
-    @if (planPrice()) {
-      <div class="plan-note">
-        <span>💡</span>
-        <span>
-          <strong>{{ planPrice()!.amount | number:'1.2-2' }}</strong> / {{ planPrice()!.unit }} ·
-          had {{ planPrice()!.limit }} akaun
-        </span>
-      </div>
     }
+  </div>
 
+  <!-- ===== PAKEJ & LANGGANAN ===== -->
+  <div class="card-filter" style="padding:24px;margin-bottom:16px">
+    <h3 class="sec-t" (click)="toggle('pakej')"
+        style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;margin:0">
+      <span>Pakej & Langganan</span>
+      <span style="font-size:13px;opacity:.55">{{ buka()['pakej'] ? '▾' : '▸' }}</span>
+    </h3>
+    @if (buka()['pakej']) {
+      <div class="hint" style="margin-bottom:14px">
+        Pakej diambil terus daripada produk SP Rapidevelop — apa yang dijual di
+        sini adalah apa yang akan dibil.
+      </div>
+
+      <div class="g1">
+        <div>
+          <label>Pelan Perkhidmatan</label>
+          <select class="fld" [(ngModel)]="planProductId">
+            <option [ngValue]="null">Pilih pakej</option>
+            @for (p of plans(); track p.id) {
+              <option [ngValue]="p.id">{{ p.name }} — sehingga {{ p.accountLimit }} akaun</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      @if (planPrice()) {
+        <div class="plan-note" style="margin-top:12px">
+          <span>💡</span>
+          <span>
+            <strong>{{ planPrice()!.amount | number:'1.2-2' }}</strong> / {{ planPrice()!.unit }} ·
+            had {{ planPrice()!.limit }} akaun
+          </span>
+        </div>
+      }
+
+      @if (itemAsas().length) {
+        <h4 class="sub-t" style="margin-top:18px">Caj Sekali Sahaja</h4>
+        @for (it of itemAsas(); track it.id) {
+          <label class="radio" [class.on]="dipilih(it.id)"
+                 style="display:flex;align-items:center;gap:10px;margin-bottom:8px;cursor:pointer">
+            <input type="checkbox" [checked]="dipilih(it.id)" (change)="togglePilihan(it.id)" />
+            <span style="flex:1">{{ it.name }}</span>
+            <span style="opacity:.7">RM{{ it.price | number:'1.2-2' }}</span>
+          </label>
+        }
+      }
+
+      @if (modulTambahan().length) {
+        <h4 class="sub-t" style="margin-top:18px">Modul Tambahan</h4>
+        <div class="hint" style="margin-bottom:10px">
+          Modul ditambah melalui permohonan selepas SP aktif — bukan semasa
+          onboarding. Hak akses dan bil mesti bermula serentak.
+        </div>
+        @for (m of modulTambahan(); track m.id) {
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;opacity:.5">
+            <input type="checkbox" disabled />
+            <span style="flex:1">{{ m.name }}</span>
+            <span>RM{{ m.price | number:'1.2-2' }}/bln</span>
+          </div>
+        }
+      }
+    }
   </div>
 
   <!-- ===== ORANG PERHUBUNGAN ===== -->
   <div class="card-filter" style="padding:24px;margin-bottom:16px">
-    <h3 class="sec-t">Orang Perhubungan</h3>
+    <h3 class="sec-t" (click)="toggle('kontak')"
+        style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;margin:0">
+      <span>Orang Perhubungan</span>
+      <span style="font-size:13px;opacity:.55">{{ buka()['kontak'] ? '▾' : '▸' }}</span>
+    </h3>
+    @if (buka()['kontak']) {
     <div class="g3">
       <div><label>Nama *</label><input class="fld" [(ngModel)]="contactName" /></div>
       <div>
@@ -109,11 +170,17 @@
       ⚠️ E-mel ini <strong>mesti sudah berdaftar</strong> dengan Monthley.
       Pengguna tersebut akan dinaik taraf menjadi <strong>SP Admin</strong> organisasi ini.
     </div>
+    }
   </div>
 
   <!-- ===== KHIDMAT PEMBAYARAN ONLINE ===== -->
   <div class="card-filter" style="padding:24px;margin-bottom:16px">
-    <h3 class="sec-t">Khidmat Pembayaran Online</h3>
+    <h3 class="sec-t" (click)="toggle('bayar')"
+        style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;margin:0">
+      <span>Khidmat Pembayaran Online</span>
+      <span style="font-size:13px;opacity:.55">{{ buka()['bayar'] ? '▾' : '▸' }}</span>
+    </h3>
+    @if (buka()['bayar']) {
 
     <div class="radio-row">
       <label class="radio" [class.on]="absorb">
@@ -148,6 +215,7 @@
       <div><label>No. Akaun Bank</label><input class="fld" [(ngModel)]="bankAccountNo" /></div>
       <div><label>Nama Pemegang Akaun</label><input class="fld" [(ngModel)]="bankAccountName" /></div>
     </div>
+    }
   </div>
 
   <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:40px">

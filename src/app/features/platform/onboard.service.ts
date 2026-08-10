@@ -2,6 +2,11 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
+export interface CatalogItem {
+  id: number; code: string; name: string; category: string;
+  chargeFrequency: string; price: number; accountLimit: number | null;
+}
+
 export interface PlanOption {
   id: number; code: string; name: string;
   accountLimit: number; price: number;
@@ -16,6 +21,8 @@ export interface OnboardRequest {
   addrLine1?: string; addrLine2?: string; city?: string; postcode?: string;
   state?: string; country?: string; orgRegisteredDate?: string;
   planProductId?: number | null;
+  accountNo?: string;
+  extraProductIds?: number[];
   estInvoicesMonth?: number | null;
   contactName: string; adminEmail: string; contactPhone?: string;
   absorb: boolean; merchantId?: string; gatewayKey?: string;
@@ -30,6 +37,11 @@ export interface OnboardResult {
 export class OnboardService {
   private http = inject(HttpClient);
   private base = '/api/v1/platform';
+
+  /** Katalog penuh produk platform: pelan, item sekali sahaja, modul. */
+  catalog(): Observable<CatalogItem[]> {
+    return this.http.get<CatalogItem[]>(`${this.base}/catalog`);
+  }
 
   plans(): Observable<PlanOption[]> {
     return this.http.get<PlanOption[]>(`${this.base}/service-plans`);

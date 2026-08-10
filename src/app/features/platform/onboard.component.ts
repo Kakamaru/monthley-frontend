@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { OnboardService, PlanOption, OnboardResult, BusinessType } from './onboard.service';
+import { OnboardService, PlanOption, CatalogItem, OnboardResult, BusinessType } from './onboard.service';
 
 @Component({
   selector: 'app-onboard',
@@ -13,6 +13,37 @@ export class OnboardComponent {
   private api = inject(OnboardService);
 
   readonly plans = signal<PlanOption[]>([]);
+  readonly catalog = signal<CatalogItem[]>([]);
+
+  /** Accordion: seksyen mana terbuka. Semua terbuka pada mulanya. */
+  readonly buka = signal<Record<string, boolean>>({
+    sp: true, pakej: true, kontak: true, bayar: true
+  });
+  toggle(k: string) {
+    this.buka.update(b => ({ ...b, [k]: !b[k] }));
+  }
+
+  /** Produk BASIC bukan pelan — onboarding, migrasi. Boleh ditick. */
+  readonly itemAsas = computed(() =>
+    this.catalog().filter(c => c.category === 'BASIC' && c.accountLimit === null));
+
+  /**
+   * Modul tambahan — dipaparkan tetapi BELUM boleh ditick.
+   * Menick modul mencipta langganan (bil) tanpa sp_module (hak): SP dibil
+   * untuk modul yang tidak boleh diguna. Dibuka bila sp_module wujud.
+   */
+  readonly modulTambahan = computed(() =>
+    this.catalog().filter(c => c.category === 'ADDITIONAL MODUL'));
+
+  readonly pilihanExtra = signal<Set<number>>(new Set());
+  togglePilihan(id: number) {
+    this.pilihanExtra.update(s => {
+      const n = new Set(s);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
+  }
+  dipilih(id: number) { return this.pilihanExtra().has(id); }
   readonly bizTypes = signal<BusinessType[]>([]);
   readonly busy = signal(false);
   readonly keyBusy = signal(false);
@@ -24,6 +55,7 @@ export class OnboardComponent {
   addrLine1 = ''; addrLine2 = ''; city = ''; postcode = '';
   state = ''; country = 'Malaysia'; orgRegisteredDate = '';
   planProductId: number | null = null;
+  accountNo = '';
   estInvoicesMonth: number | null = null;
 
   // orang perhubungan
@@ -56,6 +88,10 @@ export class OnboardComponent {
       next: p => this.plans.set(p),
       error: () => this.plans.set([])
     });
+    this.api.catalog().subscribe({
+      next: c => this.catalog.set(c),
+      error: () => this.catalog.set([])
+    });
     this.api.businessTypes().subscribe({
       next: b => this.bizTypes.set(b),
       error: () => this.bizTypes.set([])
@@ -86,6 +122,8 @@ export class OnboardComponent {
       postcode: this.postcode, state: this.state, country: this.country,
       orgRegisteredDate: this.orgRegisteredDate || undefined,
       planProductId: this.planProductId,
+      accountNo: this.accountNo.trim(),
+      extraProductIds: [...this.pilihanExtra()],
       estInvoicesMonth: this.estInvoicesMonth,
       contactName: this.contactName, adminEmail: this.adminEmail,
       contactPhone: this.contactPhone,
