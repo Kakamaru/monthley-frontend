@@ -63,6 +63,36 @@ export interface ExpSetting {
   bankGlAccountId: number | null;
 }
 
+// ---------- Laporan ----------
+
+export interface ExpenseLine { jenis: string; amount: number; }
+export interface ExpenseGroup { category: string; total: number; lines: ExpenseLine[]; }
+export interface ExpenseReport { groups: ExpenseGroup[]; grandTotal: number; }
+
+export interface DetailRow {
+  date: string; ref: string; category: string; jenis: string;
+  note: string | null; source: string; amount: number;
+}
+export interface CategorySummary { name: string; amount: number; }
+export interface DetailReport {
+  summary: CategorySummary[]; rows: DetailRow[]; grandTotal: number;
+}
+
+export interface AgingRow {
+  supplier: string; current: number; d30: number; d60: number;
+  d90plus: number; total: number;
+}
+export interface AgingTotals {
+  current: number; d30: number; d60: number; d90plus: number; total: number;
+}
+export interface AgingReport { asAt: string; rows: AgingRow[]; totals: AgingTotals; }
+
+export interface PaymentReportRow {
+  payDate: string; pvNo: string; supplierName: string;
+  invoiceNo: string; method: string; amount: number;
+}
+export interface PaymentReport { rows: PaymentReportRow[]; total: number; }
+
 // ---------- Servis ----------
 
 @Injectable({ providedIn: 'root' })
@@ -149,6 +179,32 @@ export class ExpensesService {
     if (from) p = p.set('from', from);
     if (to) p = p.set('to', to);
     return this.http.get<ExpCashbookRow[]>(`${this.base}/cashbook`, { params: p });
+  }
+
+  // Laporan
+  reportExpense(from: string | null, to: string | null): Observable<ExpenseReport> {
+    return this.http.get<ExpenseReport>(`${this.base}/reports/expense`,
+      { params: this.tempoh(from, to) });
+  }
+  reportExpenseDetail(from: string | null, to: string | null): Observable<DetailReport> {
+    return this.http.get<DetailReport>(`${this.base}/reports/expense-detail`,
+      { params: this.tempoh(from, to) });
+  }
+  reportAging(asAt: string | null): Observable<AgingReport> {
+    let p = new HttpParams();
+    if (asAt) p = p.set('asAt', asAt);
+    return this.http.get<AgingReport>(`${this.base}/reports/aging`, { params: p });
+  }
+  reportPayments(from: string | null, to: string | null): Observable<PaymentReport> {
+    return this.http.get<PaymentReport>(`${this.base}/reports/payments`,
+      { params: this.tempoh(from, to) });
+  }
+
+  private tempoh(from: string | null, to: string | null): HttpParams {
+    let p = new HttpParams();
+    if (from) p = p.set('from', from);
+    if (to) p = p.set('to', to);
+    return p;
   }
 
   // Tetapan

@@ -1,0 +1,229 @@
+<div class="exp-module">
+  <div class="phead">
+    <div>
+      <h1>Laporan &amp; Penyata</h1>
+      <p>Jana penyata perbelanjaan, tunggakan pembekal &amp; rekod bayaran — sedia untuk dicetak.</p>
+    </div>
+  </div>
+
+  @if (error()) { <div class="panecard"><div class="empty">⚠️ {{ error() }}</div></div> }
+
+  <div class="panecard">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+      @for (t of tabs; track t.k) {
+        <button class="chip" [class.on]="jenis() === t.k" (click)="setJenis(t.k)">{{ t.l }}</button>
+      }
+    </div>
+
+    <div class="rbar">
+      <div class="rfields">
+        @if (jenis() !== 'aging') {
+          <div class="rfield">
+            <label>Dari</label>
+            <input class="inp" type="date" [(ngModel)]="from" (ngModelChange)="generate()" />
+          </div>
+        }
+        <div class="rfield">
+          <label>{{ jenis() === 'aging' ? 'Sehingga tarikh' : 'Hingga' }}</label>
+          <input class="inp" type="date" [(ngModel)]="to" (ngModelChange)="generate()" />
+        </div>
+        <div class="rfield" style="display:flex;align-items:flex-end">
+          <button class="btn-sm btn-soft" (click)="reset()">Reset</button>
+        </div>
+      </div>
+      <button class="btn-sm rprint" (click)="print()">🖨 Cetak / Eksport PDF</button>
+    </div>
+  </div>
+
+  <div class="panecard">
+    <div id="stmtArea">
+      <!-- Kepala penyata — disalin ke tetingkap cetakan. -->
+      <div class="stmt-top">
+        <div class="stmt-l">
+          <div class="stmt-org">{{ sp.spName() || 'Organisasi' }}</div>
+          <div class="stmt-sub">Kod SP: {{ sp.currentSp() }}</div>
+        </div>
+        <div class="stmt-r">
+          <div class="stmt-title">{{ tajuk[jenis()] }}</div>
+          <div class="stmt-p">Tempoh: {{ tempoh() }}</div>
+          <div class="stmt-p">Dijana: {{ hariIni() }}</div>
+        </div>
+      </div>
+
+      @if (loading()) {
+        <div class="loading">Menjana…</div>
+      } @else {
+
+        <!-- ===== PENYATA PERBELANJAAN ===== -->
+        @if (jenis() === 'expense') {
+          @if (!expense() || !expense()!.groups.length) {
+            <div class="empty">Tiada perbelanjaan dalam tempoh dipilih.</div>
+          } @else {
+            <table class="stmt-tbl">
+              <thead>
+                <tr><th>Kategori / Jenis</th><th class="num">Jumlah (RM)</th><th class="num">%</th></tr>
+              </thead>
+              <tbody>
+                @for (g of expense()!.groups; track g.category) {
+                  <tr class="grp">
+                    <td>{{ g.category }}</td>
+                    <td class="num">{{ g.total | number:'1.2-2' }}</td>
+                    <td class="num">{{ peratus(g.total, expense()!.grandTotal) }}%</td>
+                  </tr>
+                  @for (l of g.lines; track l.jenis) {
+                    <tr>
+                      <td class="sub">{{ l.jenis }}</td>
+                      <td class="num">{{ l.amount | number:'1.2-2' }}</td>
+                      <td></td>
+                    </tr>
+                  }
+                }
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td>JUMLAH PERBELANJAAN</td>
+                  <td class="num">{{ expense()!.grandTotal | number:'1.2-2' }}</td>
+                  <td class="num">100%</td>
+                </tr>
+              </tfoot>
+            </table>
+          }
+        }
+
+        <!-- ===== TERPERINCI ===== -->
+        @if (jenis() === 'expdetail') {
+          @if (!detail() || !detail()!.rows.length) {
+            <div class="empty">Tiada perbelanjaan dalam tempoh dipilih.</div>
+          } @else {
+            <div style="font-weight:700;margin:2px 0 8px">RINGKASAN MENGIKUT KATEGORI</div>
+            <table class="stmt-tbl">
+              <thead>
+                <tr><th>Kategori</th><th class="num">Jumlah (RM)</th><th class="num">%</th></tr>
+              </thead>
+              <tbody>
+                @for (c of detail()!.summary; track c.name) {
+                  <tr>
+                    <td class="strong">{{ c.name }}</td>
+                    <td class="num">{{ c.amount | number:'1.2-2' }}</td>
+                    <td class="num">{{ peratus(c.amount, detail()!.grandTotal) }}%</td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td>JUMLAH</td>
+                  <td class="num">{{ detail()!.grandTotal | number:'1.2-2' }}</td>
+                  <td class="num">100%</td>
+                </tr>
+              </tfoot>
+            </table>
+
+            <div style="font-weight:700;margin:22px 0 8px">BUTIRAN TERPERINCI</div>
+            <table class="stmt-tbl">
+              <thead>
+                <tr>
+                  <th>Tarikh</th><th>Rujukan</th><th>Kategori</th><th>Jenis</th>
+                  <th>Catatan</th><th>Sumber</th><th class="num">Jumlah (RM)</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (r of detail()!.rows; track $index) {
+                  <tr>
+                    <td>{{ r.date }}</td>
+                    <td class="strong">{{ r.ref }}</td>
+                    <td>{{ r.category }}</td>
+                    <td>{{ r.jenis }}</td>
+                    <td>{{ r.note || '' }}</td>
+                    <td>{{ r.source === 'INVOICE' ? 'INVOIS' : 'TERUS' }}</td>
+                    <td class="num">{{ r.amount | number:'1.2-2' }}</td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="6">JUMLAH ({{ detail()!.rows.length }} baris)</td>
+                  <td class="num">{{ detail()!.grandTotal | number:'1.2-2' }}</td>
+                </tr>
+              </tfoot>
+            </table>
+          }
+        }
+
+        <!-- ===== TUNGGAKAN PEMBEKAL ===== -->
+        @if (jenis() === 'aging') {
+          @if (!aging() || !aging()!.rows.length) {
+            <div class="empty">Tiada tunggakan — semua invois telah dijelaskan. 🎉</div>
+          } @else {
+            <table class="stmt-tbl">
+              <thead>
+                <tr>
+                  <th>Pembekal</th><th class="num">Semasa</th><th class="num">1–30 hari</th>
+                  <th class="num">31–60 hari</th><th class="num">&gt;60 hari</th>
+                  <th class="num">Jumlah Baki</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (r of aging()!.rows; track r.supplier) {
+                  <tr>
+                    <td class="strong">{{ r.supplier }}</td>
+                    <td class="num">{{ r.current ? (r.current | number:'1.2-2') : '–' }}</td>
+                    <td class="num">{{ r.d30 ? (r.d30 | number:'1.2-2') : '–' }}</td>
+                    <td class="num">{{ r.d60 ? (r.d60 | number:'1.2-2') : '–' }}</td>
+                    <td class="num" [style.color]="r.d90plus ? '#B0151E' : ''">
+                      {{ r.d90plus ? (r.d90plus | number:'1.2-2') : '–' }}
+                    </td>
+                    <td class="num strong">{{ r.total | number:'1.2-2' }}</td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td>JUMLAH</td>
+                  <td class="num">{{ aging()!.totals.current | number:'1.2-2' }}</td>
+                  <td class="num">{{ aging()!.totals.d30 | number:'1.2-2' }}</td>
+                  <td class="num">{{ aging()!.totals.d60 | number:'1.2-2' }}</td>
+                  <td class="num">{{ aging()!.totals.d90plus | number:'1.2-2' }}</td>
+                  <td class="num">{{ aging()!.totals.total | number:'1.2-2' }}</td>
+                </tr>
+              </tfoot>
+            </table>
+          }
+        }
+
+        <!-- ===== PENYATA BAYARAN ===== -->
+        @if (jenis() === 'payments') {
+          @if (!payments() || !payments()!.rows.length) {
+            <div class="empty">Tiada bayaran dalam tempoh dipilih.</div>
+          } @else {
+            <table class="stmt-tbl">
+              <thead>
+                <tr>
+                  <th>Tarikh</th><th>No PV</th><th>Pembekal</th>
+                  <th>No Invois</th><th>Kaedah</th><th class="num">Jumlah (RM)</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (r of payments()!.rows; track r.pvNo) {
+                  <tr>
+                    <td>{{ r.payDate }}</td>
+                    <td class="strong">{{ r.pvNo }}</td>
+                    <td>{{ r.supplierName }}</td>
+                    <td>{{ r.invoiceNo }}</td>
+                    <td>{{ r.method }}</td>
+                    <td class="num">{{ r.amount | number:'1.2-2' }}</td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="5">JUMLAH BAYARAN ({{ payments()!.rows.length }} PV)</td>
+                  <td class="num">{{ payments()!.total | number:'1.2-2' }}</td>
+                </tr>
+              </tfoot>
+            </table>
+          }
+        }
+      }
+    </div>
+  </div>
+</div>

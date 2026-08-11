@@ -1,0 +1,169 @@
+<div class="exp-module">
+  <div class="phead">
+    <div>
+      <h1>Buku Tunai</h1>
+      <p>Rekod penuh wang keluar — catatan terus (tanpa invois) &amp; bayaran invois (auto dari PV).</p>
+    </div>
+    <div><button class="btn-sm btn-pri" (click)="openNew()">+ Tambah Catatan</button></div>
+  </div>
+
+  @if (error() && !formOpen()) {
+    <div class="panecard"><div class="empty">⚠️ {{ error() }}</div></div>
+  }
+
+  <div class="panecard">
+    <div class="toolbar">
+      <input class="inp grow" [(ngModel)]="q" placeholder="🔍 Cari no dokumen / keterangan…" />
+      <input class="inp" type="date" [(ngModel)]="from" (ngModelChange)="load()" title="Dari" />
+      <input class="inp" type="date" [(ngModel)]="to" (ngModelChange)="load()" title="Hingga" />
+    </div>
+
+    <div class="toolbar">
+      @for (c of chips; track c.k) {
+        <button class="chip" [class.on]="source() === c.k" (click)="source.set(c.k)">{{ c.l }}</button>
+      }
+      <span class="grow"></span>
+      <button class="btn-sm btn-soft" (click)="clearFilter()">Clear</button>
+    </div>
+
+    @if (loading()) {
+      <div class="loading">Memuatkan…</div>
+    } @else if (!visible().length) {
+      <div class="empty">Tiada rekod.</div>
+    } @else {
+      <div class="tbl-sm" style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>ID / Rujukan</th>
+              <th>Tarikh</th>
+              <th>Keterangan</th>
+              <th>Sumber</th>
+              <th class="num">Jumlah (RM)</th>
+              <th class="num">Tindakan</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of visible(); track r.docNo) {
+              <tr>
+                <td><b>{{ r.docNo }}</b></td>
+                <td>{{ r.date }}</td>
+                <td>{{ r.description }}</td>
+                <td>
+                  <span class="badge" [class.b-blue]="r.source === 'PV'"
+                        [class.b-grey]="r.source !== 'PV'">
+                    {{ r.source === 'PV' ? 'DARI PV' : 'TERUS' }}
+                  </span>
+                </td>
+                <td class="num">{{ r.amount | number:'1.2-2' }}</td>
+                <td class="num">
+                  @if (r.source === 'PV') {
+                    <span style="color:var(--body);font-size:12px">auto</span>
+                  } @else {
+                    <button class="iconbtn danger" (click)="cancel(r)" title="Batal">🚫</button>
+                  }
+                </td>
+              </tr>
+            }
+            <tr>
+              <td colspan="4" style="text-align:right;font-weight:700;border-top:2px solid var(--line)">
+                JUMLAH
+              </td>
+              <td class="num" style="font-weight:700;border-top:2px solid var(--line)">
+                {{ jumlah() | number:'1.2-2' }}
+              </td>
+              <td style="border-top:2px solid var(--line)"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- ===== TAMBAH CATATAN ===== -->
+@if (formOpen()) {
+  <div class="ov show exp-module exp-ov" (click)="closeForm()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h2>Tambah Catatan — Buku Tunai</h2>
+        <button type="button" class="mclose" (click)="closeForm()">×</button>
+      </div>
+
+      <div class="mform-grid">
+        @if (error()) { <div class="fspan"><div class="empty">⚠️ {{ error() }}</div></div> }
+
+        <div class="frow half">
+          <label>Tarikh *</label>
+          <input type="date" [(ngModel)]="entryDate" />
+        </div>
+        <div class="frow half">
+          <label>Penerima *</label>
+          <input [(ngModel)]="payee" placeholder="nama penerima bayaran" />
+        </div>
+        <div class="frow half">
+          <label>Kaedah *</label>
+          <select [(ngModel)]="method">
+            @for (m of methods(); track m.id) {
+              <option [ngValue]="m.name">{{ m.name }}</option>
+            }
+          </select>
+        </div>
+        <div class="frow half">
+          <label>No Rujukan</label>
+          <input [(ngModel)]="refNo" placeholder="no cek / rujukan" />
+        </div>
+
+        <div class="fspan">
+          <label style="display:block;margin-bottom:6px">Butiran</label>
+          <div style="display:grid;grid-template-columns:1.4fr 1.4fr 0.9fr auto;gap:8px;
+                      font-size:12px;font-family:'Sora',sans-serif;text-transform:uppercase;
+                      letter-spacing:.03em;color:var(--body);margin-bottom:6px">
+            <span>Kategori</span><span>Jenis</span><span>Jumlah (RM)</span><span></span>
+          </div>
+
+          @for (it of items; track $index) {
+            <div style="border:1px solid var(--line);border-radius:11px;padding:10px 11px;
+                        margin-bottom:9px;background:var(--bg-soft)">
+              <div style="display:grid;grid-template-columns:1.4fr 1.4fr 0.9fr auto;gap:8px">
+                <select [(ngModel)]="it.parentId" (ngModelChange)="onParentChange(it)">
+                  <option [ngValue]="null">— Kategori —</option>
+                  @for (p of induk(); track p.id) {
+                    <option [ngValue]="p.id">{{ p.name }}</option>
+                  }
+                </select>
+                <select [(ngModel)]="it.categoryId" [disabled]="it.parentId === null">
+                  <option [ngValue]="null">— Jenis —</option>
+                  @for (j of jenisBagi(it.parentId); track j.id) {
+                    <option [ngValue]="j.id">{{ j.name }}</option>
+                  }
+                </select>
+                <input type="number" step="0.01" [(ngModel)]="it.amount" placeholder="0.00" />
+                <button type="button" class="btn-sm btn-danger"
+                        (click)="removeItem($index)" title="Buang baris">×</button>
+              </div>
+              <input [(ngModel)]="it.description" placeholder="Catatan (pilihan)"
+                     style="margin-top:8px;width:100%" />
+            </div>
+          }
+
+          <button type="button" class="btn-sm btn-soft" (click)="addItem()">+ Tambah Baris</button>
+
+          <div style="text-align:right;margin-top:10px;font-family:'Sora',sans-serif;font-weight:700">
+            Jumlah: RM {{ formSubtotal() | number:'1.2-2' }}
+          </div>
+          <p class="sub2" style="text-align:right;margin-top:2px">
+            Setiap baris menjadi satu catatan dengan nombor baucar sendiri.
+          </p>
+        </div>
+
+        <div class="modal-foot fspan">
+          <button type="button" class="btn-sm btn-soft" (click)="closeForm()">Batal</button>
+          <button type="button" class="btn-sm btn-pri" (click)="save()" [disabled]="saving()">
+            {{ saving() ? 'Menyimpan…' : 'Simpan Catatan' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

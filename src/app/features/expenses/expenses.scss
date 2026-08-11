@@ -70,7 +70,7 @@
   .chip { font-family:var(--display); font-weight:600; font-size:13px; padding:7px 14px; border-radius:9px; border:1px solid var(--line); background:var(--bg); color:var(--body); cursor:pointer; }
   .chip.on { background:var(--blue); color:#fff; border-color:var(--blue); }
   .grow { flex:1; }
-  .inp { padding:9px 12px; border:1.5px solid var(--line); border-radius:9px; font-family:var(--font); font-size:14px; color:var(--ink); }
+  .inp { padding:9px 12px; border:1.5px solid var(--line); border-radius:9px; font-family:var(--font); font-size:14px; color:var(--ink); background:var(--bg); }
   .inp:focus { outline:none; border-color:var(--blue); }
 
   table { width:100%; border-collapse:collapse; }
@@ -271,12 +271,12 @@
   .stmt-tbl { width:100%; border-collapse:collapse; }
   .stmt-tbl th { font-size:12.5px; font-weight:700; color:var(--ink); text-align:left; padding:12px 14px; background:var(--bg-soft); border-bottom:1.5px solid var(--line); }
   .stmt-tbl th.num, .stmt-tbl td.num { text-align:right; font-variant-numeric:tabular-nums; }
-  .stmt-tbl td { padding:13px 14px; font-size:14px; color:var(--body); border-bottom:1px solid var(--line); }
-  .stmt-tbl tr.grp td { font-family:var(--display); font-weight:800; color:var(--ink); background:#fbfcfe; }
-  .stmt-tbl td.sub { padding-left:30px; color:#8a93a3; }
+  .stmt-tbl td { padding:13px 14px; font-size:14.5px; color:var(--ink); border-bottom:1px solid var(--line); }
+  .stmt-tbl tr.grp td { font-family:var(--display); font-weight:800; color:var(--ink); background:var(--bg-soft); }
+  .stmt-tbl td.sub { padding-left:30px; color:var(--ink); opacity:.82; }
   .stmt-tbl .strong { font-weight:700; color:var(--ink); }
   .stmt-tbl tfoot td { font-family:var(--display); font-weight:800; color:var(--ink); font-size:14.5px; border-top:2px solid var(--ink); background:var(--bg-soft); padding-top:15px; }
-  .stmt-sub2 { font-size:11.5px; color:#9aa3b0; font-weight:400; margin-top:3px; }
+  .stmt-sub2 { font-size:12.5px; color:var(--body); font-weight:400; margin-top:3px; }
   .stmt-box { border:1px solid var(--line); border-radius:12px; padding:6px 18px; margin-bottom:20px; }
   .stmt-boxrow { display:flex; justify-content:space-between; gap:16px; padding:11px 0; border-bottom:1px dashed var(--line); font-size:14px; color:var(--body); }
   .stmt-boxrow:last-child { border-bottom:none; }
@@ -362,3 +362,31 @@
   box-shadow: 0 1px 3px rgba(176,21,30,.12);
 }
 
+
+/* ============================================================
+   Kawalan borang dalam mod gelap.
+
+   CSS prototaip tidak menetapkan latar pada input dan select — ia
+   bergantung pada lalai putih pelayar, yang betul dalam mod terang
+   sahaja. Dan input tarikh memerlukan color-scheme: tanpanya ikon
+   kalendar dan pemilih pelayar kekal gelap atas gelap, jadi pengguna
+   nampak kotak kosong.
+   ============================================================ */
+.exp-module input,
+.exp-module select,
+.exp-module textarea,
+.exp-ov input,
+.exp-ov select,
+.exp-ov textarea {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+[data-theme='dark'] .exp-module input,
+[data-theme='dark'] .exp-module select,
+[data-theme='dark'] .exp-module textarea,
+[data-theme='dark'] .exp-ov input,
+[data-theme='dark'] .exp-ov select,
+[data-theme='dark'] .exp-ov textarea {
+  color-scheme: dark;
+}
