@@ -1,0 +1,304 @@
+<div class="exp-module">
+  <div class="phead">
+    <div>
+      <h1>Invois Pembekal</h1>
+      <p>Daftar invois dari pembekal, jejak baki &amp; buat bayaran.</p>
+    </div>
+    <div><button class="btn-sm btn-pri" (click)="openNew()">+ Daftar Invois</button></div>
+  </div>
+
+  @if (error() && !formOpen() && !payOpen()) {
+    <div class="panecard"><div class="empty">⚠️ {{ error() }}</div></div>
+  }
+
+  <div class="panecard">
+    <div class="toolbar">
+      @for (c of chips; track c.k) {
+        <button class="chip" [class.on]="filter() === c.k" (click)="setFilter(c.k)">{{ c.l }}</button>
+      }
+      <span class="grow"></span>
+      <input class="inp" [(ngModel)]="q" placeholder="🔍 Cari no invois / pembekal…"
+             style="min-width:230px" />
+    </div>
+
+    @if (loading()) {
+      <div class="loading">Memuatkan…</div>
+    } @else if (!visible().length) {
+      <div class="empty">Tiada invois.</div>
+    } @else {
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>No Invois</th>
+              <th>Pembekal</th>
+              <th>Tempoh</th>
+              <th class="num">Jumlah</th>
+              <th class="num">Dibayar</th>
+              <th class="num">Baki</th>
+              <th>Status</th>
+              <th class="num">Tindakan</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of visible(); track r.id) {
+              <tr>
+                <td>
+                  <b class="link" (click)="view(r)">{{ r.invNo }}</b>
+                  <div class="sub2">{{ r.invDate }}</div>
+                </td>
+                <td>{{ r.supplierName }}</td>
+                <td>
+                  {{ r.dueDate || '-' }}
+                  @if (r.overdue) { <span class="badge late">Lewat</span> }
+                </td>
+                <td class="num">{{ r.total | number:'1.2-2' }}</td>
+                <td class="num" style="color:#1B7A3E">{{ r.paid | number:'1.2-2' }}</td>
+                <td class="num">
+                  <span [style.color]="r.balance > 0 ? '#B0151E' : 'var(--body)'"
+                        style="font-weight:600">{{ r.balance | number:'1.2-2' }}</span>
+                </td>
+                <td>
+                  <span class="badge"
+                        [class.b-red]="r.status === 'UNPAID'"
+                        [class.b-amber]="r.status === 'PARTIAL'"
+                        [class.b-green]="r.status === 'SETTLED'"
+                        [class.b-grey]="r.status === 'CANCELLED'">
+                    {{ r.status === 'UNPAID' ? 'BELUM BAYAR'
+                     : r.status === 'PARTIAL' ? 'SEBAHAGIAN'
+                     : r.status === 'SETTLED' ? 'SELESAI' : 'DIBATALKAN' }}
+                  </span>
+                </td>
+                <td class="num">
+                  <div class="acts">
+                    @if (r.status !== 'SETTLED' && r.status !== 'CANCELLED') {
+                      <button class="btn-sm btn-pri" (click)="openPay(r)">Bayar</button>
+                    }
+                    <button class="iconbtn" (click)="view(r)" title="Lihat">👁</button>
+                    @if (r.paid === 0 && r.status !== 'CANCELLED') {
+                      <button class="iconbtn danger" (click)="cancel(r)" title="Batal">🚫</button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (pages() > 1) {
+        <div class="pager">
+          <button class="pgbtn" [disabled]="page() === 0" (click)="goPage(page() - 1)">‹</button>
+          <span style="padding:0 10px;font-size:13px;color:var(--body)">
+            {{ page() + 1 }} / {{ pages() }}
+          </span>
+          <button class="pgbtn" [disabled]="page() + 1 >= pages()" (click)="goPage(page() + 1)">›</button>
+        </div>
+      }
+    }
+  </div>
+</div>
+
+<!-- ===== DAFTAR INVOIS ===== -->
+@if (formOpen()) {
+  <div class="ov show exp-module exp-ov" (click)="closeForm()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h2>Daftar Invois</h2>
+        <button type="button" class="mclose" (click)="closeForm()">×</button>
+      </div>
+
+      <div class="mform-grid">
+        @if (error()) { <div class="fspan"><div class="empty">⚠️ {{ error() }}</div></div> }
+
+        <div class="frow">
+          <label>Pembekal *</label>
+          <select [(ngModel)]="supplierId">
+            <option [ngValue]="null">— Pilih pembekal —</option>
+            @for (s of suppliers(); track s.id) {
+              @if (s.active) { <option [ngValue]="s.id">{{ s.name }}</option> }
+            }
+          </select>
+        </div>
+
+        <div class="frow half">
+          <label>No Invois *</label>
+          <input [(ngModel)]="invNo" placeholder="no invois pembekal" />
+        </div>
+        <div class="frow half">
+          <label>Tarikh Invois *</label>
+          <input type="date" [(ngModel)]="invDate" />
+        </div>
+        <div class="frow half">
+          <label>Tarikh Tempoh</label>
+          <input type="date" [(ngModel)]="dueDate" />
+        </div>
+        <div class="frow half"></div>
+
+        <div class="fspan">
+          <label style="display:block;margin-bottom:6px">Butiran (Item)</label>
+          <div style="display:grid;grid-template-columns:1.4fr 1.4fr 0.9fr auto;gap:8px;
+                      font-size:12px;font-family:'Sora',sans-serif;text-transform:uppercase;
+                      letter-spacing:.03em;color:var(--body);margin-bottom:6px">
+            <span>Kategori</span><span>Jenis</span><span>Jumlah (RM)</span><span></span>
+          </div>
+
+          @for (it of items; track $index) {
+            <!-- Dua baris per item: pilihan di atas, catatan penuh di bawah.
+                 Empat medan dalam satu baris memaksa setiap satu terlalu
+                 sempit untuk dibaca — nama jenis dipotong dan catatan
+                 hampir tidak boleh diguna. -->
+            <div style="border:1px solid var(--line);border-radius:11px;padding:10px 11px;
+                        margin-bottom:9px;background:var(--bg-soft)">
+              <div style="display:grid;grid-template-columns:1.4fr 1.4fr 0.9fr auto;gap:8px">
+                <select [(ngModel)]="it.parentId" (ngModelChange)="onParentChange(it)">
+                  <option [ngValue]="null">— Kategori —</option>
+                  @for (p of induk(); track p.id) {
+                    <option [ngValue]="p.id">{{ p.name }}</option>
+                  }
+                </select>
+                <select [(ngModel)]="it.categoryId" [disabled]="it.parentId === null">
+                  <option [ngValue]="null">— Jenis —</option>
+                  @for (j of jenisBagi(it.parentId); track j.id) {
+                    <option [ngValue]="j.id">{{ j.name }}</option>
+                  }
+                </select>
+                <input type="number" step="0.01" [(ngModel)]="it.amount" placeholder="0.00" />
+                <button type="button" class="btn-sm btn-danger"
+                        (click)="removeItem($index)" title="Buang baris">×</button>
+              </div>
+              <input [(ngModel)]="it.description" placeholder="Catatan (pilihan)"
+                     style="margin-top:8px;width:100%" />
+            </div>
+          }
+          <button type="button" class="btn-sm btn-soft" (click)="addItem()">+ Item</button>
+
+          <div style="text-align:right;margin-top:10px;font-family:'Sora',sans-serif;font-weight:700">
+            Subtotal: RM {{ formSubtotal() | number:'1.2-2' }}
+          </div>
+          <p class="sub2" style="text-align:right;margin-top:2px">
+            SST dikira semasa simpan mengikut tetapan modul.
+          </p>
+        </div>
+
+        <div class="frow">
+          <label>Nota</label>
+          <textarea rows="2" [(ngModel)]="note"></textarea>
+        </div>
+
+        <div class="modal-foot fspan">
+          <button type="button" class="btn-sm btn-soft" (click)="closeForm()">Batal</button>
+          <button type="button" class="btn-sm btn-pri" (click)="save()" [disabled]="saving()">
+            {{ saving() ? 'Menyimpan…' : 'Simpan Invois' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ===== LIHAT INVOIS ===== -->
+@if (viewOpen()) {
+  <div class="ov show exp-module exp-ov" (click)="closeView()">
+    <div class="modal" style="max-width:620px" (click)="$event.stopPropagation()">
+      @if (!detail()) {
+        <div class="loading">Memuatkan…</div>
+      } @else {
+        <div class="modal-head">
+          <h2>Invois {{ detail()!.header.invNo }}</h2>
+          <button type="button" class="mclose" (click)="closeView()">×</button>
+        </div>
+
+        <div class="iview">
+          <dl>
+            <dt>Pembekal</dt><dd>{{ detail()!.header.supplierName }}</dd>
+            <dt>Tarikh Invois</dt><dd>{{ detail()!.header.invDate }}</dd>
+            <dt>Tarikh Tempoh</dt><dd>{{ detail()!.header.dueDate || '-' }}</dd>
+            <dt>Subtotal</dt><dd>RM {{ detail()!.header.subtotal | number:'1.2-2' }}</dd>
+            @if (detail()!.header.sstAmount > 0) {
+              <dt>SST</dt><dd>RM {{ detail()!.header.sstAmount | number:'1.2-2' }}</dd>
+            }
+            <dt>Jumlah</dt><dd><b>RM {{ detail()!.header.total | number:'1.2-2' }}</b></dd>
+            <dt>Dibayar</dt>
+            <dd style="color:#1B7A3E">RM {{ detail()!.header.paid | number:'1.2-2' }}</dd>
+            <dt>Baki</dt>
+            <dd style="color:#B0151E;font-weight:600">RM {{ detail()!.header.balance | number:'1.2-2' }}</dd>
+            @if (detail()!.note) { <dt>Nota</dt><dd>{{ detail()!.note }}</dd> }
+          </dl>
+
+          <div class="tbl-sm">
+            <table>
+              <thead>
+                <tr><th>Jenis</th><th>Keterangan</th><th class="num">Jumlah</th></tr>
+              </thead>
+              <tbody>
+                @for (it of detail()!.items; track it.id) {
+                  <tr>
+                    <td>{{ it.categoryName }}</td>
+                    <td>{{ it.description || '—' }}</td>
+                    <td class="num">{{ it.amount | number:'1.2-2' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="modal-foot">
+          <button type="button" class="btn-sm btn-soft" (click)="closeView()">Tutup</button>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- ===== BAYAR ===== -->
+@if (payOpen()) {
+  <div class="ov show exp-module exp-ov" (click)="closePay()">
+    <div class="modal" style="max-width:480px" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h2>Bayar Invois</h2>
+        <button type="button" class="mclose" (click)="closePay()">×</button>
+      </div>
+
+      <div class="mform-grid">
+        @if (error()) { <div class="fspan"><div class="empty">⚠️ {{ error() }}</div></div> }
+
+        <div class="fspan">
+          <p style="margin:0 0 4px;font-size:14px;color:var(--body)">
+            Invois <b>{{ payFor()!.invNo }}</b> — {{ payFor()!.supplierName }}<br />
+            Baki: <b style="color:#B0151E">RM {{ payFor()!.balance | number:'1.2-2' }}</b>
+          </p>
+        </div>
+
+        <div class="frow half">
+          <label>Amaun (RM) *</label>
+          <input type="number" step="0.01" [(ngModel)]="payAmount" />
+        </div>
+        <div class="frow half">
+          <label>Tarikh Bayaran *</label>
+          <input type="date" [(ngModel)]="payDate" />
+        </div>
+        <div class="frow half">
+          <label>Kaedah *</label>
+          <select [(ngModel)]="payMethod">
+            @for (m of methods(); track m.id) {
+              <option [ngValue]="m.name">{{ m.name }}</option>
+            }
+          </select>
+        </div>
+        <div class="frow half">
+          <label>No Rujukan</label>
+          <input [(ngModel)]="payRefNo" />
+        </div>
+
+        <div class="modal-foot fspan">
+          <button type="button" class="btn-sm btn-soft" (click)="closePay()">Batal</button>
+          <button type="button" class="btn-sm btn-pri" (click)="pay()" [disabled]="saving()">
+            {{ saving() ? 'Menyimpan…' : 'Rekod Bayaran' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
