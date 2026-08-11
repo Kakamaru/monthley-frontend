@@ -1,0 +1,180 @@
+<div class="exp-module">
+  <div class="phead">
+    <div>
+      <h1>Bayaran &amp; Baucar (PV)</h1>
+      <p>Setiap bayaran kepada pembekal menjana satu Baucar Bayaran (PV).</p>
+    </div>
+    <div><button class="btn-sm btn-pri" (click)="openChooser()">+ Bayar Invois</button></div>
+  </div>
+
+  @if (error() && !payOpen() && !chooserOpen()) {
+    <div class="panecard"><div class="empty">⚠️ {{ error() }}</div></div>
+  }
+
+  <div class="panecard">
+    <div class="toolbar">
+      <input class="inp grow" [(ngModel)]="q"
+             placeholder="🔍 Cari no PV / pembekal / no invois…" />
+      <input class="inp" type="date" [(ngModel)]="from" title="Dari tarikh" />
+      <input class="inp" type="date" [(ngModel)]="to" title="Hingga tarikh" />
+      <button class="btn-sm btn-soft" (click)="clearFilter()">Clear</button>
+    </div>
+
+    @if (loading()) {
+      <div class="loading">Memuatkan…</div>
+    } @else if (!visible().length) {
+      <div class="empty">Tiada PV sepadan carian.</div>
+    } @else {
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>No PV</th>
+              <th>Tarikh</th>
+              <th>No Invois</th>
+              <th>Pembekal</th>
+              <th>Kaedah</th>
+              <th class="num">Jumlah</th>
+              <th>Status</th>
+              <th class="num">Tindakan</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of visible(); track r.id) {
+              <tr [style.opacity]="r.status === 'CANCELLED' ? 0.5 : 1">
+                <td><b>{{ r.pvNo }}</b></td>
+                <td>{{ r.payDate }}</td>
+                <td>{{ r.invNo }}</td>
+                <td>{{ r.supplierName }}</td>
+                <td>
+                  {{ r.method }}
+                  @if (r.refNo) { <div class="sub2">{{ r.refNo }}</div> }
+                </td>
+                <td class="num">{{ r.amount | number:'1.2-2' }}</td>
+                <td>
+                  <span class="badge"
+                        [class.b-green]="r.status === 'ACTIVE'"
+                        [class.b-grey]="r.status === 'CANCELLED'">
+                    {{ r.status === 'ACTIVE' ? 'AKTIF' : 'DIBATALKAN' }}
+                  </span>
+                </td>
+                <td class="num">
+                  <div class="acts">
+                    <button class="iconbtn blue" (click)="print(r)" title="Cetak PV">🖨</button>
+                    @if (r.status === 'ACTIVE') {
+                      <button class="iconbtn danger" (click)="cancel(r)" title="Batal">🚫</button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (pages() > 1) {
+        <div class="pager">
+          <button class="pgbtn" [disabled]="page() === 0" (click)="goPage(page() - 1)">‹</button>
+          <span style="padding:0 10px;font-size:13px;color:var(--body)">
+            {{ page() + 1 }} / {{ pages() }}
+          </span>
+          <button class="pgbtn" [disabled]="page() + 1 >= pages()" (click)="goPage(page() + 1)">›</button>
+        </div>
+      }
+    }
+  </div>
+</div>
+
+<!-- ===== PILIH INVOIS ===== -->
+@if (chooserOpen()) {
+  <div class="ov show exp-module exp-ov" (click)="closeChooser()">
+    <div class="modal" style="max-width:560px" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h2>Pilih Invois untuk Bayar</h2>
+        <button type="button" class="mclose" (click)="closeChooser()">×</button>
+      </div>
+
+      <div class="mform-grid">
+        @if (error()) { <div class="fspan"><div class="empty">⚠️ {{ error() }}</div></div> }
+
+        @if (!openInvoices().length) {
+          <div class="fspan"><div class="empty">Tiada invois belum selesai. 🎉</div></div>
+        } @else {
+          <div class="frow">
+            <label>Invois *</label>
+            <select [(ngModel)]="chosenInvoiceId">
+              <option [ngValue]="null">— Pilih invois —</option>
+              @for (i of openInvoices(); track i.id) {
+                <option [ngValue]="i.id">
+                  {{ i.invNo }} — {{ i.supplierName }} (baki RM{{ i.balance | number:'1.2-2' }})
+                </option>
+              }
+            </select>
+          </div>
+        }
+
+        <div class="modal-foot fspan">
+          <button type="button" class="btn-sm btn-soft" (click)="closeChooser()">Batal</button>
+          @if (openInvoices().length) {
+            <button type="button" class="btn-sm btn-pri" (click)="proceed()">Teruskan</button>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ===== BAYAR ===== -->
+@if (payOpen()) {
+  <div class="ov show exp-module exp-ov" (click)="closePay()">
+    <div class="modal" style="max-width:500px" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h2>Rekod Bayaran</h2>
+        <button type="button" class="mclose" (click)="closePay()">×</button>
+      </div>
+
+      <div class="mform-grid">
+        @if (error()) { <div class="fspan"><div class="empty">⚠️ {{ error() }}</div></div> }
+
+        <div class="fspan">
+          <p style="margin:0 0 4px;font-size:14px;color:var(--body)">
+            Invois <b>{{ payFor()!.invNo }}</b> — {{ payFor()!.supplierName }}<br />
+            Baki: <b style="color:#B0151E">RM {{ payFor()!.balance | number:'1.2-2' }}</b>
+          </p>
+        </div>
+
+        <div class="frow half">
+          <label>Amaun (RM) *</label>
+          <input type="number" step="0.01" [(ngModel)]="payAmount" />
+        </div>
+        <div class="frow half">
+          <label>Tarikh Bayaran *</label>
+          <input type="date" [(ngModel)]="payDate" />
+        </div>
+        <div class="frow half">
+          <label>Kaedah *</label>
+          <select [(ngModel)]="payMethod">
+            @for (m of methods(); track m.id) {
+              <option [ngValue]="m.name">{{ m.name }}</option>
+            }
+          </select>
+        </div>
+        <div class="frow half">
+          <label>No Rujukan</label>
+          <input [(ngModel)]="payRefNo" placeholder="no cek / rujukan bank" />
+        </div>
+        <div class="frow">
+          <label>Nota</label>
+          <input [(ngModel)]="payNote" />
+        </div>
+
+        <div class="modal-foot fspan">
+          <button type="button" class="btn-sm btn-soft" (click)="closePay()">Batal</button>
+          <button type="button" class="btn-sm btn-pri" (click)="pay()" [disabled]="saving()">
+            {{ saving() ? 'Menyimpan…' : 'Rekod & Jana PV' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

@@ -12,24 +12,11 @@
   <div class="panels">
     <!-- ===== Maklumat & SST ===== -->
     <div class="panel">
-      <h3>Maklumat &amp; SST</h3>
+      <h3>Maklumat</h3>
 
       @if (loading()) {
         <div class="loading">Memuatkan…</div>
       } @else {
-        <div class="frow">
-          <label>SST Didayakan</label>
-          <select [(ngModel)]="sstEnabled">
-            <option [ngValue]="true">Ya</option>
-            <option [ngValue]="false">Tidak</option>
-          </select>
-        </div>
-
-        <div class="frow">
-          <label>Kadar SST (%)</label>
-          <input type="number" step="0.01" [(ngModel)]="sstRate" [disabled]="!sstEnabled" />
-        </div>
-
         <div class="frow">
           <label>Akaun Bank (GL)</label>
           <select [(ngModel)]="bankGlAccountId">

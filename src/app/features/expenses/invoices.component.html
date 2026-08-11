@@ -174,10 +174,10 @@
           <button type="button" class="btn-sm btn-soft" (click)="addItem()">+ Item</button>
 
           <div style="text-align:right;margin-top:10px;font-family:'Sora',sans-serif;font-weight:700">
-            Subtotal: RM {{ formSubtotal() | number:'1.2-2' }}
+            Jumlah: RM {{ formSubtotal() | number:'1.2-2' }}
           </div>
           <p class="sub2" style="text-align:right;margin-top:2px">
-            SST dikira semasa simpan mengikut tetapan modul.
+            Masukkan amaun seperti tertera pada invois pembekal — termasuk SST jika ada.
           </p>
         </div>
 
@@ -214,10 +214,6 @@
             <dt>Pembekal</dt><dd>{{ detail()!.header.supplierName }}</dd>
             <dt>Tarikh Invois</dt><dd>{{ detail()!.header.invDate }}</dd>
             <dt>Tarikh Tempoh</dt><dd>{{ detail()!.header.dueDate || '-' }}</dd>
-            <dt>Subtotal</dt><dd>RM {{ detail()!.header.subtotal | number:'1.2-2' }}</dd>
-            @if (detail()!.header.sstAmount > 0) {
-              <dt>SST</dt><dd>RM {{ detail()!.header.sstAmount | number:'1.2-2' }}</dd>
-            }
             <dt>Jumlah</dt><dd><b>RM {{ detail()!.header.total | number:'1.2-2' }}</b></dd>
             <dt>Dibayar</dt>
             <dd style="color:#1B7A3E">RM {{ detail()!.header.paid | number:'1.2-2' }}</dd>
