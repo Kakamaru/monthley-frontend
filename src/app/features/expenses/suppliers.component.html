@@ -4,8 +4,10 @@
       <h1>Pembekal</h1>
       <p>Senarai pembekal / supplier berdaftar untuk modul ini.</p>
     </div>
-    <div><button class="btn-sm btn-pri" (click)="openNew()">+ Pembekal Baru</button></div>
+    <div><button class="btn-sm btn-pri" [disabled]="!modules.hasPerbelanjaan()" (click)="openNew()">+ Pembekal Baru</button></div>
   </div>
+
+  <app-exp-notice />
 
   @if (error() && !formOpen()) { <div class="panecard"><div class="empty">⚠️ {{ error() }}</div></div> }
 

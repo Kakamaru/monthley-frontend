@@ -65,11 +65,28 @@
         }
       }
 
-      <!-- Perbelanjaan — modul tambahan, kumpulan sendiri -->
+      <!-- Perbelanjaan — modul tambahan, kumpulan sendiri.
+           Kekal kelihatan walaupun tidak dilanggan: menyembunyikannya
+           bermakna SP tidak pernah tahu ia wujud (ADR 0016). -->
       @if (auth.isSpAdmin()) {
         <button class="grp-btn" (click)="toggleExp()">
-          <span>Perbelanjaan</span><span class="chev">{{ expOpen() ? '▾' : '▸' }}</span>
+          <span>Perbelanjaan</span>
+          <span class="chev">{{ expOpen() ? '▾' : '▸' }}</span>
         </button>
+
+        <!-- Penanda pada baris SENDIRI: meletakkannya dalam .grp-btn
+             menjadikannya elemen ketiga dalam space-between, jadi ia
+             terperangkap di tengah dan membalut ke baris kedua — tajuk
+             kumpulan tidak lagi sejajar dengan yang lain. -->
+        @if (modules.loaded() && !modules.hasPerbelanjaan()) {
+          <div style="padding:0 12px 8px">
+            <span style="font-size:10px;font-weight:700;padding:2px 8px;
+                         border-radius:8px;background:#F59E0B;color:#3A2A00;
+                         text-transform:none;letter-spacing:0;white-space:nowrap">
+              belum dilanggan
+            </span>
+          </div>
+        }
         @if (expOpen()) {
           @for (it of visibleExpenses(); track it.id) {
             <a class="nav" [routerLink]="it.route" routerLinkActive="on">
@@ -80,10 +97,6 @@
       }
     </div>
 
-    <div class="side-foot">
-      <div class="sf-label">Log masuk sebagai</div>
-      <div class="sf-value">{{ userRole() }}</div>
-    </div>
   </aside>
 
   <!-- ============ MAIN ============ -->

@@ -93,6 +93,18 @@ export interface PaymentReportRow {
 }
 export interface PaymentReport { rows: PaymentReportRow[]; total: number; }
 
+export interface TrendPoint { label: string; billed: number; paid: number; }
+export interface CategorySlice { name: string; amount: number; }
+export interface UnsettledRow {
+  id: number; invNo: string; supplierName: string; dueDate: string | null;
+  total: number; balance: number; status: string; overdue: boolean;
+}
+export interface Dashboard {
+  totalSpend: number; directCash: number; paid: number; pvCount: number;
+  outstanding: number; outstandingCount: number; overdueCount: number;
+  trend: TrendPoint[]; byCategory: CategorySlice[]; unsettled: UnsettledRow[];
+}
+
 // ---------- Servis ----------
 
 @Injectable({ providedIn: 'root' })
@@ -179,6 +191,10 @@ export class ExpensesService {
     if (from) p = p.set('from', from);
     if (to) p = p.set('to', to);
     return this.http.get<ExpCashbookRow[]>(`${this.base}/cashbook`, { params: p });
+  }
+
+  dashboard(): Observable<Dashboard> {
+    return this.http.get<Dashboard>(`${this.base}/reports/dashboard`);
   }
 
   // Laporan

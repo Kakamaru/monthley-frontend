@@ -1,17 +1,20 @@
 import { Component, computed, inject, signal, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ExpNoticeComponent } from './module-notice.component';
+import { ModuleService } from '../../core/services/module.service';
 import { ExpensesService, ExpSupplier } from './expenses.service';
 
 @Component({
   selector: 'app-exp-suppliers',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ExpNoticeComponent],
   templateUrl: './suppliers.component.html',
   styleUrl: './expenses.scss'
 })
 export class ExpSuppliersComponent {
   private api = inject(ExpensesService);
+  readonly modules = inject(ModuleService);
 
   readonly rows = signal<ExpSupplier[]>([]);
   readonly loading = signal(false);

@@ -4,8 +4,10 @@
       <h1>Invois Pembekal</h1>
       <p>Daftar invois dari pembekal, jejak baki &amp; buat bayaran.</p>
     </div>
-    <div><button class="btn-sm btn-pri" (click)="openNew()">+ Daftar Invois</button></div>
+    <div><button class="btn-sm btn-pri" [disabled]="!modules.hasPerbelanjaan()" (click)="openNew()">+ Daftar Invois</button></div>
   </div>
+
+  <app-exp-notice />
 
   @if (error() && !formOpen() && !payOpen()) {
     <div class="panecard"><div class="empty">⚠️ {{ error() }}</div></div>

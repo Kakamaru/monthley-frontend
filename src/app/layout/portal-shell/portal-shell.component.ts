@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { SpContextService } from '../../core/services/sp-context.service';
+import { ModuleService } from '../../core/services/module.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { AuthService } from '../../core/auth/auth.service';
 
@@ -16,6 +17,7 @@ interface NavItem { id: string; icon: string; label: string; route?: string; rol
 })
 export class PortalShellComponent {
   readonly sp = inject(SpContextService);
+  readonly modules = inject(ModuleService);
   private readonly router = inject(Router);
   readonly themeSvc = inject(ThemeService);
   readonly auth = inject(AuthService);

@@ -4,8 +4,10 @@
       <h1>Buku Tunai</h1>
       <p>Rekod penuh wang keluar — catatan terus (tanpa invois) &amp; bayaran invois (auto dari PV).</p>
     </div>
-    <div><button class="btn-sm btn-pri" (click)="openNew()">+ Tambah Catatan</button></div>
+    <div><button class="btn-sm btn-pri" [disabled]="!modules.hasPerbelanjaan()" (click)="openNew()">+ Tambah Catatan</button></div>
   </div>
+
+  <app-exp-notice />
 
   @if (error() && !formOpen()) {
     <div class="panecard"><div class="empty">⚠️ {{ error() }}</div></div>

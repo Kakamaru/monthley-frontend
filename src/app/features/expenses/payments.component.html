@@ -4,8 +4,10 @@
       <h1>Bayaran &amp; Baucar (PV)</h1>
       <p>Setiap bayaran kepada pembekal menjana satu Baucar Bayaran (PV).</p>
     </div>
-    <div><button class="btn-sm btn-pri" (click)="openChooser()">+ Bayar Invois</button></div>
+    <div><button class="btn-sm btn-pri" [disabled]="!modules.hasPerbelanjaan()" (click)="openChooser()">+ Bayar Invois</button></div>
   </div>
+
+  <app-exp-notice />
 
   @if (error() && !payOpen() && !chooserOpen()) {
     <div class="panecard"><div class="empty">⚠️ {{ error() }}</div></div>

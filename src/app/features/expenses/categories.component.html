@@ -4,8 +4,10 @@
       <h1>Kategori</h1>
       <p>Kategori &amp; jenis untuk Buku Tunai / Invois.</p>
     </div>
-    <div><button class="btn-sm btn-pri" (click)="newParent()">+ Kategori Induk</button></div>
+    <div><button class="btn-sm btn-pri" [disabled]="!modules.hasPerbelanjaan()" (click)="newParent()">+ Kategori Induk</button></div>
   </div>
+
+  <app-exp-notice />
 
   @if (error() && !formOpen()) { <div class="panecard"><div class="empty">⚠️ {{ error() }}</div></div> }
 

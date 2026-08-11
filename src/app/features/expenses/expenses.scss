@@ -390,3 +390,9 @@
 [data-theme='dark'] .exp-ov textarea {
   color-scheme: dark;
 }
+
+/* Butang dinyahdayakan — SP tanpa hak modul (ADR 0016). */
+.exp-module .btn-sm:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}

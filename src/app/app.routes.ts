@@ -79,6 +79,11 @@ export const routes: Routes = [
           import('./features/expenses/categories.component').then(m => m.ExpCategoriesComponent)
       },
       {
+        path: 'expenses/dashboard',
+        loadComponent: () =>
+          import('./features/expenses/dashboard.component').then(m => m.ExpDashboardComponent)
+      },
+      {
         path: 'expenses/reports',
         loadComponent: () =>
           import('./features/expenses/reports.component').then(m => m.ExpReportsComponent)

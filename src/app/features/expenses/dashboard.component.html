@@ -1,0 +1,208 @@
+<div class="exp-module">
+  <div class="phead">
+    <div>
+      <h1>Dashboard</h1>
+      <p>Ringkasan perbelanjaan &amp; akaun belum bayar.</p>
+    </div>
+  </div>
+
+  @if (error()) { <div class="panecard"><div class="empty">⚠️ {{ error() }}</div></div> }
+
+  @if (loading()) {
+    <div class="panecard"><div class="loading">Memuatkan…</div></div>
+  } @else if (data(); as d) {
+
+    <!-- ===== KAD KPI ===== -->
+    <div class="cards">
+      <div class="card" style="--c:#16A34A">
+        <div class="lbl">💸 Jumlah Perbelanjaan</div>
+        <div class="val">RM {{ d.totalSpend | number:'1.2-2' }}</div>
+        <div class="sub">PV + Tunai Terus</div>
+      </div>
+
+      <div class="card" style="--c:#0EA5E9">
+        <div class="lbl">🧾 Bayaran Terus</div>
+        <div class="val">RM {{ d.directCash | number:'1.2-2' }}</div>
+        <div class="sub">catatan tunai langsung</div>
+      </div>
+
+      <div class="card" style="--c:#8B5CF6">
+        <div class="lbl">✅ Bayaran PV</div>
+        <div class="val">RM {{ d.paid | number:'1.2-2' }}</div>
+        <div class="sub">{{ d.pvCount }} baucar (PV)</div>
+      </div>
+
+      <div class="card" style="--c:#DC1F2A">
+        <div class="lbl">⚠️ Belum Bayar</div>
+        <div class="val">RM {{ d.outstanding | number:'1.2-2' }}</div>
+        <div class="sub">
+          {{ d.outstandingCount }} invois aktif ·
+          <span class="hot">{{ d.overdueCount }} lewat tempoh</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== CARTA ===== -->
+    <div class="panels">
+      <!-- Trend bulanan -->
+      <div class="panel">
+        <h3>Trend Bulanan — Diinvois vs Perbelanjaan</h3>
+
+        @if (!trendPenuh().length) {
+          <div class="empty">Tiada data.</div>
+        } @else {
+          <div style="display:flex;gap:16px;justify-content:center;margin-bottom:14px;font-size:13px">
+            <span style="display:flex;align-items:center;gap:6px">
+              <span style="width:11px;height:11px;border-radius:3px;background:#DC1F2A"></span>
+              Diinvois
+            </span>
+            <span style="display:flex;align-items:center;gap:6px">
+              <span style="width:11px;height:11px;border-radius:3px;background:#F7B6BA"></span>
+              Perbelanjaan
+            </span>
+          </div>
+
+          <!-- Paksi Y + grid di belakang, bar di hadapan. Kedua-duanya
+               berkongsi ketinggian yang sama supaya garis grid sejajar
+               dengan tanda paksi. -->
+          <div style="display:flex;gap:8px">
+            <div style="display:flex;flex-direction:column;justify-content:space-between;
+                        height:220px;font-size:11.5px;color:var(--body);
+                        text-align:right;min-width:52px;padding-bottom:1px">
+              @for (t of tanda(); track $index) {
+                <span style="line-height:1;transform:translateY(-50%)">{{ labelPaksi(t) }}</span>
+              }
+            </div>
+
+            <div style="flex:1;position:relative;height:220px;
+                        border-bottom:1px solid var(--line)">
+              <!-- Garis grid mendatar -->
+              @for (t of tanda(); track $index) {
+                <div [style.top.%]="$index * 25"
+                     style="position:absolute;left:0;right:0;height:1px;
+                            background:var(--line);opacity:.6"></div>
+              }
+
+              <div style="position:absolute;inset:0;display:flex;align-items:flex-end;gap:14px">
+                @for (p of trendPenuh(); track p.label) {
+                  <div style="flex:1;display:flex;align-items:flex-end;gap:4px;
+                              height:100%;justify-content:center">
+                    <div [style.height.%]="tinggi(p.billed)"
+                         [title]="'Diinvois: RM' + (p.billed | number:'1.2-2')"
+                         style="width:22px;max-width:22px;background:#DC1F2A;
+                                border-radius:4px 4px 0 0;min-height:2px"></div>
+                    <div [style.height.%]="tinggi(p.paid)"
+                         [title]="'Perbelanjaan: RM' + (p.paid | number:'1.2-2')"
+                         style="width:22px;max-width:22px;background:#F7B6BA;
+                                border-radius:4px 4px 0 0;min-height:2px"></div>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:14px;padding:8px 0 0 60px">
+            @for (p of trendPenuh(); track p.label) {
+              <div style="flex:1;text-align:center;font-size:12px;color:var(--body)">
+                {{ labelBulan(p.label) }}
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Donat kategori -->
+      <div class="panel">
+        <h3>Perbelanjaan ikut Kategori</h3>
+
+        @if (!d.byCategory.length) {
+          <div class="empty">Tiada perbelanjaan direkod.</div>
+        } @else {
+          <div style="display:flex;justify-content:center;padding:10px 0 18px">
+            <div [style.background]="donatGradient()"
+                 style="width:190px;height:190px;border-radius:50%;position:relative">
+              <div style="position:absolute;inset:32px;border-radius:50%;
+                          background:var(--bg);display:flex;flex-direction:column;
+                          align-items:center;justify-content:center">
+                <div style="font-size:12px;color:var(--body)">JUMLAH</div>
+                <div style="font-family:'Sora',sans-serif;font-weight:800;font-size:16px;
+                            color:var(--ink)">
+                  {{ jumlahKategori() | number:'1.0-0' }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="legend">
+            @for (c of d.byCategory; track c.name; let i = $index) {
+              <div class="row">
+                <span class="dot" [style.background]="warna(i)"></span>
+                <span class="nm">{{ c.name }}</span>
+                <span class="am">RM {{ c.amount | number:'1.2-2' }}</span>
+                <span class="pc">{{ peratus(c.amount) }}%</span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- ===== INVOIS BELUM SELESAI ===== -->
+    <div class="panecard">
+      <div style="display:flex;align-items:center;justify-content:space-between;
+                  gap:12px;flex-wrap:wrap;margin-bottom:14px">
+        <h3 style="font-family:'Sora',sans-serif;font-size:16px;margin:0">
+          Invois Belum Selesai
+          <span style="color:var(--body);font-weight:500;font-size:13px">
+            · paling hampir tamat tempoh
+          </span>
+        </h3>
+        <span class="link" style="font-weight:600" (click)="keInvois()">Lihat semua →</span>
+      </div>
+
+      @if (!d.unsettled.length) {
+        <div class="empty">Tiada invois belum selesai. 🎉</div>
+      } @else {
+        <div style="overflow-x:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>No Invois</th><th>Pembekal</th><th>Tarikh Tempoh</th>
+                <th class="num">Jumlah</th><th class="num">Baki</th>
+                <th>Status</th><th class="num"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of d.unsettled; track r.id) {
+                <tr>
+                  <td><b>{{ r.invNo }}</b></td>
+                  <td>{{ r.supplierName }}</td>
+                  <td>
+                    {{ r.dueDate || '—' }}
+                    @if (r.overdue) { <span class="badge late">Lewat</span> }
+                  </td>
+                  <td class="num">{{ r.total | number:'1.2-2' }}</td>
+                  <td class="num">
+                    <span style="color:#B0151E;font-weight:600">
+                      {{ r.balance | number:'1.2-2' }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="badge"
+                          [class.b-red]="r.status === 'UNPAID'"
+                          [class.b-amber]="r.status === 'PARTIAL'">
+                      {{ r.status === 'UNPAID' ? 'BELUM BAYAR' : 'SEBAHAGIAN' }}
+                    </span>
+                  </td>
+                  <td class="num">
+                    <button class="btn-sm btn-pri" (click)="keBayar()">Bayar</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
+</div>

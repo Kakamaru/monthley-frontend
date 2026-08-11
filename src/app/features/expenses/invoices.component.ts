@@ -1,6 +1,8 @@
 import { Component, computed, inject, signal, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ExpNoticeComponent } from './module-notice.component';
+import { ModuleService } from '../../core/services/module.service';
 import {
   ExpensesService, ExpInvoiceRow, ExpInvoiceDetail,
   ExpSupplier, ExpCategory, ExpPaymentMethod
@@ -24,12 +26,13 @@ interface BarisItem {
 @Component({
   selector: 'app-exp-invoices',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ExpNoticeComponent],
   templateUrl: './invoices.component.html',
   styleUrl: './expenses.scss'
 })
 export class ExpInvoicesComponent {
   private api = inject(ExpensesService);
+  readonly modules = inject(ModuleService);
 
   readonly rows = signal<ExpInvoiceRow[]>([]);
   readonly total = signal(0);

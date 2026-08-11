@@ -1,17 +1,20 @@
 import { Component, inject, signal, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ExpNoticeComponent } from './module-notice.component';
+import { ModuleService } from '../../core/services/module.service';
 import { ExpensesService, ExpSetting, ExpPaymentMethod, GlOption } from './expenses.service';
 
 @Component({
   selector: 'app-exp-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ExpNoticeComponent],
   templateUrl: './settings.component.html',
   styleUrl: './expenses.scss'
 })
 export class ExpSettingsComponent {
   private api = inject(ExpensesService);
+  readonly modules = inject(ModuleService);
 
   readonly loading = signal(false);
   readonly saving = signal(false);
