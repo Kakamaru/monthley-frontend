@@ -1,0 +1,128 @@
+<div class="exp-module">
+  <div class="phead">
+    <div>
+      <h1>Pembekal</h1>
+      <p>Senarai pembekal / supplier berdaftar untuk modul ini.</p>
+    </div>
+    <div><button class="btn-sm btn-pri" (click)="openNew()">+ Pembekal Baru</button></div>
+  </div>
+
+  @if (error() && !formOpen()) { <div class="panecard"><div class="empty">⚠️ {{ error() }}</div></div> }
+
+  <div class="panecard">
+    <div class="toolbar">
+      <input class="inp grow" [(ngModel)]="q" placeholder="🔍 Cari nama pembekal…" />
+    </div>
+
+    @if (loading()) {
+      <div class="loading">Memuatkan…</div>
+    } @else if (!visible().length) {
+      <div class="empty">Tiada pembekal sepadan carian.</div>
+    } @else {
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Nama Pembekal</th>
+              <th>No Pendaftaran</th>
+              <th>Telefon</th>
+              <th>Akaun Bank</th>
+              <th>Status</th>
+              <th class="num">Tindakan</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (s of visible(); track s.id) {
+              <tr>
+                <td>
+                  <b>{{ s.name }}</b>
+                  @if (s.email) { <div class="sub2">{{ s.email }}</div> }
+                </td>
+                <td>
+                  {{ s.regNo || '-' }}
+                  @if (s.tin) { <div class="sub2">TIN: {{ s.tin }}</div> }
+                </td>
+                <td>{{ s.phone || '-' }}</td>
+                <td>
+                  {{ s.bankName || '-' }}
+                  @if (s.bankAccNo) { <div class="sub2">{{ s.bankAccNo }}</div> }
+                </td>
+                <td>
+                  <span class="badge" [class.b-green]="s.active" [class.b-grey]="!s.active">
+                    {{ s.active ? 'AKTIF' : 'TUTUP' }}
+                  </span>
+                </td>
+                <td class="num">
+                  <span class="link" (click)="openEdit(s)">Kemaskini</span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- ===== MODAL ===== -->
+@if (formOpen()) {
+  <div class="ov show exp-module exp-ov" (click)="close()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h2>{{ editingId() ? 'Kemaskini Pembekal' : 'Daftar Pembekal' }}</h2>
+        <button type="button" class="mclose" (click)="close()">×</button>
+      </div>
+
+      <div class="mform-grid">
+        @if (error()) { <div class="fspan"><div class="empty">⚠️ {{ error() }}</div></div> }
+
+        <div class="frow">
+          <label>Nama Pembekal *</label>
+          <input [(ngModel)]="name" />
+        </div>
+        <div class="frow half">
+          <label>No Pendaftaran (SSM)</label>
+          <input [(ngModel)]="regNo" />
+        </div>
+        <div class="frow half">
+          <label>No TIN</label>
+          <input [(ngModel)]="tin" />
+        </div>
+        <div class="frow half">
+          <label>Telefon</label>
+          <input [(ngModel)]="phone" />
+        </div>
+        <div class="frow half">
+          <label>Emel</label>
+          <input type="email" [(ngModel)]="email" />
+        </div>
+        <div class="frow">
+          <label>Alamat</label>
+          <textarea rows="2" [(ngModel)]="address"></textarea>
+        </div>
+        <div class="frow half">
+          <label>Nama Bank</label>
+          <input [(ngModel)]="bankName" />
+        </div>
+        <div class="frow half">
+          <label>No Akaun</label>
+          <input [(ngModel)]="bankAccNo" />
+        </div>
+        <div class="frow half">
+          <label>Status</label>
+          <select [(ngModel)]="active">
+            <option [ngValue]="true">Aktif</option>
+            <option [ngValue]="false">Tidak Aktif</option>
+          </select>
+        </div>
+
+        <div class="modal-foot fspan">
+          <button type="button" class="btn-sm btn-soft" (click)="close()">Batal</button>
+          <button type="button" class="btn-sm btn-pri" (click)="save()" [disabled]="saving()">
+            {{ saving() ? 'Menyimpan…' : 'Simpan' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

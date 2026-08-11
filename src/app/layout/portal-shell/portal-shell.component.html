@@ -64,6 +64,20 @@
           }
         }
       }
+
+      <!-- Perbelanjaan — modul tambahan, kumpulan sendiri -->
+      @if (auth.isSpAdmin()) {
+        <button class="grp-btn" (click)="toggleExp()">
+          <span>Perbelanjaan</span><span class="chev">{{ expOpen() ? '▾' : '▸' }}</span>
+        </button>
+        @if (expOpen()) {
+          @for (it of visibleExpenses(); track it.id) {
+            <a class="nav" [routerLink]="it.route" routerLinkActive="on">
+              <span class="ic">{{ it.icon }}</span>{{ it.label }}
+            </a>
+          }
+        }
+      }
     </div>
 
     <div class="side-foot">

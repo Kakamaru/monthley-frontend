@@ -57,19 +57,45 @@ export class PortalShellComponent {
     // VIEWER termasuk: pengawal pondok jaga tidak memerlukannya, tetapi
     // lejar ialah bacaan sahaja dan endpoint membenarkan ketiga-tiga.
     { id: 'spStatement',  icon: '📑',  label: 'SP Account Statement', route: '/portal/sp-ledger' },
-    { id: 'expenses',     icon: '💸',  label: 'Perbelanjaan' },
     { id: 'complaints',   icon: '🗣️', label: 'Aduan' },
     { id: 'memo',         icon: '📝',  label: 'Memo' },
     { id: 'donation',     icon: '🤲',  label: 'Kutipan Derma' }
   ];
 
+  /**
+   * Perbelanjaan — kumpulan sendiri, bukan di bawah Service Provider.
+   *
+   * Ia modul tambahan yang dilanggan berasingan (ADR 0016), bukan
+   * sebahagian menu SP teras. Meletakkannya di dalam Service Provider
+   * bermakna menu itu berkembang setiap kali modul baharu ditambah.
+   */
+  readonly navExpenses: NavItem[] = [
+    { id: 'expDash',     icon: '📊', label: 'Dashboard',    route: '/portal/expenses/dashboard' },
+    { id: 'expCashbook', icon: '📒', label: 'Buku Tunai',   route: '/portal/expenses/cashbook' },
+    { id: 'expSupplier', icon: '🏢', label: 'Pembekal',     route: '/portal/expenses/suppliers' },
+    { id: 'expInvoice',  icon: '🧾', label: 'Invois',       route: '/portal/expenses/invoices' },
+    { id: 'expPayment',  icon: '💳', label: 'Bayaran / PV', route: '/portal/expenses/payments' },
+    { id: 'expReport',   icon: '📈', label: 'Laporan',      route: '/portal/expenses/reports' },
+    { id: 'expCategory', icon: '🏷️', label: 'Kategori',     route: '/portal/expenses/categories', roles: ['SP_ADMIN'] },
+    { id: 'expSetting',  icon: '⚙️', label: 'Tetapan',      route: '/portal/expenses/settings', roles: ['SP_ADMIN'] }
+  ];
+
+  readonly visibleExpenses = computed(() =>
+    this.navExpenses.filter(it => this.bolehLihat(it)));
+
+  readonly expOpen = signal(false);
+  toggleExp() { this.expOpen.set(!this.expOpen()); }
+
   /** Menu SP yang pengguna benar-benar boleh nampak — ditapis ikut peranan. */
   readonly visibleSP = computed(() =>
-    this.navSP.filter(it => {
-      if (!it.roles) return true;                    // tiada sekatan
-      if (this.auth.isSuperadmin()) return true;     // superadmin nampak semua
-      return it.roles.some(r => this.sp.currentRoles().includes(r));
-    }));
+    this.navSP.filter(it => this.bolehLihat(it)));
+
+  private bolehLihat(it: NavItem): boolean {
+    if (!it.roles) return true;
+    if (this.auth.isSuperadmin()) return true;
+    return it.roles.some(r => this.sp.currentRoles().includes(r));
+  }
+
 
   /** Inisial untuk avatar SP */
   readonly spInitial = computed(() => (this.sp.spName() || '?').charAt(0).toUpperCase());
