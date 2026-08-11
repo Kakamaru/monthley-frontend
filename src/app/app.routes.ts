@@ -69,6 +69,11 @@ export const routes: Routes = [
           import('./features/payment/manual-payment.component').then(m => m.ManualPaymentComponent)
       },
       {
+        path: 'expenses/settings', canActivate: [spAdminGuard],
+        loadComponent: () =>
+          import('./features/expenses/settings.component').then(m => m.ExpSettingsComponent)
+      },
+      {
         path: 'expenses/categories', canActivate: [spAdminGuard],
         loadComponent: () =>
           import('./features/expenses/categories.component').then(m => m.ExpCategoriesComponent)

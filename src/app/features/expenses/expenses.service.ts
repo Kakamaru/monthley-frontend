@@ -52,6 +52,10 @@ export interface ExpCashbookRow {
   description: string; amount: number;
 }
 
+export interface ExpPaymentMethod {
+  id: number; name: string; sortOrder: number; active: boolean;
+}
+
 export interface ExpSetting {
   sstEnabled: boolean; sstRate: number;
   pvPrefix: string; pvNoSize: number; pvNoStart: number;
@@ -153,5 +157,21 @@ export class ExpensesService {
   }
   saveSettings(body: ExpSetting): Observable<ExpSetting> {
     return this.http.put<ExpSetting>(`${this.base}/settings`, body);
+  }
+
+  bankAccounts(): Observable<GlOption[]> {
+    return this.http.get<GlOption[]>(`${this.base}/settings/bank-accounts`);
+  }
+
+  methods(): Observable<ExpPaymentMethod[]> {
+    return this.http.get<ExpPaymentMethod[]>(`${this.base}/settings/methods`);
+  }
+  saveMethod(body: Partial<ExpPaymentMethod>, id?: number): Observable<ExpPaymentMethod> {
+    return id
+      ? this.http.put<ExpPaymentMethod>(`${this.base}/settings/methods/${id}`, body)
+      : this.http.post<ExpPaymentMethod>(`${this.base}/settings/methods`, body);
+  }
+  deactivateMethod(id: number): Observable<unknown> {
+    return this.http.delete(`${this.base}/settings/methods/${id}`);
   }
 }

@@ -1,0 +1,153 @@
+<div class="exp-module">
+  <div class="phead">
+    <div>
+      <h1>Tetapan</h1>
+      <p>Tetapan modul Perbelanjaan &amp; kaedah bayaran.</p>
+    </div>
+  </div>
+
+  @if (error() && !methodOpen()) { <div class="panecard"><div class="empty">⚠️ {{ error() }}</div></div> }
+  @if (ok()) { <div class="panecard"><div class="empty" style="color:#16A34A">✓ {{ ok() }}</div></div> }
+
+  <div class="panels">
+    <!-- ===== Maklumat & SST ===== -->
+    <div class="panel">
+      <h3>Maklumat &amp; SST</h3>
+
+      @if (loading()) {
+        <div class="loading">Memuatkan…</div>
+      } @else {
+        <div class="frow">
+          <label>SST Didayakan</label>
+          <select [(ngModel)]="sstEnabled">
+            <option [ngValue]="true">Ya</option>
+            <option [ngValue]="false">Tidak</option>
+          </select>
+        </div>
+
+        <div class="frow">
+          <label>Kadar SST (%)</label>
+          <input type="number" step="0.01" [(ngModel)]="sstRate" [disabled]="!sstEnabled" />
+        </div>
+
+        <div class="frow">
+          <label>Akaun Bank (GL)</label>
+          <select [(ngModel)]="bankGlAccountId">
+            <option [ngValue]="null">— 1000 Bank / Tunai (lalai) —</option>
+            @for (b of banks(); track b.id) {
+              <option [ngValue]="b.id">{{ b.code }} — {{ b.name }}</option>
+            }
+          </select>
+        </div>
+        <p class="sub2" style="margin:-8px 0 14px">
+          Bayaran dan baucar mengkredit akaun ini.
+        </p>
+
+        <h4 class="sub-t" style="margin-top:6px">Penomboran Dokumen</h4>
+
+        <div style="display:flex;gap:12px">
+          <div class="frow" style="flex:2">
+            <label>Prefix Baucar (PV)</label>
+            <input [(ngModel)]="pvPrefix" maxlength="10" />
+          </div>
+          <div class="frow" style="flex:1">
+            <label>Digit</label>
+            <input type="number" min="1" max="18" [(ngModel)]="pvNoSize" />
+          </div>
+        </div>
+
+        <div style="display:flex;gap:12px">
+          <div class="frow" style="flex:2">
+            <label>Prefix Bayaran Terus</label>
+            <input [(ngModel)]="cashPrefix" maxlength="10" />
+          </div>
+          <div class="frow" style="flex:1">
+            <label>Digit</label>
+            <input type="number" min="1" max="18" [(ngModel)]="cashNoSize" />
+          </div>
+        </div>
+
+        <p class="sub2" style="margin:-4px 0 16px">
+          ⚠️ Menukar prefix memulakan penomboran semula dari nombor mula.
+          Dokumen sedia ada tidak berubah.
+        </p>
+
+        <button class="btn-sm btn-pri" (click)="saveSettings()" [disabled]="saving()">
+          {{ saving() ? 'Menyimpan…' : 'Simpan Tetapan' }}
+        </button>
+      }
+    </div>
+
+    <!-- ===== Kaedah Bayaran ===== -->
+    <div class="panel">
+      <h3>Kaedah Bayaran</h3>
+
+      @if (!methods().length) {
+        <div class="empty">Tiada kaedah bayaran.</div>
+      } @else {
+        <div style="overflow-x:auto">
+          <table>
+            <thead>
+              <tr><th>Nama</th><th>Status</th><th class="num">Tindakan</th></tr>
+            </thead>
+            <tbody>
+              @for (m of methods(); track m.id) {
+                <tr [style.opacity]="m.active ? 1 : 0.5">
+                  <td><b>{{ m.name }}</b></td>
+                  <td>
+                    <span class="badge" [class.b-green]="m.active" [class.b-grey]="!m.active">
+                      {{ m.active ? 'AKTIF' : 'TUTUP' }}
+                    </span>
+                  </td>
+                  <td class="num">
+                    <span class="link" (click)="editMethod(m)">Kemaskini</span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      <button class="btn-sm btn-soft" style="margin-top:12px" (click)="newMethod()">
+        + Kaedah
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL KAEDAH ===== -->
+@if (methodOpen()) {
+  <div class="ov show exp-module exp-ov" (click)="closeMethod()">
+    <div class="modal" style="max-width:460px" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h2>{{ editingMethod() ? 'Kemaskini Kaedah' : 'Kaedah Bayaran Baru' }}</h2>
+        <button type="button" class="mclose" (click)="closeMethod()">×</button>
+      </div>
+
+      <div class="mform-grid">
+        @if (error()) { <div class="fspan"><div class="empty">⚠️ {{ error() }}</div></div> }
+
+        <div class="frow">
+          <label>Nama *</label>
+          <input [(ngModel)]="methodName" placeholder="cth: Pindahan Bank" />
+        </div>
+
+        <div class="frow">
+          <label>Status</label>
+          <select [(ngModel)]="methodActive">
+            <option [ngValue]="true">Aktif</option>
+            <option [ngValue]="false">Tidak Aktif</option>
+          </select>
+        </div>
+
+        <div class="modal-foot fspan">
+          <button type="button" class="btn-sm btn-soft" (click)="closeMethod()">Batal</button>
+          <button type="button" class="btn-sm btn-pri" (click)="saveMethod()" [disabled]="saving()">
+            {{ saving() ? 'Menyimpan…' : 'Simpan' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
