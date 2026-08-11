@@ -1,0 +1,122 @@
+<div class="exp-module">
+  <div class="phead">
+    <div>
+      <h1>Kategori</h1>
+      <p>Kategori &amp; jenis untuk Buku Tunai / Invois.</p>
+    </div>
+    <div><button class="btn-sm btn-pri" (click)="newParent()">+ Kategori Induk</button></div>
+  </div>
+
+  @if (error() && !formOpen()) { <div class="panecard"><div class="empty">⚠️ {{ error() }}</div></div> }
+
+  <div class="panecard">
+    @if (loading()) {
+      <div class="loading">Memuatkan…</div>
+    } @else if (!tree().length) {
+      <div class="empty">Tiada kategori. Klik "+ Kategori Induk".</div>
+    } @else {
+      <div style="overflow-x:auto">
+        <table class="cat-tbl">
+          <thead>
+            <tr>
+              <th style="width:22%">Kategori</th>
+              <th style="width:18%">Akaun GL</th>
+              <th>Jenis (anak)</th>
+              <th style="text-align:right;white-space:nowrap">Tindakan</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of tree(); track p.row.id) {
+              <tr [style.opacity]="p.row.active ? 1 : 0.5">
+                <td class="cat-name">
+                  <b>{{ p.row.name }}</b>
+                  <div class="sub2">{{ p.kids.length }} jenis</div>
+                </td>
+                <td><span class="sub2">{{ glLabel(p.row.glAccountId) }}</span></td>
+                <td>
+                  <div class="jwrap">
+                    @for (k of p.kids; track k.id) {
+                      <span class="jpill" [style.opacity]="k.active ? 1 : 0.5">
+                        {{ k.name }}
+                        <span class="link j-ed" (click)="edit(k)" title="Rename">✎</span>
+                        @if (k.active) {
+                          <span class="link j-del" (click)="deactivate(k)" title="Nyahaktif">×</span>
+                        }
+                      </span>
+                    }
+                    @if (!p.kids.length) {
+                      <span class="jnone">— tiada jenis —</span>
+                    }
+                  </div>
+                </td>
+                <td class="cat-act">
+                  <button class="btn-sm btn-soft" (click)="newChild(p.row)">+ Jenis</button>
+                  <button class="btn-sm btn-soft" (click)="edit(p.row)">Kemaskini</button>
+                  @if (p.row.active) {
+                    <button class="btn-sm btn-danger" (click)="deactivate(p.row)">Nyahaktif</button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- ===== MODAL ===== -->
+@if (formOpen()) {
+  <div class="ov show exp-module exp-ov" (click)="close()">
+    <div class="modal" style="max-width:520px" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h2>{{ tajukModal() }}</h2>
+        <button type="button" class="mclose" (click)="close()">×</button>
+      </div>
+
+      <div class="mform-grid">
+        @if (error()) { <div class="fspan"><div class="empty">⚠️ {{ error() }}</div></div> }
+
+        @if (parentFor()) {
+          <div class="fspan">
+            <p style="margin:0 0 4px;font-size:14px;color:var(--body)">
+              Di bawah kategori <b>{{ parentFor()!.name }}</b>.
+            </p>
+          </div>
+        }
+
+        <div class="frow">
+          <label>Nama *</label>
+          <input [(ngModel)]="name" />
+        </div>
+
+        <!-- GL pada induk sahaja: jenis mewarisi daripada induknya, jadi
+             menetapkannya di dua aras mencipta dua sumber kebenaran. -->
+        @if (!parentFor()) {
+          <div class="frow">
+            <label>Akaun GL</label>
+            <select [(ngModel)]="glAccountId">
+              <option [ngValue]="null">— Perbelanjaan Am (lalai) —</option>
+              @for (g of gls(); track g.id) {
+                <option [ngValue]="g.id">{{ g.code }} — {{ g.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="fspan">
+            <p class="sub2" style="margin:0">
+              Untung Rugi memaparkan perbelanjaan mengikut akaun ini.
+              Jenis di bawah kategori ini mewarisinya.
+            </p>
+          </div>
+        }
+
+        <div class="modal-foot fspan">
+          <button type="button" class="btn-sm btn-soft" (click)="close()">Batal</button>
+          <button type="button" class="btn-sm btn-pri" (click)="save()" [disabled]="saving()">
+            {{ saving() ? 'Menyimpan…' : 'Simpan' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

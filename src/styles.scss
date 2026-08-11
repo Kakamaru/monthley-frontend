@@ -597,3 +597,30 @@ select.fld { color: var(--muted); }
   from { transform: translateY(100%); }
   to { transform: translateY(0); }
 }
+
+/* ============================================================
+   Jambatan tema untuk modul Perbelanjaan.
+
+   CSS modul diambil daripada prototaip yang tidak pernah mempunyai mod
+   gelap; ia menimpa --ink, --line, --bg untuk dirinya sendiri. Nama
+   berasingan diperlukan supaya modul boleh membaca nilai tema tanpa
+   rujukan bulat.
+
+   Ditakrifkan DI SINI dan bukan dalam expenses.scss kerana Angular
+   menskopkan SCSS komponen: :root menjadi :root[_ngcontent-xxx], iaitu
+   pemilih yang tidak pernah padan.
+   ============================================================ */
+:root {
+  --exp-ink: #16262f;
+  --exp-muted: #5E646D;
+  --exp-surface: #ffffff;
+  --exp-surface-alt: #f4f7f4;
+  --exp-line: #e6ebe7;
+}
+[data-theme='dark'] {
+  --exp-ink: #eaf1ee;
+  --exp-muted: #9fb3ab;
+  --exp-surface: #17252e;
+  --exp-surface-alt: #22333e;
+  --exp-line: rgba(255,255,255,.22);
+}

@@ -10,6 +10,8 @@ export interface ExpCategory {
   glAccountId: number | null; sortOrder: number; active: boolean;
 }
 
+export interface GlOption { id: number; code: string; name: string; }
+
 export interface ExpSupplier {
   id: number; name: string; regNo?: string | null; tin?: string | null;
   address?: string | null; phone?: string | null; email?: string | null;
@@ -75,6 +77,10 @@ export class ExpensesService {
   }
   deactivateCategory(id: number): Observable<unknown> {
     return this.http.delete(`${this.base}/categories/${id}`);
+  }
+
+  glAccounts(): Observable<GlOption[]> {
+    return this.http.get<GlOption[]>(`${this.base}/categories/gl-accounts`);
   }
 
   // Pembekal
