@@ -152,6 +152,11 @@ export const routes: Routes = [
           import('./features/platform/service-providers.component').then(m => m.ServiceProvidersComponent)
       },
       {
+        path: 'change-requests', canActivate: [superadminGuard],
+        loadComponent: () =>
+          import('./features/platform/change-requests.component').then(m => m.ChangeRequestsComponent)
+      },
+      {
         path: 'modules', canActivate: [superadminGuard],
         loadComponent: () =>
           import('./features/platform/module-catalog.component').then(m => m.ModuleCatalogComponent)

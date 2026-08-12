@@ -437,6 +437,75 @@
             Untuk menaik taraf, hubungi admin Monthley.
           </div>
         }
+
+        <!-- ============ MODUL TAMBAHAN ============ -->
+        <h3 class="sec-t" style="margin-top:32px">Modul Tambahan</h3>
+
+        @if (!modules.modules().length) {
+          <div class="hint">Tiada modul tambahan ditawarkan untuk sektor anda.</div>
+        } @else {
+          <div class="mod-list" style="display:flex;flex-direction:column;gap:10px">
+            @for (m of modules.modules(); track m.code) {
+              <div class="plan-box" data-card
+                   style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+                <div style="flex:1;min-width:220px">
+                  <div style="font-weight:700;color:var(--ink);font-size:17px">
+                    {{ m.name }}
+                  </div>
+                  @if (m.description) {
+                    <div class="pb-sub" style="margin-top:3px">{{ m.description }}</div>
+                  }
+                  @if (m.videoUrl) {
+                    <a [href]="m.videoUrl" target="_blank" rel="noopener"
+                       class="link" style="font-size:13px;display:inline-block;margin-top:5px">
+                      📹 Tonton video
+                    </a>
+                  }
+
+                  <!-- Sebab penolakan ditunjukkan supaya SP tidak perlu bertanya. -->
+                  @if (!m.active && !pendingFor(m.code) && rejectedFor(m.code); as tolak) {
+                    <div class="hint" style="margin-top:8px;font-size:14.5px">
+                      ✕ Permohonan sebelum ini ditolak: {{ tolak.decisionNote }}
+                    </div>
+                  }
+                </div>
+
+                <div style="text-align:right;min-width:170px">
+                  @if (m.active) {
+                    <div>
+                      <span class="badge b-green">AKTIF</span>
+                    </div>
+                    @if (pendingFor(m.code)) {
+                      <div class="pb-sub" style="margin-top:6px;font-size:15px">
+                        ⏳ Permohonan henti sedang dinilai
+                      </div>
+                    } @else {
+                      <button class="btn-sm" style="margin-top:8px"
+                              [disabled]="moduleBusy() === m.code"
+                              (click)="hentiModul(m)">Henti langganan</button>
+                    }
+                  } @else if (pendingFor(m.code)) {
+                    <span class="badge" style="background:#FEF3C7;color:#92400E">
+                      ⏳ MENUNGGU KELULUSAN
+                    </span>
+                  } @else {
+                    <button class="btn btn-green"
+                            [disabled]="moduleBusy() === m.code"
+                            (click)="mohonModul(m)">
+                      {{ moduleBusy() === m.code ? 'Menghantar…' : 'Mohon' }}
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+
+          <div class="hint mod-list" style="margin-top:14px">
+            ℹ️ Permohonan dinilai oleh admin Monthley. Setelah diluluskan, modul
+            boleh digunakan <strong>serta-merta</strong> dan bil bermula
+            <strong>1 haribulan berikutnya</strong>.
+          </div>
+        }
       }
 
       <!-- ============ LOOKUP: acctcat / prodcat / branch ============ -->

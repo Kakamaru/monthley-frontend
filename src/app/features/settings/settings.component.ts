@@ -8,6 +8,7 @@ import {
 import { ToastService } from '../../core/ui/toast.service';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { YesNoComponent } from '../../core/ui/yesno.component';
+import { ModuleService, ModuleStatus, ChangeRequest } from '../../core/services/module.service';
 
 interface Tab { id: string; label: string; }
 
@@ -22,6 +23,7 @@ export class SettingsComponent {
   private api = inject(SettingsService);
   private toast = inject(ToastService);
   private confirm = inject(ConfirmService);
+  readonly modules = inject(ModuleService);
 
   /** 16 tab — tepat dari prototaip (settingsSecs) */
   readonly tabs: Tab[] = [
@@ -142,6 +144,7 @@ export class SettingsComponent {
     this.active.set(id);
     this.error.set(null);
     this.load(id);
+    if (id === 'plan') { this.loadRequests(); }
   }
 
   /** Muat data ikut tab — hanya apa yang perlu. */
@@ -347,4 +350,63 @@ export class SettingsComponent {
   }
 
   private fail() { this.toast.error('Gagal memuatkan tetapan.'); }
+
+  // ---------- Modul tambahan ----------
+
+  readonly requests = signal<ChangeRequest[]>([]);
+  readonly moduleBusy = signal<string | null>(null);
+
+  loadRequests() {
+    this.modules.requests().subscribe({
+      next: r => this.requests.set(r),
+      error: () => this.requests.set([])
+    });
+  }
+
+  /** Permohonan MENUNGGU untuk satu modul — status dipapar pada barisnya. */
+  pendingFor(code: string): ChangeRequest | undefined {
+    return this.requests().find(r => r.moduleCode === code && r.status === 'PENDING');
+  }
+
+  /**
+   * Penolakan TERKINI untuk modul ini.
+   *
+   * Senarai datang diisih menurun mengikut tarikh, jadi padanan pertama
+   * ialah yang terbaharu — SP nampak sebab penolakan yang paling relevan
+   * dan bukan yang pertama sekali.
+   */
+  rejectedFor(code: string): ChangeRequest | undefined {
+    return this.requests().find(r => r.moduleCode === code && r.status === 'REJECTED');
+  }
+
+  mohonModul(m: ModuleStatus) {
+    this.hantar('MODULE_ADD', m, `Permohonan modul ${m.name} dihantar.`);
+  }
+
+  async hentiModul(m: ModuleStatus) {
+    const ya = await this.confirm.ask({
+      title: 'Henti Langganan Modul',
+      message: `Mohon henti langganan modul ${m.name}?`,
+      detail: 'Anda boleh terus menggunakannya sehingga hujung bulan ini. '
+            + 'Permohonan perlu diluluskan oleh admin Monthley.',
+      confirmText: 'Ya, mohon henti'
+    });
+    if (!ya) return;
+    this.hantar('MODULE_END', m, `Permohonan henti ${m.name} dihantar.`);
+  }
+
+  private hantar(jenis: string, m: ModuleStatus, mesej: string) {
+    this.moduleBusy.set(m.code);
+    this.modules.request({ type: jenis, moduleCode: m.code }).subscribe({
+      next: () => {
+        this.moduleBusy.set(null);
+        this.toast.success(mesej, 'Superadmin akan menilai dan memaklumkan keputusan.');
+        this.loadRequests();
+      },
+      error: e => {
+        this.moduleBusy.set(null);
+        this.toast.error(e?.error?.message ?? 'Gagal menghantar permohonan.');
+      }
+    });
+  }
 }

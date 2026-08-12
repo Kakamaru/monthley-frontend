@@ -1,0 +1,137 @@
+<div class="page">
+  <div class="phead">
+    <div>
+      <h1>Permohonan SP</h1>
+      <p>Permohonan modul dan pertukaran pelan daripada Service Provider.</p>
+    </div>
+  </div>
+
+  @if (error()) { <div class="alert">{{ error() }}</div> }
+
+  <div class="tabs-pill" style="margin-top:16px">
+    @for (t of tabs; track t.k) {
+      <button class="tab-pill" [class.on]="filter() === t.k" (click)="setFilter(t.k)">
+        {{ t.l }}
+        @if (t.k === 'PENDING' && pendingCount() > 0 && filter() === 'PENDING') {
+          <span style="margin-left:5px">({{ pendingCount() }})</span>
+        }
+      </button>
+    }
+  </div>
+
+  <div class="card-filter" style="padding:0;overflow:hidden">
+    @if (loading()) {
+      <div style="padding:50px;text-align:center;color:var(--muted)">Memuatkan…</div>
+    } @else if (!rows().length) {
+      <div style="padding:50px;text-align:center;color:var(--muted)">
+        Tiada permohonan.
+      </div>
+    } @else {
+      <div style="display:grid;grid-template-columns:1.4fr 1fr 1.2fr 1.3fr 0.9fr 190px;
+                  gap:10px;padding:14px 20px;border-bottom:1.5px solid var(--line-soft);
+                  font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">
+        <span>Service Provider</span><span>Jenis</span><span>Perkara</span>
+        <span>Dimohon</span><span>Status</span>
+        <span style="text-align:right">Tindakan</span>
+      </div>
+
+      @for (r of rows(); track r.id) {
+        <div style="display:grid;grid-template-columns:1.4fr 1fr 1.2fr 1.3fr 0.9fr 190px;
+                    gap:10px;padding:14px 20px;border-bottom:1px solid var(--line-soft);
+                    font-size:13px;align-items:center">
+          <span>
+            <span style="font-weight:600;color:var(--ink)">{{ r.spName }}</span>
+            <div style="font-size:12px;color:var(--muted)">{{ r.spCode }}</div>
+          </span>
+
+          <span>{{ labelJenis(r) }}</span>
+          <span style="font-weight:600;color:var(--ink)">{{ labelPerkara(r) }}</span>
+
+          <span>
+            {{ bila(r.requestedAt) }}
+            @if (r.requestedByEmail) {
+              <div style="font-size:12px;color:var(--muted)">{{ r.requestedByEmail }}</div>
+            }
+          </span>
+
+          <span>
+            @if (r.status === 'PENDING') {
+              <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;
+                           background:#FEF3C7;color:#92400E">MENUNGGU</span>
+            } @else if (r.status === 'APPROVED') {
+              <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;
+                           background:#eaf7ee;color:#1B7A3E">DILULUSKAN</span>
+            } @else {
+              <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;
+                           background:#fdecec;color:#B0151E">DITOLAK</span>
+            }
+            @if (r.decidedAt) {
+              <div style="font-size:12px;color:var(--muted);margin-top:2px">
+                {{ bila(r.decidedAt) }}
+              </div>
+            }
+          </span>
+
+          <span style="text-align:right">
+            @if (r.status === 'PENDING') {
+              <button class="btn-sm btn-green" style="margin-right:6px"
+                      [disabled]="busy() === r.id" (click)="approve(r)">Lulus</button>
+              <button class="btn-sm" [disabled]="busy() === r.id"
+                      (click)="openReject(r)">Tolak</button>
+            } @else if (r.decisionNote) {
+              <span style="font-size:12px;color:var(--muted);display:block;text-align:right"
+                    [title]="r.decisionNote">
+                {{ r.decisionNote.length > 40
+                   ? (r.decisionNote.slice(0, 40) + '…') : r.decisionNote }}
+              </span>
+            } @else {
+              <span style="color:var(--muted)">—</span>
+            }
+          </span>
+        </div>
+      }
+    }
+  </div>
+</div>
+
+<!-- ===== MODAL TOLAK ===== -->
+@if (rejectOpen()) {
+  <div style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;
+              align-items:center;justify-content:center;padding:20px" (click)="closeReject()">
+    <div class="modal-card" style="border-radius:14px;max-width:520px;width:100%"
+         (click)="$event.stopPropagation()">
+      <div style="padding:22px 26px;border-bottom:1.5px solid var(--line-soft)">
+        <div style="font-family:'Sora',sans-serif;font-weight:800;font-size:19px;color:var(--ink)">
+          Tolak Permohonan
+        </div>
+        <div style="font-size:13px;color:var(--muted);margin-top:3px">
+          {{ rejectFor()!.spName }} — {{ labelJenis(rejectFor()!) }}
+          {{ labelPerkara(rejectFor()!) }}
+        </div>
+      </div>
+
+      <div style="padding:22px 26px">
+        <div class="g1">
+          <div>
+            <label>Sebab Penolakan *</label>
+            <textarea class="fld" rows="3" [(ngModel)]="rejectNote"
+                      placeholder="cth: Pelan semasa tidak menyokong modul ini"></textarea>
+          </div>
+        </div>
+        <p style="font-size:12.5px;color:var(--muted);margin-top:8px">
+          SP akan melihat sebab ini dalam skrin Tetapan mereka. Tanpa penjelasan,
+          setiap penolakan menghasilkan pertanyaan susulan.
+        </p>
+      </div>
+
+      <div style="padding:18px 26px;display:flex;justify-content:flex-end;gap:10px;
+                  border-top:1.5px solid var(--line-soft)">
+        <button class="btn btn-ghost" (click)="closeReject()">Batal</button>
+        <button class="btn" style="background:#B0151E;color:#fff"
+                [disabled]="busy() === rejectFor()!.id" (click)="reject()">
+          Tolak Permohonan
+        </button>
+      </div>
+    </div>
+  </div>
+}

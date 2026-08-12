@@ -1,10 +1,17 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
+import { Observable } from 'rxjs';
 import { SpContextService } from './sp-context.service';
 
 export interface ModuleStatus {
   code: string; name: string; active: boolean;
   description: string | null; videoUrl: string | null;
+}
+
+export interface ChangeRequest {
+  id: number; type: string; moduleCode: string | null; moduleName: string | null;
+  planProductId: number | null; planName: string | null; status: string;
+  requestedAt: string; decidedAt: string | null; decisionNote: string | null;
 }
 
 /**
@@ -39,6 +46,15 @@ export class ModuleService {
       next: m => { this.modules.set(m); this.loaded.set(true); },
       error: () => { this.modules.set([]); this.loaded.set(true); }
     });
+  }
+
+  requests(): Observable<ChangeRequest[]> {
+    return this.http.get<ChangeRequest[]>('/api/v1/modules/requests');
+  }
+
+  request(body: { type: string; moduleCode?: string | null; planProductId?: number | null })
+      : Observable<unknown> {
+    return this.http.post('/api/v1/modules/request', body);
   }
 
   /** Adakah SP semasa melanggan modul ini? */

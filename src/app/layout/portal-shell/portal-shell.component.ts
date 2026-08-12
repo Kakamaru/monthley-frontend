@@ -34,7 +34,8 @@ export class PortalShellComponent {
     { id: 'p_sps',      icon: '🏢', label: 'Service Providers', route: '/platform/service-providers' },
     { id: 'p_onboard',  icon: '➕', label: 'Onboard SP',        route: '/platform/onboard' },
     { id: 'p_users',    icon: '👤', label: 'Pengguna', route: '/platform/users' },
-    { id: 'p_modules',  icon: '🧩', label: 'Katalog Modul', route: '/platform/modules' }
+    { id: 'p_modules',  icon: '🧩', label: 'Katalog Modul', route: '/platform/modules' },
+    { id: 'p_reqs',     icon: '📨', label: 'Permohonan SP', route: '/platform/change-requests' }
   ];
 
   /** Menu Pelanggan — ikon & label tepat dari prototaip */
