@@ -1,0 +1,182 @@
+<div class="page">
+  <div class="phead">
+    <div>
+      <h1>Katalog Modul</h1>
+      <p>Modul tambahan yang ditawarkan kepada SP, dan sektor mana boleh melihatnya.</p>
+    </div>
+  </div>
+
+  @if (error() && !formOpen()) { <div class="alert">{{ error() }}</div> }
+  @if (ok()) {
+    <div class="alert" style="background:#eaf7ee;color:#1B7A3E;border-color:#bfe3ca">
+      ✓ {{ ok() }}
+    </div>
+  }
+
+  <div class="card-filter" style="padding:0;overflow:hidden;margin-top:16px">
+    @if (loading()) {
+      <div style="padding:50px;text-align:center;color:var(--muted)">Memuatkan…</div>
+    } @else {
+      <div style="display:grid;grid-template-columns:1.4fr 1.1fr 1.6fr 0.8fr 0.9fr 110px;
+                  gap:10px;padding:14px 20px;border-bottom:1.5px solid var(--line-soft);
+                  font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">
+        <span>Modul</span><span>Produk / Harga</span><span>Sektor Dibenarkan</span>
+        <span>Pelanggan</span><span>Status</span>
+        <span style="text-align:right">Tindakan</span>
+      </div>
+
+      @for (m of rows(); track m.code) {
+        <div style="display:grid;grid-template-columns:1.4fr 1.1fr 1.6fr 0.8fr 0.9fr 110px;
+                    gap:10px;padding:14px 20px;border-bottom:1px solid var(--line-soft);
+                    font-size:13px;align-items:center"
+             [style.opacity]="m.active ? 1 : 0.5">
+          <span>
+            <span style="font-weight:600;color:var(--ink)">{{ m.name }}</span>
+            <div style="font-size:12px;color:var(--muted)">{{ m.code }}</div>
+          </span>
+
+          <span>
+            @if (m.productCode) {
+              {{ m.productCode }}
+              <div style="font-size:12px;color:var(--muted)">
+                RM{{ m.price | number:'1.2-2' }}/bln
+              </div>
+            } @else {
+              <span style="color:var(--muted)">— tiada produk —</span>
+            }
+          </span>
+
+          <span>
+            @if (!m.businessTypes.length) {
+              <span style="color:var(--muted)">Semua sektor</span>
+            } @else {
+              <span style="display:flex;gap:4px;flex-wrap:wrap">
+                @for (b of m.businessTypes; track b) {
+                  <span style="font-size:11px;font-weight:600;padding:2px 8px;
+                               border-radius:8px;background:var(--surface-alt);
+                               border:1px solid var(--line)">{{ b }}</span>
+                }
+              </span>
+            }
+          </span>
+
+          <span>{{ m.subscriberCount }} SP</span>
+
+          <span>
+            <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px"
+                  [style.background]="m.active ? '#eaf7ee' : '#f0f1f4'"
+                  [style.color]="m.active ? '#1B7A3E' : '#666'">
+              {{ m.active ? 'AKTIF' : 'TUTUP' }}
+            </span>
+          </span>
+
+          <span style="text-align:right">
+            <button class="btn-sm" (click)="edit(m)">Kemaskini</button>
+          </span>
+        </div>
+      }
+
+      @if (!rows().length) {
+        <div style="padding:50px;text-align:center;color:var(--muted)">
+          Tiada modul dalam katalog.
+        </div>
+      }
+    }
+  </div>
+</div>
+
+<!-- ===== MODAL ===== -->
+@if (formOpen()) {
+  <div style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;
+              align-items:center;justify-content:center;padding:20px" (click)="close()">
+    <div class="modal-card" style="border-radius:14px;max-width:640px;width:100%;
+                                   max-height:88vh;overflow:auto"
+         (click)="$event.stopPropagation()">
+      <div style="padding:22px 26px;border-bottom:1.5px solid var(--line-soft)">
+        <div style="font-family:'Sora',sans-serif;font-weight:800;font-size:19px;color:var(--ink)">
+          {{ editing()!.name }}
+        </div>
+        <div style="font-size:13px;color:var(--muted);margin-top:2px">{{ editing()!.code }}</div>
+      </div>
+
+      <div style="padding:22px 26px">
+        @if (error()) { <div class="alert" style="margin-bottom:14px">{{ error() }}</div> }
+
+        <div class="g1">
+          <div>
+            <label>Keterangan</label>
+            <textarea class="fld" rows="2" [(ngModel)]="description"
+                      placeholder="Apa yang modul ini lakukan — dilihat oleh SP"></textarea>
+          </div>
+        </div>
+
+        <div class="g2">
+          <div>
+            <label>Pautan Video</label>
+            <input class="fld" [(ngModel)]="videoUrl" placeholder="https://youtu.be/…" />
+          </div>
+          <div>
+            <label>Produk (harga)</label>
+            <select class="fld" [(ngModel)]="productId">
+              <option [ngValue]="null">— tiada produk —</option>
+              @for (p of produk(); track p.id) {
+                <option [ngValue]="p.id">{{ p.code }} — RM{{ p.price | number:'1.2-2' }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <div class="g1">
+          <div>
+            <label>Sektor Dibenarkan</label>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+              @for (b of sektor(); track b.code) {
+                <label style="display:flex;align-items:center;gap:7px;padding:7px 12px;
+                              border-radius:9px;cursor:pointer;font-size:13px"
+                       [style.background]="dipilih(b.code) ? 'var(--green-soft, #eaf7ee)' : 'var(--surface-alt)'"
+                       [style.border]="dipilih(b.code) ? '1.5px solid var(--green, #1B7A3E)' : '1.5px solid var(--line)'">
+                  <input type="checkbox" [checked]="dipilih(b.code)"
+                         (change)="toggleSektor(b.code)" />
+                  <span><b>{{ b.code }}</b> · {{ b.name }}</span>
+                </label>
+              }
+            </div>
+            <p style="font-size:12.5px;color:var(--muted);margin-top:8px">
+              Tiada pilihan bermakna <b>semua sektor</b> boleh melihat modul ini.
+              JMB tidak sepatutnya melihat modul sekolah walaupun sebagai tawaran.
+            </p>
+          </div>
+        </div>
+
+        <div class="g2">
+          <div>
+            <label>Susunan</label>
+            <input class="fld" type="number" [(ngModel)]="sortOrder" />
+          </div>
+          <div>
+            <label>Status</label>
+            <select class="fld" [(ngModel)]="active">
+              <option [ngValue]="true">Aktif — ditawarkan</option>
+              <option [ngValue]="false">Tutup — tidak ditawarkan</option>
+            </select>
+          </div>
+        </div>
+
+        @if (editing()!.subscriberCount > 0 && !active) {
+          <div class="alert" style="margin-top:12px">
+            ⚠️ {{ editing()!.subscriberCount }} SP sedang melanggan modul ini.
+            Menutupnya menghalang langganan BAHARU; SP sedia ada tidak terjejas.
+          </div>
+        }
+      </div>
+
+      <div style="padding:18px 26px;display:flex;justify-content:flex-end;gap:10px;
+                  border-top:1.5px solid var(--line-soft)">
+        <button class="btn btn-ghost" (click)="close()">Batal</button>
+        <button class="btn btn-green" (click)="save()" [disabled]="saving()">
+          {{ saving() ? 'Menyimpan…' : 'Simpan' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

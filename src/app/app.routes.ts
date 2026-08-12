@@ -152,6 +152,11 @@ export const routes: Routes = [
           import('./features/platform/service-providers.component').then(m => m.ServiceProvidersComponent)
       },
       {
+        path: 'modules', canActivate: [superadminGuard],
+        loadComponent: () =>
+          import('./features/platform/module-catalog.component').then(m => m.ModuleCatalogComponent)
+      },
+      {
         path: 'onboard',
         loadComponent: () =>
           import('./features/platform/onboard.component').then(m => m.OnboardComponent)
