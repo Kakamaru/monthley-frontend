@@ -65,6 +65,34 @@
         }
       }
 
+      <!-- Aduan — kumpulan sendiri. Hanya dipapar jika modul DITAWARKAN
+           kepada sektor SP ini; penapis sektor menghalang JMB daripada
+           melihat modul yang tidak berkenaan (ref_module.business_types). -->
+      @if (auth.isSpAdmin() && modules.loaded() && modulDitawarkan('ADUAN')) {
+        <button class="grp-btn" (click)="toggleAdu()">
+          <span>Aduan</span>
+          <span class="chev">{{ aduOpen() ? '▾' : '▸' }}</span>
+        </button>
+
+        @if (!modules.has('ADUAN')) {
+          <div style="padding:0 12px 8px">
+            <span style="font-size:10px;font-weight:700;padding:2px 8px;
+                         border-radius:8px;background:#F59E0B;color:#3A2A00;
+                         text-transform:none;letter-spacing:0;white-space:nowrap">
+              belum dilanggan
+            </span>
+          </div>
+        }
+
+        @if (aduOpen()) {
+          @for (it of visibleComplaints(); track it.id) {
+            <a class="nav" [routerLink]="it.route" routerLinkActive="on">
+              <span class="ic">{{ it.icon }}</span>{{ it.label }}
+            </a>
+          }
+        }
+      }
+
       <!-- Perbelanjaan — modul tambahan, kumpulan sendiri.
            Kekal kelihatan walaupun tidak dilanggan: menyembunyikannya
            bermakna SP tidak pernah tahu ia wujud (ADR 0016). -->

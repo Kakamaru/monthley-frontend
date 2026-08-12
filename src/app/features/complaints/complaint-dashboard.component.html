@@ -1,0 +1,222 @@
+<div class="adu-module">
+  <div class="phead">
+    <div>
+      <h1>Dashboard Aduan</h1>
+      <p>Gambaran keseluruhan aduan pelanggan.</p>
+    </div>
+    <div>
+      <button class="btn-sm btn-soft" (click)="keSenarai()">Lihat Senarai Aduan →</button>
+    </div>
+  </div>
+
+  @if (error()) { <div class="panecard"><div class="empty">⚠️ {{ error() }}</div></div> }
+
+  @if (loading()) {
+    <div class="panecard"><div class="loading">Memuatkan…</div></div>
+  } @else if (data(); as d) {
+
+    <!-- ===== KPI ===== -->
+    <div class="cards">
+      <div class="card" style="--c:#2563EB">
+        <div class="lbl">🗣️ Jumlah Aduan</div>
+        <div class="val">{{ d.total }}</div>
+        <div class="sub">semua tempoh</div>
+      </div>
+
+      <div class="card" style="--c:#F59E0B">
+        <div class="lbl">🆕 Baru &amp; Dalam Proses</div>
+        <div class="val">{{ d.baru + d.dalamProses }}</div>
+        <div class="sub">{{ d.baru }} baru · {{ d.dalamProses }} dalam proses</div>
+      </div>
+
+      <div class="card" style="--c:#16A34A">
+        <div class="lbl">✅ Selesai</div>
+        <div class="val">{{ d.selesai }}</div>
+        <div class="sub">
+          @if (d.dibukaSemula > 0) {
+            <span class="hot">{{ d.dibukaSemula }} dibuka semula</span>
+          } @else { tiada dibuka semula }
+        </div>
+      </div>
+
+      <div class="card" style="--c:#DC1F2A">
+        <div class="lbl">⚠️ Melebihi SLA</div>
+        <div class="val">{{ d.melebihiSla }}</div>
+        <div class="sub">belum selesai &gt; {{ d.slaDays }} hari</div>
+      </div>
+    </div>
+
+    <!-- ===== CARTA ===== -->
+    <div class="panels">
+      <div class="panel">
+        <h3>Aduan Bulanan — Diterima vs Selesai</h3>
+
+        <div style="display:flex;gap:16px;justify-content:center;margin-bottom:14px;font-size:13px">
+          <span style="display:flex;align-items:center;gap:6px">
+            <span style="width:11px;height:11px;border-radius:3px;background:#CBD5C0"></span>
+            Diterima
+          </span>
+          <span style="display:flex;align-items:center;gap:6px">
+            <span style="width:11px;height:11px;border-radius:3px;background:#16A34A"></span>
+            Selesai
+          </span>
+        </div>
+
+        <div style="display:flex;gap:8px">
+          <div style="display:flex;flex-direction:column;justify-content:space-between;
+                      height:200px;font-size:11.5px;color:var(--body);text-align:right;
+                      min-width:26px;padding-bottom:1px">
+            @for (t of tanda(); track $index) {
+              <span style="line-height:1;transform:translateY(-50%)">{{ t }}</span>
+            }
+          </div>
+
+          <div style="flex:1;position:relative;height:200px;border-bottom:1px solid var(--line)">
+            @for (t of tanda(); track $index) {
+              <div [style.top.%]="$index * 25"
+                   style="position:absolute;left:0;right:0;height:1px;
+                          background:var(--line);opacity:.6"></div>
+            }
+            <div style="position:absolute;inset:0;display:flex;align-items:flex-end;gap:14px">
+              @for (p of trendPenuh(); track p.label) {
+                <div style="flex:1;display:flex;align-items:flex-end;gap:4px;
+                            height:100%;justify-content:center">
+                  <div [style.height.%]="tinggi(p.received)"
+                       [title]="'Diterima: ' + p.received"
+                       style="width:22px;background:#CBD5C0;border-radius:4px 4px 0 0;
+                              min-height:2px"></div>
+                  <div [style.height.%]="tinggi(p.resolved)"
+                       [title]="'Selesai: ' + p.resolved"
+                       style="width:22px;background:#16A34A;border-radius:4px 4px 0 0;
+                              min-height:2px"></div>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:14px;padding:8px 0 0 34px">
+          @for (p of trendPenuh(); track p.label) {
+            <div style="flex:1;text-align:center;font-size:12px;color:var(--body)">
+              {{ labelBulan(p.label) }}
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Aduan Ikut Kategori</h3>
+
+        @if (!d.byCategory.length) {
+          <div class="empty">Tiada aduan direkod.</div>
+        } @else {
+          <div style="display:flex;flex-direction:column;gap:13px;margin-top:6px">
+            @for (c of d.byCategory; track c.name; let i = $index) {
+              <div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+                  <span style="font-size:13.5px;font-weight:600;color:var(--ink)">{{ c.name }}</span>
+                  <span style="font-size:13px;font-weight:800;color:var(--ink)">{{ c.count }}</span>
+                </div>
+                <div style="height:9px;border-radius:99px;background:var(--bg-soft);overflow:hidden">
+                  <div [style.width.%]="lebar(c.count)" [style.background]="warna(i)"
+                       style="height:100%;border-radius:99px"></div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- ===== PRESTASI + SEGERA ===== -->
+    <div class="panels">
+      <div class="panel">
+        <h3>Prestasi Penyelesaian</h3>
+
+        <div style="display:flex;align-items:center;gap:22px;margin-top:6px">
+          <div [style.background]="donat()"
+               style="position:relative;width:132px;height:132px;flex:none;border-radius:50%;
+                      display:flex;align-items:center;justify-content:center">
+            <div style="width:98px;height:98px;border-radius:50%;background:var(--bg);
+                        display:flex;flex-direction:column;align-items:center;justify-content:center">
+              <div style="font-family:'Sora',sans-serif;font-weight:800;font-size:26px;
+                          color:#16A34A">{{ d.kadarSelesai }}%</div>
+              <div style="font-size:11px;color:var(--body);font-weight:600">kadar selesai</div>
+            </div>
+          </div>
+
+          <div style="flex:1;display:flex;flex-direction:column;gap:11px">
+            <div style="display:flex;justify-content:space-between;font-size:13.5px">
+              <span style="color:var(--body);font-weight:600">Purata masa maklum balas</span>
+              <span style="font-family:'Sora',sans-serif;font-weight:800;color:var(--ink)">
+                {{ d.purataMaklumBalasJam || '—' }} jam
+              </span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13.5px">
+              <span style="color:var(--body);font-weight:600">Purata masa selesai</span>
+              <span style="font-family:'Sora',sans-serif;font-weight:800;color:var(--ink)">
+                {{ d.purataSelesaiHari || '—' }} hari
+              </span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13.5px">
+              <span style="color:var(--body);font-weight:600">
+                Melebihi SLA (&gt;{{ d.slaDays }} hari)
+              </span>
+              <span style="font-family:'Sora',sans-serif;font-weight:800;color:#E0863B">
+                {{ d.melebihiSla }} aduan
+              </span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13.5px">
+              <span style="color:var(--body);font-weight:600">Aduan dibuka semula</span>
+              <span style="font-family:'Sora',sans-serif;font-weight:800;color:var(--ink)">
+                {{ d.dibukaSemula }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <p class="sub2" style="margin-top:14px">
+          Purata maklum balas dikira dari balasan SP pertama. Aduan yang belum
+          dibalas langsung dikecualikan — memasukkannya menjadikan purata
+          bertambah baik apabila aduan diabaikan.
+        </p>
+      </div>
+
+      <div class="panel">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <h3 style="margin:0">Perlu Tindakan Segera</h3>
+          <span class="link" style="font-weight:600" (click)="keSenarai()">Semua →</span>
+        </div>
+
+        @if (!d.urgent.length) {
+          <div class="empty">Tiada aduan menunggu tindakan. 🎉</div>
+        } @else {
+          @for (c of d.urgent; track c.id) {
+            <div style="display:flex;align-items:center;justify-content:space-between;
+                        padding:11px 4px;border-top:1px solid var(--line)">
+              <div style="min-width:0;flex:1">
+                <div style="font-weight:700;font-size:14px;color:var(--ink);
+                            white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                  {{ c.subject }}
+                </div>
+                <div class="sub2">
+                  {{ c.complaintNo }} · {{ c.accountNo }} · {{ c.categoryName || 'Tiada kategori' }}
+                </div>
+              </div>
+              <div style="text-align:right;flex:none;margin-left:12px">
+                <div style="font-size:11.5px;font-weight:800"
+                     [style.color]="c.priority === 'HIGH' ? '#B0151E'
+                                  : c.priority === 'MEDIUM' ? '#E0863B' : 'var(--body)'">
+                  {{ labelPriority(c.priority) }}
+                </div>
+                <div class="sub2" [style.color]="c.overSla ? '#E0863B' : ''">
+                  {{ c.ageDays }} hari
+                </div>
+              </div>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  }
+</div>

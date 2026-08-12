@@ -42,18 +42,18 @@
   .nav-toggle:hover { background:rgba(255,255,255,.08); }
 
   .main { padding:clamp(20px,3vw,34px); min-width:0; }
-  .phead { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+  .phead { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-top:-24px; }
   .phead h1 { font-size:clamp(24px,3vw,32px); }
-  .phead p { margin-top:6px; color:var(--body); font-size:15px; }
+  .phead p { margin-top:-2px; color:var(--body); font-size:16px; }
 
-  .cards { margin-top:24px; display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); }
+  .cards { margin-top:4px; display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); }
   .card { background:var(--bg); border:1px solid var(--line); border-radius:16px; padding:18px 20px; border-left:4px solid var(--c,var(--line)); }
   .card .lbl { font-family:var(--display); font-weight:600; font-size:13px; color:var(--body); }
   .card .val { font-family:var(--display); font-weight:700; color:var(--ink); font-size:26px; margin-top:8px; }
   .card .sub { font-size:12.5px; color:var(--body); margin-top:6px; }
   .card .sub .hot { color:var(--blue); font-weight:600; }
 
-  .panels { margin-top:18px; display:grid; gap:16px; grid-template-columns:1.4fr 1fr; }
+  .panels { margin-top:4px; display:grid; gap:16px; grid-template-columns:1.4fr 1fr; }
   @media (max-width:980px){ .panels{grid-template-columns:1fr;} .app{grid-template-columns:1fr;} .side{position:static;height:auto;} }
   .panel { background:var(--bg); border:1px solid var(--line); border-radius:16px; padding:20px; }
   .panel h3 { font-family:var(--display); font-size:16px; color:var(--ink); margin-bottom:14px; }
@@ -65,7 +65,7 @@
   .legend .am { font-family:var(--display); font-weight:700; }
   .legend .pc { color:var(--body); font-size:12px; width:42px; text-align:right; }
 
-  .panecard { margin-top:22px; background:var(--bg); border:1px solid var(--line); border-radius:16px; padding:20px; }
+  .panecard { margin-top:4px; background:var(--bg); border:1px solid var(--line); border-radius:16px; padding:20px; }
   .toolbar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:16px; }
   .chip { font-family:var(--display); font-weight:600; font-size:13px; padding:7px 14px; border-radius:9px; border:1px solid var(--line); background:var(--bg); color:var(--body); cursor:pointer; }
   .chip.on { background:var(--blue); color:#fff; border-color:var(--blue); }
@@ -308,11 +308,16 @@
    z-index 200 mengatasi bar atas (30) dan panel sisi mudah alih (70).
    ============================================================ */
 .exp-ov {
+  /* Jenama kekal; permukaan dan teks MENGIKUT tema. Nilai tegar di sini
+     bermakna label dalam modal gelap atas latar gelap. */
   --blue: #DC1F2A;
   --blue-2: #F2474E;
-  --ink: #1B1E24;
-  --body: #5E646D;
-  --line: #E2E5EA;
+  --navy: #24282F;
+  --ink: var(--exp-ink);
+  --body: var(--exp-muted);
+  --bg: var(--exp-surface);
+  --bg-soft: var(--exp-surface-alt);
+  --line: var(--exp-line);
   --display: "Sora", system-ui, sans-serif;
   --font: "Plus Jakarta Sans", system-ui, sans-serif;
   font-family: var(--font);
@@ -395,4 +400,44 @@
 .exp-module .btn-sm:disabled {
   opacity: .45;
   cursor: not-allowed;
+}
+
+/* ============================================================
+   Alias untuk modul lain.
+
+   Modul Aduan menggunakan gaya yang sama; ia datang dari prototaip yang
+   sama dan sepatutnya kelihatan serupa. Menyalin 300 baris bermakna
+   kedua-duanya menyimpang selepas suntingan pertama.
+   ============================================================ */
+.adu-module { @extend .exp-module; }
+.adu-ov { @extend .exp-ov; }
+
+/* ============================================================
+   Butang tindakan sekunder dalam bar penapis.
+
+   Merah sudah dipakai oleh tindakan utama borang; kelabu hilang dalam
+   panel yang juga kelabu. Biru gelap membezakannya tanpa bersaing.
+   ============================================================ */
+.exp-module .btn-alt,
+.adu-module .btn-alt,
+.exp-ov .btn-alt {
+  background: #16A34A;
+  color: #fff;
+}
+.exp-module .btn-alt:hover,
+.adu-module .btn-alt:hover,
+.exp-ov .btn-alt:hover {
+  filter: brightness(1.08);
+}
+.exp-module .btn-alt:disabled,
+.adu-module .btn-alt:disabled,
+.exp-ov .btn-alt:disabled {
+  opacity: .45;
+}
+
+/* Butang Batal dalam modal — kelabu hilang atas latar gelap. */
+.exp-ov .btn-soft {
+  background: var(--bg-soft);
+  color: var(--ink);
+  border: 1.5px solid var(--line);
 }

@@ -1,0 +1,135 @@
+<div class="adu-module">
+  <div class="phead">
+    <div>
+      <h1>Tetapan Aduan</h1>
+      <p>Kategori aduan, penomboran, dan tempoh SLA.</p>
+    </div>
+  </div>
+
+  @if (error() && !catOpen()) { <div class="panecard"><div class="empty">⚠️ {{ error() }}</div></div> }
+
+  <div class="panels">
+    <!-- ===== Tetapan ===== -->
+    <div class="panel">
+      <h3>Penomboran &amp; SLA</h3>
+
+      <div style="display:flex;gap:12px">
+        <div class="frow" style="flex:2">
+          <label>Prefix No. Aduan</label>
+          <input [(ngModel)]="prefix" maxlength="10" />
+        </div>
+        <div class="frow" style="flex:1">
+          <label>Digit</label>
+          <input type="number" min="1" max="18" [(ngModel)]="noSize" />
+        </div>
+      </div>
+
+      <p class="sub2" style="margin:-6px 0 14px">
+        ⚠️ Menukar prefix memulakan penomboran semula dari nombor mula.
+        Aduan sedia ada tidak berubah.
+      </p>
+
+      <div class="frow">
+        <label>Tempoh SLA (hari)</label>
+        <input type="number" min="1" max="365" [(ngModel)]="slaDays" />
+      </div>
+      <p class="sub2" style="margin:-6px 0 16px">
+        Aduan yang belum selesai melebihi tempoh ini ditandakan dalam dashboard
+        dan senarai. Ia amaran, bukan sekatan — tiada apa yang dihalang.
+      </p>
+
+      <button class="btn-sm btn-pri" [disabled]="saving() || !modules.has('ADUAN')"
+              (click)="saveSettings()">
+        {{ saving() ? 'Menyimpan…' : 'Simpan Tetapan' }}
+      </button>
+    </div>
+
+    <!-- ===== Kategori ===== -->
+    <div class="panel">
+      <h3>Kategori Aduan</h3>
+
+      @if (loading()) {
+        <div class="loading">Memuatkan…</div>
+      } @else if (!categories().length) {
+        <div class="empty">Tiada kategori.</div>
+      } @else {
+        <div style="overflow-x:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Kategori</th><th class="num">Aduan</th>
+                <th>Status</th><th class="num">Tindakan</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of categories(); track c.id) {
+                <tr [style.opacity]="c.active ? 1 : 0.5">
+                  <td><b>{{ c.name }}</b></td>
+                  <td class="num">{{ c.used }}</td>
+                  <td>
+                    <span class="badge" [class.b-green]="c.active" [class.b-grey]="!c.active">
+                      {{ c.active ? 'AKTIF' : 'TUTUP' }}
+                    </span>
+                  </td>
+                  <td class="num">
+                    <span class="link" (click)="editCategory(c)">Kemaskini</span>
+                    @if (c.active) {
+                      <span class="link" style="color:#B0151E;margin-left:10px"
+                            (click)="deactivate(c)">Nyahaktif</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      <button class="btn-sm btn-soft" style="margin-top:12px"
+              [disabled]="!modules.has('ADUAN')" (click)="newCategory()">
+        + Kategori
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL KATEGORI ===== -->
+@if (catOpen()) {
+  <div class="ov show adu-module adu-ov" (click)="closeCat()">
+    <div class="modal" style="max-width:460px" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h2>{{ editing() ? 'Kemaskini Kategori' : 'Kategori Baharu' }}</h2>
+        <button type="button" class="mclose" (click)="closeCat()">×</button>
+      </div>
+
+      <div class="mform-grid">
+        @if (error()) { <div class="fspan"><div class="empty">⚠️ {{ error() }}</div></div> }
+
+        <div class="frow">
+          <label>Nama *</label>
+          <input [(ngModel)]="cName" placeholder="cth: Penyelenggaraan" />
+        </div>
+
+        <div class="frow half">
+          <label>Susunan</label>
+          <input type="number" [(ngModel)]="cSortOrder" />
+        </div>
+        <div class="frow half">
+          <label>Status</label>
+          <select [(ngModel)]="cActive">
+            <option [ngValue]="true">Aktif</option>
+            <option [ngValue]="false">Tidak Aktif</option>
+          </select>
+        </div>
+
+        <div class="modal-foot fspan">
+          <button type="button" class="btn-sm btn-soft" (click)="closeCat()">Batal</button>
+          <button type="button" class="btn-sm btn-pri" [disabled]="saving()"
+                  (click)="saveCategory()">
+            {{ saving() ? 'Menyimpan…' : 'Simpan' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

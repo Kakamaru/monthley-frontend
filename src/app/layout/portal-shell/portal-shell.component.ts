@@ -43,7 +43,7 @@ export class PortalShellComponent {
     { id: 'c_dashboard',  icon: '📊',  label: 'Dashboard',  route: '/portal/my-accounts' },
     { id: 'c_accounts',   icon: '📁',  label: 'Akaun Saya', route: '/portal/my-accounts' },
     { id: 'c_donations',  icon: '🤲',  label: 'Sumbangan' },
-    { id: 'c_complaints', icon: '🗣️', label: 'Aduan' },
+    { id: 'c_complaints', icon: '🗣️', label: 'Aduan', route: '/portal/my-complaints' },
     { id: 'c_memo',       icon: '📝',  label: 'Memo' }
   ];
 
@@ -61,7 +61,6 @@ export class PortalShellComponent {
     // VIEWER termasuk: pengawal pondok jaga tidak memerlukannya, tetapi
     // lejar ialah bacaan sahaja dan endpoint membenarkan ketiga-tiga.
     { id: 'spStatement',  icon: '📑',  label: 'SP Account Statement', route: '/portal/sp-ledger' },
-    { id: 'complaints',   icon: '🗣️', label: 'Aduan' },
     { id: 'memo',         icon: '📝',  label: 'Memo' },
     { id: 'donation',     icon: '🤲',  label: 'Kutipan Derma' }
   ];
@@ -89,6 +88,24 @@ export class PortalShellComponent {
 
   readonly expOpen = signal(false);
   toggleExp() { this.expOpen.set(!this.expOpen()); }
+
+  /** Aduan — modul tambahan, kumpulan sendiri seperti Perbelanjaan. */
+  readonly navComplaints: NavItem[] = [
+    { id: 'aduDash', icon: '📊', label: 'Dashboard Aduan', route: '/portal/complaints/dashboard' },
+    { id: 'aduList', icon: '🗣️', label: 'Senarai Aduan',   route: '/portal/complaints/list' },
+    { id: 'aduSet',  icon: '⚙️', label: 'Tetapan Aduan',   route: '/portal/complaints/settings', roles: ['SP_ADMIN'] }
+  ];
+
+  readonly visibleComplaints = computed(() =>
+    this.navComplaints.filter(it => this.bolehLihat(it)));
+
+  readonly aduOpen = signal(false);
+  toggleAdu() { this.aduOpen.set(!this.aduOpen()); }
+
+  /** Modul ini ditawarkan kepada sektor SP semasa? */
+  modulDitawarkan(kod: string): boolean {
+    return this.modules.modules().some(m => m.code === kod);
+  }
 
   /** Menu SP yang pengguna benar-benar boleh nampak — ditapis ikut peranan. */
   readonly visibleSP = computed(() =>

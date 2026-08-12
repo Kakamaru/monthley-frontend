@@ -79,6 +79,29 @@ export const routes: Routes = [
           import('./features/expenses/categories.component').then(m => m.ExpCategoriesComponent)
       },
       {
+        path: 'my-complaints',
+        loadComponent: () =>
+          import('./features/complaints/my-complaints.component')
+            .then(m => m.MyComplaintsComponent)
+      },
+      {
+        path: 'complaints/dashboard',
+        loadComponent: () =>
+          import('./features/complaints/complaint-dashboard.component')
+            .then(m => m.ComplaintDashboardComponent)
+      },
+      {
+        path: 'complaints/settings', canActivate: [spAdminGuard],
+        loadComponent: () =>
+          import('./features/complaints/complaint-settings.component')
+            .then(m => m.ComplaintSettingsComponent)
+      },
+      {
+        path: 'complaints/list',
+        loadComponent: () =>
+          import('./features/complaints/complaint-list.component').then(m => m.ComplaintListComponent)
+      },
+      {
         path: 'expenses/dashboard',
         loadComponent: () =>
           import('./features/expenses/dashboard.component').then(m => m.ExpDashboardComponent)

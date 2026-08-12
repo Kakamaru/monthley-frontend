@@ -1,0 +1,383 @@
+<div class="adu-module">
+  <div class="phead">
+    <div>
+      <h1>Senarai Aduan</h1>
+      <p>Cari, balas &amp; kemas kini status aduan pelanggan.</p>
+    </div>
+    <div>
+      <button class="btn-sm btn-soft" (click)="muatTurun()">⬇ Muat Turun</button>
+    </div>
+  </div>
+
+  @if (error() && !replyOpen() && !newOpen()) {
+    <div class="panecard"><div class="empty">⚠️ {{ error() }}</div></div>
+  }
+
+  <!-- Penapis -->
+  <div class="panecard">
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+      <input class="inp" [(ngModel)]="fQ" placeholder="No. Aduan / Tajuk / Pengadu"
+             (keyup.enter)="cari()" />
+      <select class="inp" [(ngModel)]="fCategory">
+        <option [ngValue]="null">Kategori — Semua</option>
+        @for (c of categories(); track c.id) {
+          <option [ngValue]="c.id">{{ c.name }}</option>
+        }
+      </select>
+      <select class="inp" [(ngModel)]="fStatus">
+        @for (s of statusOpts; track s.k) { <option [ngValue]="s.k">{{ s.l }}</option> }
+      </select>
+      <select class="inp" [(ngModel)]="fPriority">
+        @for (p of priorityOpts; track p.k) { <option [ngValue]="p.k">{{ p.l }}</option> }
+      </select>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:12px">
+      <input class="inp" type="date" [(ngModel)]="fFrom" title="Dari tarikh" />
+      <input class="inp" type="date" [(ngModel)]="fTo" title="Hingga tarikh" />
+      <div></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-sm btn-pri" style="flex:1" (click)="cari()">Cari</button>
+        <button class="btn-sm btn-soft" style="flex:1" (click)="clear()">Clear</button>
+        <!-- Biru gelap: merah ialah tindakan utama borang (Cari), dan
+             kelabu hilang dalam panel yang juga kelabu. -->
+        <button class="btn-sm btn-alt" style="flex:1.4;white-space:nowrap"
+                [disabled]="!modules.has('ADUAN')" (click)="openNew()">
+          + Rekod Aduan
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Jadual -->
+  <div class="panecard" style="padding:0;overflow:hidden;margin-top:12px">
+    @if (loading()) {
+      <div class="loading">Memuatkan…</div>
+    } @else if (!rows().length) {
+      <div class="empty">Tiada aduan sepadan carian.</div>
+    } @else {
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>No. Aduan</th><th>Tajuk</th><th>Pengadu</th><th>Kategori</th>
+              <th>Keutamaan</th><th>Tarikh</th><th>Status</th>
+              <th class="num">Tindakan</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of rows(); track r.id) {
+              <tr>
+                <td>
+                  <b class="link" (click)="openReply(r)">{{ r.complaintNo }}</b>
+                  @if (r.overSla) {
+                    <div class="sub2" style="color:#E0863B;font-weight:600">
+                      ⚠ {{ r.ageDays }} hari
+                    </div>
+                  }
+                </td>
+                <td>{{ r.subject }}</td>
+                <td>
+                  {{ r.reporterName || r.accountName }}
+                  <div class="sub2">{{ r.accountNo }}</div>
+                </td>
+                <td>{{ r.categoryName || '—' }}</td>
+                <td>
+                  <span class="badge"
+                        [class.b-red]="r.priority === 'HIGH'"
+                        [class.b-amber]="r.priority === 'MEDIUM'"
+                        [class.b-grey]="r.priority === 'LOW'">
+                    {{ labelPriority(r.priority) }}
+                  </span>
+                </td>
+                <td>{{ bila(r.createdAt) }}</td>
+                <td>
+                  <span class="badge"
+                        [class.b-blue]="r.status === 'NEW'"
+                        [class.b-amber]="r.status === 'IN_PROGRESS'"
+                        [class.b-green]="r.status === 'RESOLVED'"
+                        [class.b-red]="r.status === 'REOPENED'">
+                    {{ labelStatus(r.status) }}
+                  </span>
+                  @if (r.assignedName) {
+                    <div class="sub2">{{ r.assignedName }}</div>
+                  }
+                </td>
+                <td class="num">
+                  <div class="acts">
+                    <button class="btn-sm btn-pri" (click)="openReply(r)"
+                            title="Balas / Kemas Kini">💬</button>
+                    <button class="iconbtn" (click)="print(r)" title="Cetak">🖨</button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (pages() > 1) {
+        <div class="pager" style="padding:14px 20px">
+          <button class="pgbtn" [disabled]="page() === 0" (click)="goPage(page() - 1)">‹</button>
+          <span style="padding:0 10px;font-size:13px;color:var(--body)">
+            {{ page() + 1 }} / {{ pages() }} · {{ total() }} aduan
+          </span>
+          <button class="pgbtn" [disabled]="page() + 1 >= pages()" (click)="goPage(page() + 1)">›</button>
+        </div>
+      }
+    }
+  </div>
+</div>
+
+<!-- ===== MODAL BALAS ===== -->
+@if (replyOpen()) {
+  <div class="ov show adu-module adu-ov" (click)="closeReply()">
+    <div class="modal" style="max-width:1000px" (click)="$event.stopPropagation()">
+      @if (!detail()) {
+        <div class="loading">Memuatkan…</div>
+      } @else {
+        <div class="modal-head" style="align-items:flex-start">
+          <div>
+            <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap">
+              <span style="font-family:'Sora',sans-serif;font-weight:800;font-size:15px;
+                           color:var(--blue)">{{ detail()!.header.complaintNo }}</span>
+              <span class="badge"
+                    [class.b-blue]="detail()!.header.status === 'NEW'"
+                    [class.b-amber]="detail()!.header.status === 'IN_PROGRESS'"
+                    [class.b-green]="detail()!.header.status === 'RESOLVED'"
+                    [class.b-red]="detail()!.header.status === 'REOPENED'">
+                {{ labelStatus(detail()!.header.status) }}
+              </span>
+              <span class="badge"
+                    [class.b-red]="detail()!.header.priority === 'HIGH'"
+                    [class.b-amber]="detail()!.header.priority === 'MEDIUM'"
+                    [class.b-grey]="detail()!.header.priority === 'LOW'">
+                Keutamaan {{ labelPriority(detail()!.header.priority) }}
+              </span>
+            </div>
+            <h2 style="margin:8px 0 4px">{{ detail()!.header.subject }}</h2>
+            <div class="sub2">
+              {{ detail()!.header.reporterName || detail()!.header.accountName }} ·
+              {{ detail()!.header.accountNo }} ·
+              {{ detail()!.header.categoryName || 'Tiada kategori' }} ·
+              {{ bila(detail()!.header.createdAt) }}
+              @if (detail()!.reporterPhone) { · {{ detail()!.reporterPhone }} }
+            </div>
+          </div>
+          <button type="button" class="mclose" (click)="closeReply()">×</button>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px">
+          <!-- Kiri: butiran + thread -->
+          <div>
+            <div style="background:var(--bg-soft);border:1px solid var(--line);
+                        border-radius:14px;padding:14px;margin-bottom:16px">
+              <div class="sub2" style="font-weight:800;text-transform:uppercase;
+                                       letter-spacing:.04em;margin-bottom:6px">
+                Butiran Aduan
+              </div>
+              <p style="font-size:13.5px;line-height:1.6;margin:0;color:var(--ink)">
+                {{ detail()!.detail || 'Tiada butiran.' }}
+              </p>
+            </div>
+
+            <div class="sub2" style="font-weight:800;text-transform:uppercase;
+                                     letter-spacing:.04em;margin-bottom:10px">
+              Log Maklum Balas
+            </div>
+
+            @if (!detail()!.replies.length) {
+              <div class="empty" style="padding:20px">Belum ada maklum balas.</div>
+            } @else {
+              @for (r of detail()!.replies; track r.id) {
+                <div style="display:flex;gap:11px;margin-bottom:12px">
+                  <div style="width:34px;height:34px;flex:none;border-radius:11px;
+                              display:flex;align-items:center;justify-content:center;
+                              font-family:'Sora',sans-serif;font-weight:800;font-size:12.5px"
+                       [style.background]="r.internal ? '#FEF3C7' : (r.fromSp ? '#E7F6EC' : '#EEF2F7')"
+                       [style.color]="r.internal ? '#92400E' : (r.fromSp ? '#128A41' : '#3A4C53')">
+                    {{ r.internal ? '🔒' : (r.byName || '?').charAt(0) }}
+                  </div>
+                  <div style="flex:1;min-width:0;border-radius:0 13px 13px 13px;padding:11px 13px"
+                       [style.background]="r.internal ? '#FFFDF5' : 'var(--bg)'"
+                       [style.border]="'1px solid ' + (r.internal ? '#F5E2B8' : 'var(--line)')">
+                    <div style="display:flex;align-items:center;justify-content:space-between;
+                                gap:10px;margin-bottom:4px">
+                      <span style="font-size:12.5px;font-weight:800;color:var(--ink)">
+                        {{ r.byName || 'Pengadu' }}
+                        @if (r.internal) {
+                          <span class="sub2" style="font-weight:600"> · nota dalaman</span>
+                        }
+                      </span>
+                      <span class="sub2">{{ bila(r.createdAt) }}</span>
+                    </div>
+                    <p style="font-size:13px;line-height:1.55;margin:0;color:var(--ink)">
+                      {{ r.message }}
+                    </p>
+                  </div>
+                </div>
+              }
+            }
+          </div>
+
+          <!-- Kanan: borang balas -->
+          <div>
+            <div class="frow">
+              <label>Maklum Balas Anda</label>
+              <textarea rows="5" [(ngModel)]="rMessage"
+                        placeholder="Tulis maklum balas kepada pengadu…"></textarea>
+            </div>
+
+            <div class="frow">
+              <label>Kemas Kini Status</label>
+              <div style="display:flex;flex-wrap:wrap;gap:8px">
+                @for (s of statusOpts; track s.k) {
+                  @if (s.k !== 'ALL') {
+                    <button type="button" class="chip" [class.on]="rStatus === s.k"
+                            (click)="rStatus = s.k">{{ s.l }}</button>
+                  }
+                }
+              </div>
+            </div>
+
+            <div class="frow">
+              <label>Tugaskan Kepada</label>
+              <select [(ngModel)]="rAssignedTo">
+                <option [ngValue]="null">— Belum ditugaskan —</option>
+                @for (a of assignees(); track a.id) {
+                  <option [ngValue]="a.id">{{ a.name }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="frow">
+              <label>
+                Nota Dalaman
+                <span class="sub2" style="font-weight:600">(tidak dipapar kepada pengadu)</span>
+              </label>
+              <input [(ngModel)]="rInternalNote"
+                     placeholder="cth: kontraktor dijadualkan 18 Ogos"
+                     style="background:#FFFDF5" />
+            </div>
+
+            <label style="display:flex;align-items:center;gap:9px;font-size:13.5px;
+                          color:var(--body);cursor:pointer;margin-top:4px">
+              <input type="checkbox" [(ngModel)]="rInternal" style="width:17px;height:17px" />
+              Simpan mesej di atas sebagai nota dalaman sahaja
+            </label>
+            <p class="sub2" style="margin-top:4px">
+              Pengadu tidak akan melihat mesej yang ditanda sebagai nota dalaman.
+            </p>
+          </div>
+        </div>
+
+        <div class="modal-foot">
+          <button type="button" class="btn-sm btn-soft" (click)="closeReply()">Batal</button>
+          <button type="button" class="btn-sm btn-pri" [disabled]="saving()"
+                  (click)="sendReply()">
+            {{ saving() ? 'Menyimpan…' : 'Hantar & Kemas Kini' }}
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- ===== MODAL REKOD ADUAN (KERANI) ===== -->
+@if (newOpen()) {
+  <div class="ov show adu-module adu-ov" (click)="closeNew()">
+    <div class="modal" style="max-width:600px" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h2>Rekod Aduan</h2>
+        <button type="button" class="mclose" (click)="closeNew()">×</button>
+      </div>
+
+      <div class="mform-grid">
+        @if (error()) { <div class="fspan"><div class="empty">⚠️ {{ error() }}</div></div> }
+
+        <div class="fspan">
+          <p class="sub2" style="margin:0 0 10px">
+            Untuk aduan yang diterima melalui telefon atau kaunter.
+            Aduan yang dibuat sendiri oleh pelanggan masuk terus ke senarai.
+          </p>
+        </div>
+
+        <div class="frow">
+          <label>Akaun *</label>
+          <input [(ngModel)]="nAccountSearch" (ngModelChange)="searchAccounts()"
+                 placeholder="Taip nama atau no. akaun…" />
+          @if (accountResults().length) {
+            <div style="border:1px solid var(--line);border-radius:9px;margin-top:4px;
+                        max-height:180px;overflow-y:auto;background:var(--bg)">
+              @for (a of accountResults(); track a.id) {
+                <div style="padding:9px 12px;cursor:pointer;font-size:13.5px;
+                            border-bottom:1px solid var(--line)"
+                     (click)="pickAccount(a)">
+                  <b>{{ a.no }}</b> — {{ a.name }}
+                </div>
+              }
+            </div>
+          } @else if (nAccountSearch.trim().length >= 2 && !nAccountId) {
+            <!-- Tanpa mesej ini, carian yang tidak menemui apa-apa kelihatan
+                 seperti medan yang rosak — pengguna menaip dan tiada apa
+                 berlaku. -->
+            <p class="sub2" style="margin-top:5px">
+              Tiada akaun sepadan. Cuba no. akaun (cth: SW-01) atau nama pemilik.
+            </p>
+          }
+
+          @if (nAccountId) {
+            <p class="sub2" style="margin-top:5px;color:#1B7A3E">
+              ✓ Akaun dipilih
+            </p>
+          }
+        </div>
+
+        <div class="frow half">
+          <label>Kategori</label>
+          <select [(ngModel)]="nCategoryId">
+            <option [ngValue]="null">— Pilih kategori —</option>
+            @for (c of categories(); track c.id) {
+              <option [ngValue]="c.id">{{ c.name }}</option>
+            }
+          </select>
+        </div>
+        <div class="frow half">
+          <label>Keutamaan</label>
+          <select [(ngModel)]="nPriority">
+            <option value="HIGH">Tinggi</option>
+            <option value="MEDIUM">Sederhana</option>
+            <option value="LOW">Rendah</option>
+          </select>
+        </div>
+
+        <div class="frow">
+          <label>Tajuk Aduan *</label>
+          <input [(ngModel)]="nSubject" placeholder="cth: Lampu koridor rosak" />
+        </div>
+
+        <div class="frow">
+          <label>Butiran</label>
+          <textarea rows="3" [(ngModel)]="nDetail"
+                    placeholder="Terangkan aduan yang diterima…"></textarea>
+        </div>
+
+        <div class="frow half">
+          <label>Nama Pengadu</label>
+          <input [(ngModel)]="nReporterName" placeholder="jika berbeza dari pemegang akaun" />
+        </div>
+        <div class="frow half">
+          <label>No. Telefon</label>
+          <input [(ngModel)]="nReporterPhone" />
+        </div>
+
+        <div class="modal-foot fspan">
+          <button type="button" class="btn-sm btn-soft" (click)="closeNew()">Batal</button>
+          <button type="button" class="btn-sm btn-alt" [disabled]="saving()" (click)="saveNew()">
+            {{ saving() ? 'Menyimpan…' : 'Rekod Aduan' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
