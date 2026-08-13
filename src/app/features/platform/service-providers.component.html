@@ -133,8 +133,7 @@
           </span>
 
           <span class="acts" style="justify-content:center">
-            <button class="act" data-tip="Lihat">👁</button>
-            <button class="act" data-tip="Edit">✎</button>
+            <button class="act" data-tip="Edit" (click)="openEdit(r.spCode)">✎</button>
           </span>
         </div>
       }
@@ -151,3 +150,177 @@
     </div>
   </div>
 </div>
+
+<!-- ===== EDIT PROFIL SP ===== -->
+@if (editOpen()) {
+  <div style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;
+              align-items:center;justify-content:center;padding:20px" (click)="closeEdit()">
+    <div class="modal-card" style="border-radius:14px;max-width:820px;width:100%;
+                                   max-height:90vh;overflow:auto"
+         (click)="$event.stopPropagation()">
+
+      @if (!editing()) {
+        <div style="padding:60px;text-align:center;color:var(--muted)">Memuatkan…</div>
+      } @else {
+        <div style="padding:22px 26px;border-bottom:1.5px solid var(--line-soft)">
+          <div style="font-family:'Sora',sans-serif;font-weight:800;font-size:19px;color:var(--ink)">
+            {{ editing()!.name }}
+          </div>
+          <div style="font-size:13px;color:var(--muted);margin-top:2px">
+            {{ editing()!.spCode }}
+          </div>
+        </div>
+
+        <div style="padding:22px 26px">
+          @if (editError()) { <div class="alert" style="margin-bottom:14px">{{ editError() }}</div> }
+
+          <!-- ===== Maklumat SP ===== -->
+          <h4 style="font-family:'Sora',sans-serif;font-weight:800;font-size:13px;
+                     text-transform:uppercase;letter-spacing:.05em;color:var(--muted);
+                     margin:0 0 12px">Maklumat Organisasi</h4>
+
+          <div class="g1">
+            <div><label>Nama SP *</label>
+              <input class="fld" [(ngModel)]="form.name" /></div>
+          </div>
+
+          <div class="g2">
+            <div><label>Jenis Perniagaan</label>
+              <input class="fld" [(ngModel)]="form.businessType" /></div>
+            <div><label>ROC / ROS / No. KP</label>
+              <input class="fld" [(ngModel)]="form.registrationNo" /></div>
+          </div>
+
+          <div class="g1">
+            <div><label>Keterangan Organisasi</label>
+              <input class="fld" [(ngModel)]="form.businessDesc" /></div>
+          </div>
+
+          <div class="g2">
+            <div><label>Halaman Web</label>
+              <input class="fld" [(ngModel)]="form.website" placeholder="https://" /></div>
+            <div><label>Tarikh Daftar Organisasi</label>
+              <input class="fld" type="date" [(ngModel)]="form.orgRegisteredDate" /></div>
+          </div>
+
+          <!-- ===== Alamat ===== -->
+          <h4 style="font-family:'Sora',sans-serif;font-weight:800;font-size:13px;
+                     text-transform:uppercase;letter-spacing:.05em;color:var(--muted);
+                     margin:22px 0 12px">Alamat</h4>
+
+          <div class="g1">
+            <div><label>Alamat</label>
+              <input class="fld" [(ngModel)]="form.addrLine1" placeholder="Baris 1" /></div>
+          </div>
+          <div class="g2">
+            <div><input class="fld" [(ngModel)]="form.addrLine2" placeholder="Baris 2" /></div>
+            <div><input class="fld" [(ngModel)]="form.addrLine3" placeholder="Baris 3" /></div>
+          </div>
+          <div class="g2">
+            <div><label>Bandar</label><input class="fld" [(ngModel)]="form.city" /></div>
+            <div><label>Poskod</label><input class="fld" [(ngModel)]="form.postcode" /></div>
+          </div>
+          <div class="g2">
+            <div><label>Negeri</label><input class="fld" [(ngModel)]="form.state" /></div>
+            <div><label>Negara</label><input class="fld" [(ngModel)]="form.country" /></div>
+          </div>
+
+          <!-- ===== Perhubungan ===== -->
+          <h4 style="font-family:'Sora',sans-serif;font-weight:800;font-size:13px;
+                     text-transform:uppercase;letter-spacing:.05em;color:var(--muted);
+                     margin:22px 0 12px">Perhubungan</h4>
+
+          <div class="g2">
+            <div><label>No. Telefon</label><input class="fld" [(ngModel)]="form.phone" /></div>
+            <div><label>E-mel</label><input class="fld" [(ngModel)]="form.contactEmail" /></div>
+          </div>
+          <div class="g2">
+            <div><label>Telefon Pejabat</label><input class="fld" [(ngModel)]="form.officeNo" /></div>
+            <div><label>Telefon Mudah Alih</label><input class="fld" [(ngModel)]="form.mobileNo" /></div>
+          </div>
+          <div class="g2">
+            <div><label>E-mel Helpdesk</label>
+              <input class="fld" [(ngModel)]="form.helpdeskEmail" /></div>
+            <div><label>Telefon Helpdesk</label>
+              <input class="fld" [(ngModel)]="form.helpdeskPhone" /></div>
+          </div>
+
+          <!-- ===== Bank ===== -->
+          <h4 style="font-family:'Sora',sans-serif;font-weight:800;font-size:13px;
+                     text-transform:uppercase;letter-spacing:.05em;color:var(--muted);
+                     margin:22px 0 12px">Akaun Bank</h4>
+
+          <div class="g2">
+            <div><label>Nama Bank</label><input class="fld" [(ngModel)]="form.bankCode" /></div>
+            <div><label>No. Akaun Bank</label>
+              <input class="fld" [(ngModel)]="form.bankAccountNo" /></div>
+          </div>
+          <div class="g1">
+            <div><label>Nama Pemegang Akaun</label>
+              <input class="fld" [(ngModel)]="form.bankAccountName" /></div>
+          </div>
+
+          <!-- ===== Tetapan bil ===== -->
+          <h4 style="font-family:'Sora',sans-serif;font-weight:800;font-size:13px;
+                     text-transform:uppercase;letter-spacing:.05em;color:var(--muted);
+                     margin:22px 0 12px">Tetapan</h4>
+
+          <div class="g2">
+            <div><label>Anggaran Invois / Bulan</label>
+              <input class="fld" type="number" [(ngModel)]="form.estInvoicesMonth" /></div>
+            <div><label>Status</label>
+              <select class="fld" [(ngModel)]="form.status">
+                <option value="PENDING">PENDING</option>
+                <option value="ACTIVE">ACTIVE</option>
+                <option value="SUSPENDED">SUSPENDED</option>
+                <option value="CLOSED">CLOSED</option>
+              </select></div>
+          </div>
+
+          <!-- ===== Pelan — BACA SAHAJA ===== -->
+          <h4 style="font-family:'Sora',sans-serif;font-weight:800;font-size:13px;
+                     text-transform:uppercase;letter-spacing:.05em;color:var(--muted);
+                     margin:22px 0 12px">Pelan &amp; Modul</h4>
+
+          <div style="background:var(--surface-alt);border:1px solid var(--line);
+                      border-radius:12px;padding:16px 18px">
+            <div style="display:flex;justify-content:space-between;align-items:center;
+                        gap:14px;flex-wrap:wrap">
+              <div>
+                <div style="font-weight:700;color:var(--ink);font-size:15px">
+                  {{ editing()!.planName || 'Tiada pelan' }}
+                  @if (editing()!.planPrice) {
+                    <span style="color:var(--muted);font-weight:500;font-size:13px">
+                      · RM{{ editing()!.planPrice | number:'1.2-2' }}/bln
+                    </span>
+                  }
+                </div>
+                <div style="font-size:13px;color:var(--muted);margin-top:3px">
+                  {{ editing()!.accountCount }} /
+                  {{ editing()!.accountLimit || '∞' }} akaun digunakan
+                </div>
+              </div>
+              <button class="btn btn-ghost" (click)="keArahPermohonan()">
+                Lihat Permohonan →
+              </button>
+            </div>
+
+            <p style="font-size:12.5px;color:var(--muted);margin:14px 0 0;line-height:1.55">
+              Pelan dan modul ditukar melalui <b>permohonan dengan kelulusan</b>, bukan di
+              sini. Menukarnya terus bermakna bil berubah tanpa rekod siapa membenarkannya —
+              dan dua laluan menukar pelan bermakna satu daripadanya memintas jejak itu.
+            </p>
+          </div>
+        </div>
+
+        <div style="padding:18px 26px;display:flex;justify-content:flex-end;gap:10px;
+                    border-top:1.5px solid var(--line-soft)">
+          <button class="btn btn-ghost" (click)="closeEdit()">Batal</button>
+          <button class="btn btn-green" [disabled]="savingSp()" (click)="saveEdit()">
+            {{ savingSp() ? 'Menyimpan…' : 'Simpan Profil' }}
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+}

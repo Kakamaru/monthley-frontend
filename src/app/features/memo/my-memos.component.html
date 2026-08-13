@@ -1,0 +1,99 @@
+<div class="adu-module">
+  <div class="phead">
+    <div>
+      <h1>Memo &amp; Pengumuman</h1>
+      <p>Makluman daripada pihak pengurusan.</p>
+    </div>
+  </div>
+
+  <div class="panecard">
+    <div class="toolbar" style="margin-bottom:0">
+      <button class="chip" [class.on]="scope() === 'ACTIVE'" (click)="setScope('ACTIVE')">
+        Memo Aktif
+      </button>
+      <button class="chip" [class.on]="scope() === 'PAST'" (click)="setScope('PAST')">
+        Memo Lama
+      </button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="panecard"><div class="loading">Memuatkan…</div></div>
+  } @else if (!rows().length) {
+    <div class="panecard">
+      <div class="empty">
+        {{ scope() === 'ACTIVE' ? 'Tiada memo aktif.' : 'Tiada memo lama.' }}
+      </div>
+    </div>
+  } @else {
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:12px">
+      @for (m of rows(); track m.id) {
+        <div class="panecard" style="margin-top:0" [style.opacity]="m.expired ? 0.72 : 1">
+          <div style="display:flex;align-items:center;justify-content:space-between;
+                      margin-bottom:12px;gap:10px">
+            <span class="badge b-blue">{{ m.spName }}</span>
+            <span class="sub2">{{ bila(m.publishedAt) }}</span>
+          </div>
+
+          <h3 style="font-family:'Sora',sans-serif;font-weight:700;font-size:18px;
+                     margin:0 0 8px;color:var(--ink)">{{ m.title }}</h3>
+
+          <div style="position:relative;max-height:132px;overflow:hidden">
+            <p style="font-size:14px;color:var(--body);line-height:1.6;margin:0;
+                      white-space:pre-wrap">{{ m.body }}</p>
+            @if (panjang(m)) {
+              <div style="position:absolute;left:0;right:0;bottom:0;height:44px;
+                          background:linear-gradient(transparent, var(--bg))"></div>
+            }
+          </div>
+          @if (panjang(m)) {
+            <span class="link" style="font-weight:600;font-size:13.5px;display:inline-block;
+                                      margin-top:6px"
+                  (click)="readOpen.set(m)">Baca lagi →</span>
+          }
+
+          @if (m.expiresOn) {
+            <div class="sub2" style="margin-top:14px;padding-top:12px;
+                                     border-top:1px solid var(--line)">
+              {{ m.expired ? 'Tamat tempoh' : 'Sah sehingga' }} {{ m.expiresOn }}
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>
+
+<!-- ===== BACA PENUH ===== -->
+@if (readOpen(); as m) {
+  <div class="ov show adu-module adu-ov" (click)="readOpen.set(null)">
+    <div class="modal" style="max-width:720px" (click)="$event.stopPropagation()">
+      <div class="modal-head" style="align-items:flex-start">
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+            <span class="badge b-blue">{{ m.spName }}</span>
+            <span class="sub2">{{ bila(m.publishedAt) }}</span>
+          </div>
+          <h2 style="margin:0">{{ m.title }}</h2>
+        </div>
+        <button type="button" class="mclose" (click)="readOpen.set(null)">×</button>
+      </div>
+
+      <div style="max-height:60vh;overflow-y:auto">
+        <p style="font-size:14.5px;color:var(--ink);line-height:1.7;margin:0;
+                  white-space:pre-wrap">{{ m.body }}</p>
+      </div>
+
+      <div class="modal-foot" style="justify-content:space-between;align-items:center">
+        <span class="sub2">
+          @if (m.expiresOn) {
+            {{ m.expired ? 'Tamat tempoh' : 'Sah sehingga' }} {{ m.expiresOn }}
+          } @else {
+            Makluman kekal
+          }
+        </span>
+        <button type="button" class="btn-sm btn-soft" (click)="readOpen.set(null)">Tutup</button>
+      </div>
+    </div>
+  </div>
+}

@@ -113,6 +113,20 @@ export class AccountsService {
   }
 
   /** Penyata PDF akaun sendiri. Pemilikan disemak melalui payer_user_id. */
+  /**
+   * Resit atau invois pelanggan sebagai PDF.
+   *
+   * Satu kaedah untuk kedua-dua jenis: laluan sahaja yang berbeza, dan
+   * pengendalian respons identik. Dua kaedah bermakna corak muat turun
+   * disalin dan menyimpang.
+   */
+  myDocumentPdf(docType: string, id: number): Observable<HttpResponse<Blob>> {
+    const laluan = docType === 'RECEIPT' ? 'receipts' : 'invoices';
+    return this.http.get(`/api/v1/accounts/my/${laluan}/${id}`, {
+      observe: 'response', responseType: 'blob'
+    });
+  }
+
   myStatementPdf(accountId: number, year: number | null): Observable<HttpResponse<Blob>> {
     let params = new HttpParams();
     if (year != null) params = params.set('year', String(year));
@@ -255,6 +269,7 @@ export interface MyAccountRow {
 }
 
 export interface HistoryRow {
+  id: number;
   date: string; docType: string; spName: string;
   accountNo: string; docNo: string; amount: number;
 }

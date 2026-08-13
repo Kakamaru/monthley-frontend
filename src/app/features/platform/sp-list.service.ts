@@ -40,7 +40,43 @@ export class SpListService {
     return this.http.get<SpSummary>(`${this.base}/summary`);
   }
 
+  profile(spCode: string): Observable<SpProfile> {
+    return this.http.get<SpProfile>(`${this.base}/${spCode}`);
+  }
+
+  /**
+   * Kemas kini profil SAHAJA.
+   *
+   * Pelan dan modul tidak dihantar di sini — ia melalui sp_change_request
+   * dengan kelulusan (ADR 0016). Dua laluan menukar pelan bermakna satu
+   * daripadanya memintas rekod permohonan.
+   */
+  saveProfile(spCode: string, body: Partial<SpProfile>): Observable<unknown> {
+    return this.http.put(`${this.base}/${spCode}`, body);
+  }
+
   changeStatus(spCode: string, status: string): Observable<unknown> {
     return this.http.patch(`${this.base}/${spCode}/status`, { status });
   }
+}
+
+export interface SpProfile {
+  spCode: string; name: string; handle: string | null;
+  businessType: string | null; businessDesc: string | null;
+  registrationNo: string | null; orgRegisteredDate: string | null;
+  website: string | null;
+  addrLine1: string | null; addrLine2: string | null; addrLine3: string | null;
+  city: string | null; postcode: string | null; state: string | null;
+  country: string | null;
+  phone: string | null; officeNo: string | null; mobileNo: string | null;
+  contactEmail: string | null; helpdeskEmail: string | null;
+  helpdeskPhone: string | null;
+  bankCode: string | null; bankAccountNo: string | null;
+  bankAccountName: string | null;
+  estInvoicesMonth: number | null; minPymtAmount: number | null;
+  allowSelective: boolean; minDenom: number | null;
+  status: string;
+  /** Baca sahaja — ditukar melalui sp_change_request. */
+  planProductId: number | null; planName: string | null; planPrice: number | null;
+  accountLimit: number | null; accountCount: number;
 }

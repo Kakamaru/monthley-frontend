@@ -44,7 +44,7 @@ export class PortalShellComponent {
     { id: 'c_accounts',   icon: '📁',  label: 'Akaun Saya', route: '/portal/my-accounts' },
     { id: 'c_donations',  icon: '🤲',  label: 'Sumbangan' },
     { id: 'c_complaints', icon: '🗣️', label: 'Aduan', route: '/portal/my-complaints' },
-    { id: 'c_memo',       icon: '📝',  label: 'Memo' }
+    { id: 'c_memo',       icon: '📝',  label: 'Memo', route: '/portal/my-memos' }
   ];
 
   /** Service Provider — navMain + navSP dari prototaip */
@@ -61,7 +61,6 @@ export class PortalShellComponent {
     // VIEWER termasuk: pengawal pondok jaga tidak memerlukannya, tetapi
     // lejar ialah bacaan sahaja dan endpoint membenarkan ketiga-tiga.
     { id: 'spStatement',  icon: '📑',  label: 'SP Account Statement', route: '/portal/sp-ledger' },
-    { id: 'memo',         icon: '📝',  label: 'Memo' },
     { id: 'donation',     icon: '🤲',  label: 'Kutipan Derma' }
   ];
 
@@ -101,6 +100,17 @@ export class PortalShellComponent {
 
   readonly aduOpen = signal(false);
   toggleAdu() { this.aduOpen.set(!this.aduOpen()); }
+
+  /** Memo — satu skrin sahaja, tetapi kumpulan sendiri untuk konsisten. */
+  readonly navMemo: NavItem[] = [
+    { id: 'memoList', icon: '📝', label: 'Memo & Pengumuman', route: '/portal/memos', roles: ['SP_ADMIN'] }
+  ];
+
+  readonly visibleMemo = computed(() =>
+    this.navMemo.filter(it => this.bolehLihat(it)));
+
+  readonly memoOpen = signal(false);
+  toggleMemo() { this.memoOpen.set(!this.memoOpen()); }
 
   /** Modul ini ditawarkan kepada sektor SP semasa? */
   modulDitawarkan(kod: string): boolean {

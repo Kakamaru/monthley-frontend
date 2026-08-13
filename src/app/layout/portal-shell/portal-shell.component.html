@@ -65,6 +65,32 @@
         }
       }
 
+      <!-- Memo — kumpulan sendiri seperti modul tambahan lain. -->
+      @if (auth.isSpAdmin() && modules.loaded() && modulDitawarkan('MEMO')) {
+        <button class="grp-btn" (click)="toggleMemo()">
+          <span>Memo</span>
+          <span class="chev">{{ memoOpen() ? '▾' : '▸' }}</span>
+        </button>
+
+        @if (!modules.has('MEMO')) {
+          <div style="padding:0 12px 8px">
+            <span style="font-size:10px;font-weight:700;padding:2px 8px;
+                         border-radius:8px;background:#F59E0B;color:#3A2A00;
+                         text-transform:none;letter-spacing:0;white-space:nowrap">
+              belum dilanggan
+            </span>
+          </div>
+        }
+
+        @if (memoOpen()) {
+          @for (it of visibleMemo(); track it.id) {
+            <a class="nav" [routerLink]="it.route" routerLinkActive="on">
+              <span class="ic">{{ it.icon }}</span>{{ it.label }}
+            </a>
+          }
+        }
+      }
+
       <!-- Aduan — kumpulan sendiri. Hanya dipapar jika modul DITAWARKAN
            kepada sektor SP ini; penapis sektor menghalang JMB daripada
            melihat modul yang tidak berkenaan (ref_module.business_types). -->

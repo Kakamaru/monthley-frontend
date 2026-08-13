@@ -1,0 +1,212 @@
+<div class="adu-module">
+  <div class="phead">
+    <div>
+      <h1>Memo &amp; Pengumuman</h1>
+      <p>Hebahkan makluman kepada pelanggan melalui portal.</p>
+    </div>
+    <div>
+      <button class="btn-sm btn-alt" [disabled]="!modules.has('MEMO')" (click)="openNew()">
+        + Cipta Memo
+      </button>
+    </div>
+  </div>
+
+  @if (error() && !formOpen()) { <div class="panecard"><div class="empty">⚠️ {{ error() }}</div></div> }
+
+  @if (!loading() && rows().length) {
+    <div class="panecard">
+      <div class="toolbar" style="margin-bottom:0">
+        @for (c of chips; track c.k) {
+          <button class="chip" [class.on]="tapis() === c.k" (click)="tapis.set(c.k)">
+            {{ c.l }}
+            <span style="opacity:.7;margin-left:4px">{{ kira(c.k) }}</span>
+          </button>
+        }
+      </div>
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="panecard"><div class="loading">Memuatkan…</div></div>
+  } @else if (!rows().length) {
+    <div class="panecard">
+      <div class="empty">
+        Tiada memo.
+        <span class="sub2" style="display:block;margin-top:4px">
+          Tekan "+ Cipta Memo" untuk menghebahkan makluman kepada pelanggan.
+        </span>
+      </div>
+    </div>
+  } @else {
+    @if (!visible().length) {
+      <div class="panecard"><div class="empty">Tiada memo dalam kategori ini.</div></div>
+    }
+
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:12px">
+      @for (m of visible(); track m.id) {
+        <div class="panecard" style="margin-top:0;display:flex;flex-direction:column">
+          <div style="display:flex;align-items:center;justify-content:space-between;
+                      margin-bottom:12px">
+            <span class="badge"
+                  [class.b-grey]="m.status === 'DRAFT'"
+                  [class.b-green]="m.status === 'PUBLISHED' && !m.expired"
+                  [class.b-amber]="m.expired">
+              {{ labelStatus(m) }}
+            </span>
+            <span class="sub2">
+              {{ m.status === 'PUBLISHED' ? bila(m.publishedAt) : 'belum diterbitkan' }}
+            </span>
+          </div>
+
+          <h3 style="font-family:'Sora',sans-serif;font-weight:700;font-size:18px;
+                     margin:0 0 8px;color:var(--ink)">{{ m.title }}</h3>
+
+          <div style="flex:1;margin:0 0 16px">
+            <div style="position:relative;max-height:132px;overflow:hidden">
+              <p style="font-size:14px;color:var(--body);line-height:1.6;margin:0;
+                        white-space:pre-wrap">{{ m.body }}</p>
+              @if (panjang(m)) {
+                <!-- Pudar ke latar kad supaya potongan kelihatan disengajakan
+                     dan bukan teks yang terpotong. -->
+                <div style="position:absolute;left:0;right:0;bottom:0;height:44px;
+                            background:linear-gradient(transparent, var(--bg))"></div>
+              }
+            </div>
+            @if (panjang(m)) {
+              <span class="link" style="font-weight:600;font-size:13.5px;display:inline-block;
+                                        margin-top:6px"
+                    (click)="readOpen.set(m)">Baca lagi →</span>
+            }
+          </div>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;
+                      border-top:1px solid var(--line);padding-top:14px;gap:10px;
+                      flex-wrap:wrap">
+            <div class="sub2">
+              <b style="color:var(--ink)">Penerima:</b> {{ m.audienceCount }} pelanggan
+              @if (m.expiresOn) {
+                <div>
+                  <b style="color:var(--ink)">Luput:</b> {{ m.expiresOn }}
+                </div>
+              } @else {
+                <div>Tiada tarikh luput</div>
+              }
+            </div>
+
+            <div style="display:flex;gap:7px">
+              @if (m.status === 'DRAFT') {
+                <button class="btn-sm btn-soft" [disabled]="busy() === m.id"
+                        (click)="openEdit(m)" title="Edit">✏️</button>
+                <button class="btn-sm btn-alt" [disabled]="busy() === m.id"
+                        (click)="publish(m)">Terbit</button>
+                <button class="btn-sm btn-danger" [disabled]="busy() === m.id"
+                        (click)="remove(m)" title="Padam">🗑</button>
+              } @else {
+                <button class="btn-sm btn-soft" [disabled]="busy() === m.id"
+                        (click)="openEdit(m)" title="Edit">✏️</button>
+                @if (!m.expired) {
+                  <button class="btn-sm btn-soft" [disabled]="busy() === m.id"
+                          (click)="endNow(m)" title="Tamatkan — memo ke Memo Lama">
+                    Tamatkan
+                  </button>
+                }
+                <button class="btn-sm btn-danger" [disabled]="busy() === m.id"
+                        (click)="unpublish(m)" title="Tarik balik ke draf">
+                  Tarik Balik
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+<!-- ===== MODAL ===== -->
+@if (formOpen()) {
+  <div class="ov show adu-module adu-ov" (click)="close()">
+    <div class="modal" style="max-width:560px" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h2>{{ editing() ? 'Kemaskini Memo' : 'Cipta Memo' }}</h2>
+        <button type="button" class="mclose" (click)="close()">×</button>
+      </div>
+
+      <div class="mform-grid">
+        @if (error()) { <div class="fspan"><div class="empty">⚠️ {{ error() }}</div></div> }
+
+        <div class="frow">
+          <label>Tajuk *</label>
+          <input [(ngModel)]="fTitle" placeholder="cth: Kerja penyelenggaraan lif" />
+        </div>
+
+        <div class="frow">
+          <label>Isi Memo *</label>
+          <textarea rows="6" [(ngModel)]="fBody"
+                    placeholder="Tulis makluman untuk pelanggan…"></textarea>
+        </div>
+
+        <div class="frow">
+          <label>
+            Tarikh Luput
+            <span class="sub2" style="font-weight:600">(pilihan)</span>
+          </label>
+          <input type="date" [(ngModel)]="fExpires" />
+        </div>
+
+        <div class="fspan">
+          <p class="sub2" style="margin:-6px 0 0">
+            Memo hilang dari portal pelanggan selepas tarikh ini. Biarkan
+            <b>kosong</b> untuk makluman yang kekal — seperti nombor telefon
+            pengurusan atau waktu operasi.
+          </p>
+        </div>
+
+        <div class="modal-foot fspan">
+          <button type="button" class="btn-sm btn-soft" (click)="close()">Batal</button>
+          <button type="button" class="btn-sm btn-alt" [disabled]="saving()" (click)="save()">
+            {{ saving() ? 'Menyimpan…' : (editing() ? 'Simpan' : 'Simpan sebagai Draf') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ===== BACA PENUH ===== -->
+@if (readOpen(); as m) {
+  <div class="ov show adu-module adu-ov" (click)="readOpen.set(null)">
+    <div class="modal" style="max-width:720px" (click)="$event.stopPropagation()">
+      <div class="modal-head" style="align-items:flex-start">
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+            <span class="badge"
+                  [class.b-grey]="m.status === 'DRAFT'"
+                  [class.b-green]="m.status === 'PUBLISHED' && !m.expired"
+                  [class.b-amber]="m.expired">
+              {{ labelStatus(m) }}
+            </span>
+            <span class="sub2">
+              {{ m.status === 'PUBLISHED' ? bila(m.publishedAt) : 'belum diterbitkan' }}
+            </span>
+          </div>
+          <h2 style="margin:0">{{ m.title }}</h2>
+        </div>
+        <button type="button" class="mclose" (click)="readOpen.set(null)">×</button>
+      </div>
+
+      <div style="max-height:60vh;overflow-y:auto">
+        <p style="font-size:14.5px;color:var(--ink);line-height:1.7;margin:0;
+                  white-space:pre-wrap">{{ m.body }}</p>
+      </div>
+
+      <div class="modal-foot" style="justify-content:space-between;align-items:center">
+        <span class="sub2">
+          <b style="color:var(--ink)">Penerima:</b> {{ m.audienceCount }} pelanggan
+          @if (m.expiresOn) { · Luput {{ m.expiresOn }} }
+        </span>
+        <button type="button" class="btn-sm btn-soft" (click)="readOpen.set(null)">Tutup</button>
+      </div>
+    </div>
+  </div>
+}

@@ -79,6 +79,16 @@ export const routes: Routes = [
           import('./features/expenses/categories.component').then(m => m.ExpCategoriesComponent)
       },
       {
+        path: 'memos', canActivate: [spAdminGuard],
+        loadComponent: () =>
+          import('./features/memo/memo-list.component').then(m => m.MemoListComponent)
+      },
+      {
+        path: 'my-memos',
+        loadComponent: () =>
+          import('./features/memo/my-memos.component').then(m => m.MyMemosComponent)
+      },
+      {
         path: 'my-complaints',
         loadComponent: () =>
           import('./features/complaints/my-complaints.component')

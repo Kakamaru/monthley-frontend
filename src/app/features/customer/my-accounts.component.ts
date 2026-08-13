@@ -123,7 +123,12 @@ import { AccountsService, MyAccountRow, HistoryRow, HistoryResponse } from '../a
                 <span class="c-mut">{{ h.accountNo }}</span>
                 <span class="c-doc">{{ h.docNo }}</span>
                 <span class="c-amt">MYR {{ h.amount | number:'1.2-2' }}</span>
-                <span><button class="dl-btn" title="Muat turun">⬇</button></span>
+                <span>
+                  <button class="dl-btn" title="Muat turun PDF"
+                          [disabled]="docBusy() === h.id" (click)="muatTurun(h)">
+                    {{ docBusy() === h.id ? '…' : '⬇' }}
+                  </button>
+                </span>
               </div>
             }
             @if ((hist()?.items?.length ?? 0) === 0) {
@@ -367,6 +372,39 @@ export class MyAccountsComponent implements OnInit {
       error: () => this.stmtBusy.set(null)
     });
   }
+  readonly docBusy = signal<number | null>(null);
+
+  /**
+   * Muat turun resit atau invois.
+   *
+   * Interceptor menyisipkan Authorization, jadi ini tidak boleh menjadi
+   * <a href> biasa — sama seperti penyata. Backend menyemak pemilikan
+   * melalui payer_user_id dan mengembalikan 404 untuk dokumen orang lain,
+   * supaya ID tidak boleh dibilang.
+   */
+  muatTurun(h: HistoryRow) {
+    this.docBusy.set(h.id);
+    this.api.myDocumentPdf(h.docType, h.id).subscribe({
+      next: res => {
+        const blob = res.body;
+        if (!blob) { this.docBusy.set(null); return; }
+
+        const cd = res.headers.get('Content-Disposition') ?? '';
+        const m = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(cd);
+        const nama = m ? decodeURIComponent(m[1]) : `${h.docNo}.pdf`;
+
+        const url = URL.createObjectURL(blob);
+        const el = document.createElement('a');
+        el.href = url; el.download = nama;
+        document.body.appendChild(el); el.click();
+        document.body.removeChild(el);
+        URL.revokeObjectURL(url);
+        this.docBusy.set(null);
+      },
+      error: () => this.docBusy.set(null)
+    });
+  }
+
   pay(a: MyAccountRow) { /* TODO: FPX bayar akaun */ }
   payAll() { /* TODO: FPX bayar semua */ }
   subscribe() { /* TODO: modal langgan akaun */ }

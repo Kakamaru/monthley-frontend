@@ -1,8 +1,8 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
-import { SpListService, SpRow, SpSummary } from './sp-list.service';
+import { Router, RouterLink } from '@angular/router';
+import { SpListService, SpRow, SpSummary, SpProfile } from './sp-list.service';
 import { OnboardService, PlanOption, BusinessType } from './onboard.service';
 
 @Component({
@@ -13,6 +13,71 @@ import { OnboardService, PlanOption, BusinessType } from './onboard.service';
 })
 export class ServiceProvidersComponent {
   private api = inject(SpListService);
+  private router2 = inject(Router);
+
+  // ---------- Edit profil ----------
+
+  readonly editOpen = signal(false);
+  readonly editing = signal<SpProfile | null>(null);
+  readonly savingSp = signal(false);
+  readonly editError = signal<string | null>(null);
+
+  /**
+   * Salinan boleh-ubah untuk borang.
+   *
+   * Diasingkan daripada signal `editing` supaya membatalkan tidak
+   * meninggalkan suntingan separa pada objek yang dipaparkan di senarai.
+   */
+  form: Partial<SpProfile> = {};
+
+  openEdit(spCode: string) {
+    this.editError.set(null);
+    this.editing.set(null);
+    this.editOpen.set(true);
+
+    this.api.profile(spCode).subscribe({
+      next: p => { this.editing.set(p); this.form = { ...p }; },
+      error: e => {
+        this.editError.set(e?.error?.message ?? 'Gagal memuatkan profil.');
+        this.editOpen.set(false);
+      }
+    });
+  }
+
+  closeEdit() { this.editOpen.set(false); }
+
+  @HostListener('document:keydown.escape')
+  onEscape() { if (this.editOpen()) this.closeEdit(); }
+
+  saveEdit() {
+    const p = this.editing();
+    if (!p) return;
+    if (!this.form.name?.trim()) {
+      this.editError.set('Nama SP wajib diisi.');
+      return;
+    }
+
+    this.savingSp.set(true);
+    this.editError.set(null);
+
+    this.api.saveProfile(p.spCode, this.form).subscribe({
+      next: () => {
+        this.savingSp.set(false);
+        this.editOpen.set(false);
+        this.load();
+      },
+      error: e => {
+        this.savingSp.set(false);
+        this.editError.set(e?.error?.message ?? 'Gagal menyimpan profil.');
+      }
+    });
+  }
+
+  /** Pelan ditukar melalui permohonan, bukan di sini (ADR 0016). */
+  keArahPermohonan() {
+    this.editOpen.set(false);
+    this.router2.navigate(['/platform/change-requests']);
+  }
   private ref = inject(OnboardService);
 
   readonly cols = '0.8fr 1.9fr 1.1fr 1.2fr 1fr 0.9fr 110px';
