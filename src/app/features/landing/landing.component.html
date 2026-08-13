@@ -31,58 +31,204 @@
       <p class="sectors-line">Komuniti · Persatuan · Tadika · Kelab · Nurseri · Bas Sekolah</p>
     </div>
 
-    <!-- mockup terapung -->
-    <div class="float">
-      <div class="mock">
-        <div class="mock-head">
-          <div class="mock-brand">
-            <img src="assets/monthley-badge.png" alt="" />
+    <!-- kiub berputar — empat muka dashboard -->
+    <div class="cube-stage">
+      <div class="cube">
+
+        <!-- MUKA 1 · DASHBOARD KUTIPAN -->
+        <div class="cube-face f0">
+          <div class="cf-head">
+            <div style="display:flex;align-items:center;gap:10px">
+              <img src="assets/monthley-badge.png" alt=""
+                   style="height:34px;width:34px;border-radius:50%" />
+              <div>
+                <div class="cf-title">Dashboard Kutipan</div>
+                <div class="cf-sub">JMB Serai Wangi</div>
+              </div>
+            </div>
+            <div class="cf-pill" style="color:#16a34a;background:#e7f6ec">● Live</div>
+          </div>
+
+          <div class="cf-grid g2" style="margin-top:18px">
+            <div class="cf-box" style="padding:15px">
+              <div class="cf-box-label">Terkumpul (Ogos)</div>
+              <div class="cf-box-value">RM 3,086</div>
+            </div>
+            <div class="cf-box" style="padding:15px">
+              <div class="cf-box-label">Tunggakan</div>
+              <div class="cf-box-value" style="color:#e0863b">RM 5,906</div>
+            </div>
+          </div>
+
+          <div style="margin-top:16px">
+            <div class="cf-bar-head"><span>Sasaran RM 8,695</span>
+              <b style="color:#16a34a">35%</b></div>
+            <div class="cf-track" style="height:9px">
+              <div class="cf-fill" style="width:35%;background:linear-gradient(90deg,#bcd634,#16a34a)"></div>
+            </div>
+          </div>
+
+          <div style="margin-top:14px;border-top:1px solid #eef2ef;padding-top:11px">
+            <div class="cf-row" style="margin-top:0">
+              <div class="l">
+                <div class="ic" style="background:#e7f6ec">✓</div>
+                <div><div class="t">Unit A-12-03</div><div class="s">Yuran · Ogos</div></div>
+              </div>
+              <div style="font-weight:700;font-size:12.5px;color:#16a34a">Dibayar</div>
+            </div>
+            <div class="cf-row">
+              <div class="l">
+                <div class="ic" style="background:#fdf1e6">!</div>
+                <div><div class="t">Unit B-08-11</div><div class="s">Yuran · Ogos</div></div>
+              </div>
+              <div style="font-weight:700;font-size:12.5px;color:#e0863b">Tertunggak</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MUKA 2 · STATISTIK KUTIPAN -->
+        <div class="cube-face f1">
+          <div class="cf-head">
             <div>
-              <div class="mock-title">Dashboard Kutipan</div>
-              <div class="mock-sub">Persatuan Penduduk Sri Indah</div>
+              <div class="cf-title">Statistik Kutipan</div>
+              <div class="cf-sub">Ogos 2026</div>
+            </div>
+            <div class="cf-pill" style="color:#2a6fdb;background:#e8eefb">📊 9.7%</div>
+          </div>
+
+          <div class="cf-grid g2">
+            <div class="cf-box">
+              <div class="cf-box-label">Invois Dijana</div>
+              <div class="cf-box-value">8,695</div>
+            </div>
+            <div class="cf-box">
+              <div class="cf-box-label">Kutipan Diterima</div>
+              <div class="cf-box-value" style="color:#16a34a">3,086</div>
             </div>
           </div>
-          <span class="live">● Live</span>
-        </div>
 
-        <div class="mock-stats">
-          <div class="mstat">
-            <div class="mstat-label">Terkumpul (Julai)</div>
-            <div class="mstat-value">RM 18,450</div>
-          </div>
-          <div class="mstat">
-            <div class="mstat-label">Tunggakan</div>
-            <div class="mstat-value warn">RM 2,120</div>
-          </div>
-        </div>
-
-        <div class="mock-progress">
-          <div class="mp-head"><span>Kadar kutipan bulan ini</span><span>84%</span></div>
-          <div class="mp-track"><div class="mp-fill"></div></div>
-        </div>
-
-        <div class="mock-rows">
-          <div class="mrow">
-            <div class="mrow-left">
-              <div class="mrow-ic ok">✓</div>
-              <div>
-                <div class="mrow-title">Unit A-12-03</div>
-                <div class="mrow-sub">Yuran Penyelenggaraan · Julai</div>
+          <div class="cf-sec">Jenis Pembayaran Diterima</div>
+          <div class="cf-bars">
+            <div>
+              <div class="cf-bar-head"><span>TRANSFER</span><b>RM 1,369</b></div>
+              <div class="cf-track">
+                <div class="cf-fill" style="width:100%;background:linear-gradient(90deg,#3fae52,#16a34a)"></div>
               </div>
             </div>
-            <span class="mrow-status ok">Dibayar</span>
-          </div>
-          <div class="mrow">
-            <div class="mrow-left">
-              <div class="mrow-ic warn">!</div>
-              <div>
-                <div class="mrow-title">Unit B-08-11</div>
-                <div class="mrow-sub">Yuran Penyelenggaraan · Julai</div>
+            <div>
+              <div class="cf-bar-head"><span>CASH</span><b>RM 917</b></div>
+              <div class="cf-track">
+                <div class="cf-fill" style="width:67%;background:linear-gradient(90deg,#e0a05a,#c26a1f)"></div>
               </div>
             </div>
-            <span class="mrow-status warn">Tertunggak</span>
+            <div>
+              <div class="cf-bar-head"><span>CHEQUE</span><b>RM 800</b></div>
+              <div class="cf-track">
+                <div class="cf-fill" style="width:58%;background:linear-gradient(90deg,#6f9de8,#2a6fdb)"></div>
+              </div>
+            </div>
           </div>
         </div>
+
+        <!-- MUKA 3 · DASHBOARD PERBELANJAAN -->
+        <div class="cube-face f2">
+          <div class="cf-head">
+            <div>
+              <div class="cf-title">Dashboard Perbelanjaan</div>
+              <div class="cf-sub">PV + Tunai Terus</div>
+            </div>
+            <div class="cf-pill" style="color:#c2564c;background:#fdecec">💸 Ogos</div>
+          </div>
+
+          <div class="cf-grid g2">
+            <div class="cf-box" style="border-left:3px solid #16a34a;border-radius:0 14px 14px 0">
+              <div class="cf-box-label">Jumlah Perbelanjaan</div>
+              <div class="cf-box-value">RM 424.63</div>
+            </div>
+            <div class="cf-box" style="border-left:3px solid #7c4dd1;border-radius:0 14px 14px 0">
+              <div class="cf-box-label">Bayaran PV</div>
+              <div class="cf-box-value">RM 374.63</div>
+            </div>
+          </div>
+
+          <div class="cf-sec">Perbelanjaan ikut Kategori</div>
+          <div class="cf-bars">
+            <div class="cf-legend-row">
+              <span class="dot" style="background:#c2564c"></span>
+              <span class="nm">Operasi Pejabat</span><span class="am">RM 200</span>
+              <span class="pc">49%</span>
+            </div>
+            <div class="cf-legend-row">
+              <span class="dot" style="background:#2a6fdb"></span>
+              <span class="nm">Kebajikan &amp; Sumbangan</span><span class="am">RM 100</span>
+              <span class="pc">24%</span>
+            </div>
+            <div class="cf-legend-row">
+              <span class="dot" style="background:#16a34a"></span>
+              <span class="nm">Elaun &amp; Tenaga Kerja</span><span class="am">RM 50</span>
+              <span class="pc">12%</span>
+            </div>
+            <div class="cf-legend-row">
+              <span class="dot" style="background:#e0a05a"></span>
+              <span class="nm">Makanan &amp; Minuman</span><span class="am">RM 40.80</span>
+              <span class="pc">10%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- MUKA 4 · DASHBOARD ADUAN -->
+        <div class="cube-face f3">
+          <div class="cf-head">
+            <div>
+              <div class="cf-title">Dashboard Aduan</div>
+              <div class="cf-sub">32 aduan · Ogos 2026</div>
+            </div>
+            <div class="cf-pill" style="color:#16a34a;background:#e7f6ec">✅ 78%</div>
+          </div>
+
+          <div class="cf-grid g3">
+            <div class="cf-box" style="background:#e8eefb;padding:12px">
+              <div class="cf-box-label">Baru</div>
+              <div class="cf-box-value" style="color:#2a6fdb">3</div>
+            </div>
+            <div class="cf-box" style="background:#fdf1e6;padding:12px">
+              <div class="cf-box-label">Dalam Proses</div>
+              <div class="cf-box-value" style="color:#e0863b">4</div>
+            </div>
+            <div class="cf-box" style="background:#e7f6ec;padding:12px">
+              <div class="cf-box-label">Selesai</div>
+              <div class="cf-box-value" style="color:#16a34a">25</div>
+            </div>
+          </div>
+
+          <div class="cf-sec">Aduan Ikut Kategori</div>
+          <div class="cf-bars">
+            <div>
+              <div class="cf-bar-head"><span>Penyelenggaraan</span><b>12</b></div>
+              <div class="cf-track" style="height:8px">
+                <div class="cf-fill" style="width:100%;background:linear-gradient(90deg,#3fae52,#16a34a)"></div>
+              </div>
+            </div>
+            <div>
+              <div class="cf-bar-head"><span>Pembersihan</span><b>7</b></div>
+              <div class="cf-track" style="height:8px">
+                <div class="cf-fill" style="width:58%;background:linear-gradient(90deg,#8fc740,#5aa93a)"></div>
+              </div>
+            </div>
+            <div>
+              <div class="cf-bar-head"><span>Keselamatan</span><b>5</b></div>
+              <div class="cf-track" style="height:8px">
+                <div class="cf-fill" style="width:42%;background:linear-gradient(90deg,#e0a05a,#c26a1f)"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="cube-legend">
+        Kutipan · Statistik · Perbelanjaan · Aduan
+        <span>— hover untuk jeda</span>
       </div>
     </div>
   </section>
@@ -385,4 +531,69 @@
       </div>
     </div>
   }
+</div>
+
+<!-- ============================================================
+     PEMBANTU MONTHLEY
+
+     Mascot menjadi butang FAQ. Gelembung dan panel tidak muncul serentak
+     — dua kotak hijau bertindih di sudut yang sama.
+     ============================================================ -->
+<div class="mascot-wrap"
+     [style.left.px]="pos().left" [style.bottom.px]="pos().bottom">
+
+  @if (faqOpen()) {
+    <div class="faq-panel">
+      <div class="faq-head">
+        <div>
+          <div class="t">Kenali Monthley</div>
+          <div class="s">Soalan lazim tentang sistem kami</div>
+        </div>
+        <button type="button" title="Tutup" (click)="closeFaq()">✕</button>
+      </div>
+
+      <div class="faq-body">
+        @for (f of faqs; track f.q; let i = $index) {
+          <div class="faq-item">
+            <button type="button" class="faq-q" (click)="toggleFaqItem(i)">
+              <span class="ic">{{ f.icon }}</span>
+              <span class="tx">{{ f.q }}</span>
+              <span class="ch">{{ faqIdx() === i ? '▲' : '▼' }}</span>
+            </button>
+            @if (faqIdx() === i) {
+              <div class="faq-a">{{ f.a }}</div>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="faq-foot">
+        <button type="button" class="pri" (click)="contactOpen.set(true); closeFaq()">
+          Hubungi Kami
+        </button>
+        <button type="button" class="sec" (click)="loginOpen.set(true); closeFaq()">
+          Log Masuk
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (bubbleOpen() && !faqOpen()) {
+    <div class="mascot-bubble">
+      {{ mascotMsg() }}
+      <button type="button" title="Tutup" (click)="hideBubble($event)">×</button>
+    </div>
+  }
+
+  <button type="button" class="mascot-btn"
+          (pointerdown)="mulaSeret($event)"
+          (pointermove)="semasaSeret($event)"
+          (pointerup)="habisSeret($event)"
+          (pointercancel)="habisSeret($event)"
+          [attr.aria-label]="faqOpen() ? 'Tutup soalan lazim' : 'Buka soalan lazim'"
+          title="Klik untuk FAQ · seret untuk alih">
+    <img src="assets/mascot-hijab.png" alt="Pembantu Monthley" class="mascot-img"
+         draggable="false" />
+    <span class="mascot-badge">FAQ</span>
+  </button>
 </div>
