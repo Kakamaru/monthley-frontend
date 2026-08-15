@@ -127,6 +127,31 @@ export class AccountsService {
     });
   }
 
+  /** Bil tertunggak untuk bayaran dalam talian. */
+  onlineOutstanding(accountId: number): Observable<OnlineOutstanding[]> {
+    return this.http.get<OnlineOutstanding[]>(
+      '/api/v1/payments/online/outstanding',
+      { params: new HttpParams().set('accountId', String(accountId)) });
+  }
+
+  /**
+   * Mulakan bayaran — memulangkan URL gerbang.
+   *
+   * Bentuk sama seperti Manual Payment: invois dipilih + amaun. Amaun
+   * boleh kurang daripada baki (bayaran separa) atau lebih (lebihan
+   * menjadi advance).
+   */
+  startOnlinePayment(accountId: number, documentIds: number[], amount: number)
+      : Observable<PaymentStarted> {
+    return this.http.post<PaymentStarted>('/api/v1/payments/online/start',
+      { accountId, documentIds, amount });
+  }
+
+  /** Status selepas pelanggan kembali dari gerbang. */
+  onlinePaymentStatus(ourRef: string): Observable<PaymentStatus> {
+    return this.http.get<PaymentStatus>(`/api/v1/payments/online/status/${ourRef}`);
+  }
+
   myStatementPdf(accountId: number, year: number | null): Observable<HttpResponse<Blob>> {
     let params = new HttpParams();
     if (year != null) params = params.set('year', String(year));
@@ -286,4 +311,23 @@ export interface AdjInvoiceOption {
    * invois apa, dan penyata di sebelahnya menamakannya.
    */
   description: string | null;
+}
+
+
+// ---------------------------------------------------------------------------
+// Bayaran dalam talian
+// ---------------------------------------------------------------------------
+
+export interface OnlineOutstanding {
+  documentId: number; docNo: string; period: string | null;
+  dueDate: string | null; total: number; balance: number; overdue: boolean;
+}
+
+export interface PaymentStarted {
+  ourRef: string; billCode: string; paymentUrl: string; amount: number;
+}
+
+export interface PaymentStatus {
+  status: string; amount: number; paidAmount: number | null;
+  gatewayRef: string | null; paymentId: number | null;
 }

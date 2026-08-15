@@ -1,8 +1,9 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
-import { AccountsService, MyAccountRow, HistoryRow, HistoryResponse } from '../accounts/accounts.service';
+import { AccountsService, MyAccountRow, HistoryRow, HistoryResponse, OnlineOutstanding } from '../accounts/accounts.service';
 
 @Component({
   selector: 'app-my-accounts',
@@ -10,6 +11,21 @@ import { AccountsService, MyAccountRow, HistoryRow, HistoryResponse } from '../a
   imports: [CommonModule, FormsModule],
   template: `
     <div class="m-fade">
+      <!-- ===== HASIL BAYARAN (selepas kembali dari gerbang) ===== -->
+@if (payResult(); as pr) {
+  <div class="pay-result" [class.bad]="!pr.ok">
+    <div class="pay-result-ic">{{ pr.ok ? '✓' : '!' }}</div>
+    <div class="pay-result-main">
+      <div class="pay-result-title">
+        {{ pr.ok ? 'Bayaran Diterima' : 'Bayaran Gagal' }}
+        @if (pr.amount) { <span class="pay-result-amt">MYR {{ pr.amount | number:'1.2-2' }}</span> }
+      </div>
+      <div class="pay-result-msg">{{ pr.msg }}</div>
+    </div>
+    <button type="button" class="pay-result-x" (click)="tutupHasil()">&times;</button>
+  </div>
+}
+
       @if (!auth.hasAccounts()) {
         <div class="empty-card" data-card>
           <div class="empty-ic">📭</div>
@@ -145,8 +161,189 @@ import { AccountsService, MyAccountRow, HistoryRow, HistoryResponse } from '../a
         </div>
       }
     </div>
+<!-- ===== BAYARAN DALAM TALIAN ===== -->
+@if (payOpen()) {
+  <div class="pay-ov" (click)="closePay()">
+    <div class="pay-modal" (click)="$event.stopPropagation()">
+      <div class="pay-head">
+        <div>
+          <div class="pay-title">Bayar Bil</div>
+          <div class="pay-sub">{{ payAccount()?.accountNo }} — {{ payAccount()?.accountName }}</div>
+        </div>
+        <button type="button" class="pay-x" (click)="closePay()">×</button>
+      </div>
+
+      @if (payError()) { <div class="pay-err">{{ payError() }}</div> }
+
+      @if (billsLoading()) {
+        <div class="pay-empty">Memuatkan bil…</div>
+      } @else if (!bills().length) {
+        <div class="pay-empty">Tiada bil tertunggak. 🎉</div>
+      } @else {
+        <div class="pay-tools">
+          <button type="button" class="pay-link" (click)="pickAll()">
+            {{ picked().size === bills().length ? 'Nyahtanda semua' : 'Tanda semua' }}
+          </button>
+          <span class="pay-count">{{ picked().size }} / {{ bills().length }} dipilih</span>
+        </div>
+
+        <div class="pay-list">
+          @for (b of bills(); track b.documentId) {
+            <label class="pay-row" [class.on]="picked().has(b.documentId)">
+              <input type="checkbox" [checked]="picked().has(b.documentId)"
+                     (change)="togglePick(b.documentId)" />
+              <div class="pay-row-main">
+                <div class="pay-row-no">{{ b.docNo }}</div>
+                <div class="pay-row-sub">
+                  {{ b.period || '—' }}
+                  @if (b.dueDate) {
+                    · <span [class.pay-late]="b.overdue">
+                        {{ b.dueDate | date:'dd/MM/yyyy' }}
+                      </span>
+                  }
+                </div>
+              </div>
+              <div class="pay-row-amt">MYR {{ b.balance | number:'1.2-2' }}</div>
+            </label>
+          }
+        </div>
+
+        <div class="pay-amt-box">
+          <label class="pay-amt-lbl">Amaun Bayaran (MYR)</label>
+          <input class="pay-amt-inp" type="number" step="0.01" min="0.01"
+                 [(ngModel)]="payAmount" />
+          <p class="pay-note">
+            Jumlah bil dipilih: <b>MYR {{ pickedTotal() | number:'1.2-2' }}</b>.
+            Bayar kurang untuk bayaran sebahagian, atau lebih — lebihan menjadi
+            kredit untuk bil akan datang.
+          </p>
+        </div>
+
+        <div class="pay-foot">
+          <button type="button" class="pay-cancel" (click)="closePay()">Batal</button>
+          <button type="button" class="pay-go" [disabled]="payBusy()" (click)="submitPay()">
+            {{ payBusy() ? 'Menghubungkan…' : 'Bayar MYR ' + (payAmount | number:'1.2-2') + ' →' }}
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+}
+
   `,
   styles: [`
+    /* ===== Sepanduk hasil bayaran ===== */
+    .pay-result {
+      display: flex; align-items: flex-start; gap: 14px;
+      margin: 0 0 18px; padding: 16px 18px;
+      background: #e7f6ec; border: 1.5px solid #b6e3c6; border-radius: 14px;
+      animation: payPop .35s ease;
+    }
+    .pay-result.bad { background: #fdecec; border-color: #f3c9c9; }
+    @keyframes payPop {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .pay-result-ic {
+      width: 34px; height: 34px; flex: none; border-radius: 50%;
+      background: #16a34a; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 17px;
+    }
+    .pay-result.bad .pay-result-ic { background: #c2564c; }
+    .pay-result-main { flex: 1; min-width: 0; }
+    .pay-result-title {
+      font-family: 'Sora', sans-serif; font-weight: 800; font-size: 15.5px;
+      color: #122029; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .pay-result-amt { font-size: 15px; color: #16a34a; }
+    .pay-result.bad .pay-result-amt { color: #c2564c; }
+    .pay-result-msg { font-size: 13.5px; color: #3a4c53; margin-top: 3px; }
+    .pay-result-x {
+      border: none; background: transparent; font-size: 20px; line-height: 1;
+      cursor: pointer; color: #6b7f86; flex: none;
+    }
+
+    /* ===== Modal bayaran dalam talian ===== */
+    .pay-ov {
+      position: fixed; inset: 0; z-index: 300;
+      background: rgba(9,20,26,.55);
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    .pay-modal {
+      background: #fff; border-radius: 18px; width: 100%; max-width: 520px;
+      max-height: 88vh; display: flex; flex-direction: column; overflow: hidden;
+      box-shadow: 0 30px 70px rgba(9,20,26,.4);
+    }
+    .pay-head {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 12px; padding: 20px 22px; border-bottom: 1px solid #eef2ef;
+    }
+    .pay-title { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 18px; color: #122029; }
+    .pay-sub   { font-size: 13px; color: #6b7f86; margin-top: 2px; }
+    .pay-x {
+      border: none; background: #f1f5f2; width: 30px; height: 30px; border-radius: 9px;
+      font-size: 17px; line-height: 1; cursor: pointer; color: #3a4c53; flex: none;
+    }
+    .pay-err {
+      margin: 14px 22px 0; padding: 11px 13px; border-radius: 10px;
+      background: #fdecec; color: #b0151e; font-size: 13.5px;
+    }
+    .pay-empty { padding: 40px 22px; text-align: center; color: #94a3a9; font-size: 14px; }
+    .pay-tools {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 22px 8px;
+    }
+    .pay-link {
+      border: none; background: none; padding: 0; cursor: pointer;
+      font-size: 13.5px; font-weight: 700; color: #16a34a;
+    }
+    .pay-count { font-size: 12.5px; color: #94a3a9; }
+
+    .pay-list { flex: 1; min-height: 0; overflow-y: auto; padding: 0 22px; }
+    .pay-row {
+      display: flex; align-items: center; gap: 12px; cursor: pointer;
+      padding: 12px 13px; margin-bottom: 8px;
+      border: 1.5px solid #e6ebe7; border-radius: 12px; background: #fff;
+    }
+    .pay-row.on { border-color: #16a34a; background: #f4fbf6; }
+    .pay-row input { width: 17px; height: 17px; flex: none; accent-color: #16a34a; }
+    .pay-row-main { flex: 1; min-width: 0; }
+    .pay-row-no   { font-weight: 700; font-size: 14px; color: #122029; }
+    .pay-row-sub  { font-size: 12px; color: #6b7f86; margin-top: 2px; }
+    .pay-late     { color: #c2564c; font-weight: 700; }
+    .pay-row-amt  {
+      font-family: 'Sora', sans-serif; font-weight: 800; font-size: 14.5px;
+      color: #122029; white-space: nowrap;
+    }
+
+    .pay-amt-box { padding: 14px 22px 4px; border-top: 1px solid #eef2ef; margin-top: 8px; }
+    .pay-amt-lbl {
+      display: block; font-size: 12.5px; font-weight: 700; color: #3a4c53;
+      margin-bottom: 6px;
+    }
+    .pay-amt-inp {
+      width: 100%; padding: 12px 14px; border: 1.5px solid #dbe3de; border-radius: 11px;
+      font-family: 'Sora', sans-serif; font-weight: 800; font-size: 17px; color: #122029;
+      box-sizing: border-box;
+    }
+    .pay-amt-inp:focus { outline: none; border-color: #16a34a; }
+    .pay-note { font-size: 12px; color: #6b7f86; line-height: 1.55; margin: 8px 0 0; }
+
+    .pay-foot { display: flex; gap: 10px; padding: 16px 22px 20px; }
+    .pay-cancel, .pay-go {
+      flex: 1; padding: 13px; border-radius: 12px; cursor: pointer;
+      font-family: 'Sora', sans-serif; font-weight: 700; font-size: 14px;
+    }
+    .pay-cancel { background: #fff; color: #3a4c53; border: 1.5px solid #dbe3de; }
+    .pay-go     { background: #16a34a; color: #fff; border: none; flex: 1.6; }
+    .pay-go:disabled { opacity: .5; cursor: default; }
+
+    @media (max-width: 560px) {
+      .pay-ov { padding: 0; align-items: flex-end; }
+      .pay-modal { max-width: none; border-radius: 18px 18px 0 0; max-height: 92vh; }
+    }
+
     :host { display: block; }
     .empty-card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px;
       padding: 56px 40px; text-align: center; max-width: 560px; margin: 24px auto 0; }
@@ -250,6 +447,8 @@ import { AccountsService, MyAccountRow, HistoryRow, HistoryResponse } from '../a
 export class MyAccountsComponent implements OnInit {
   readonly auth = inject(AuthService);
   private api = inject(AccountsService);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
 
   readonly rows = signal<MyAccountRow[]>([]);
   readonly loading = signal(false);
@@ -303,6 +502,7 @@ export class MyAccountsComponent implements OnInit {
 
   ngOnInit() {
     if (!this.auth.hasAccounts()) return;
+    this.semakBayaran();
     this.loading.set(true);
     this.api.myAccounts().subscribe({
       next: r => { this.rows.set(r); this.loading.set(false); },
@@ -405,7 +605,160 @@ export class MyAccountsComponent implements OnInit {
     });
   }
 
-  pay(a: MyAccountRow) { /* TODO: FPX bayar akaun */ }
+  // ---------- Kembali dari gerbang ----------
+
+  /**
+   * Hasil bayaran selepas pelanggan kembali.
+   *
+   * Tanpa ini, pelanggan mendarat di skrin yang kelihatan sama seperti
+   * sebelum membayar — resit ada dalam sejarah di bawah, tetapi mereka
+   * perlu menatal untuk mencarinya. Pelanggan yang tidak pasti akan
+   * membayar sekali lagi.
+   *
+   * Status datang daripada BACKEND, bukan daripada parameter URL: apa-apa
+   * dalam URL boleh ditaip semula oleh sesiapa.
+   */
+  readonly payResult = signal<{ ok: boolean; msg: string; amount?: number } | null>(null);
+
+  private semakBayaran() {
+    // Dibaca daripada window.location, bukan ActivatedRoute.snapshot.
+    // Komponen dimuatkan secara lazy melalui laluan bersarang, dan
+    // snapshot pada peringkat itu belum tentu membawa query param
+    // induk — ia kosong, dan semakan keluar senyap.
+    const ref = new URLSearchParams(window.location.search).get('bayar');
+    if (!ref) return;
+
+    this.api.onlinePaymentStatus(ref).subscribe({
+      next: st => {
+        if (st.status === 'SUCCESS') {
+          this.payResult.set({
+            ok: true,
+            msg: 'Bayaran berjaya diterima. Resit telah dijana.',
+            amount: st.paidAmount ?? st.amount
+          });
+          // Muat semula akaun SAHAJA — memanggil ngOnInit() di sini
+          // ialah gelung, kerana ngOnInit memanggil semakBayaran().
+          this.api.myAccounts().subscribe({
+            next: r => this.rows.set(r),
+            error: () => { /* baki kekal lama; sepanduk sudah dipapar */ }
+          });
+        } else if (st.status === 'FAILED') {
+          this.payResult.set({ ok: false, msg: 'Bayaran tidak berjaya. Sila cuba lagi.' });
+        } else {
+          // PENDING bermakna callback belum tiba. Ia biasanya tiba dalam
+          // satu saat, tetapi pelanggan boleh kembali lebih pantas.
+          this.payResult.set({
+            ok: true,
+            msg: 'Bayaran sedang diproses. Resit akan muncul sebentar lagi.'
+          });
+          setTimeout(() => this.semakBayaran(), 4000);
+        }
+      },
+      error: () => { /* rujukan tidak dikenali — abaikan senyap */ }
+    });
+  }
+
+  tutupHasil() {
+    this.payResult.set(null);
+    this.router.navigate([], { queryParams: {} });
+  }
+
+  // ---------- Bayaran dalam talian ----------
+
+  readonly payOpen = signal(false);
+  readonly payAccount = signal<MyAccountRow | null>(null);
+  readonly bills = signal<OnlineOutstanding[]>([]);
+  readonly billsLoading = signal(false);
+  readonly payBusy = signal(false);
+  readonly payError = signal<string | null>(null);
+
+  /** documentId yang ditanda. */
+  readonly picked = signal<Set<number>>(new Set());
+
+  /**
+   * Amaun yang pelanggan hendak bayar.
+   *
+   * Lalai kepada jumlah bil yang ditanda, tetapi boleh diubah — kurang
+   * untuk bayaran separa, lebih untuk membayar awal (lebihan menjadi
+   * advance dan di-knock pada bil seterusnya).
+   */
+  payAmount = 0;
+
+  readonly pickedTotal = computed(() =>
+    this.bills()
+        .filter(b => this.picked().has(b.documentId))
+        .reduce((t, b) => t + b.balance, 0));
+
+  pay(a: MyAccountRow) {
+    this.payAccount.set(a);
+    this.bills.set([]);
+    this.picked.set(new Set());
+    this.payAmount = 0;
+    this.payError.set(null);
+    this.payOpen.set(true);
+    this.billsLoading.set(true);
+
+    this.api.onlineOutstanding(a.id).subscribe({
+      next: b => {
+        this.bills.set(b);
+        // Semua ditanda secara lalai — kes biasa ialah membayar segalanya,
+        // dan menyahtanda lebih mudah daripada menanda satu per satu.
+        this.picked.set(new Set(b.map(x => x.documentId)));
+        this.payAmount = b.reduce((t, x) => t + x.balance, 0);
+        this.billsLoading.set(false);
+      },
+      error: e => {
+        this.payError.set(e?.error?.message ?? 'Gagal memuatkan bil.');
+        this.billsLoading.set(false);
+      }
+    });
+  }
+
+  closePay() { this.payOpen.set(false); }
+
+  togglePick(id: number) {
+    const set = new Set(this.picked());
+    if (set.has(id)) set.delete(id); else set.add(id);
+    this.picked.set(set);
+    this.payAmount = this.pickedTotal();
+  }
+
+  pickAll() {
+    const semua = this.picked().size === this.bills().length;
+    this.picked.set(semua ? new Set() : new Set(this.bills().map(b => b.documentId)));
+    this.payAmount = this.pickedTotal();
+  }
+
+  /**
+   * Hantar ke gerbang.
+   *
+   * Resit TIDAK dicipta di sini — ia dicipta oleh callback server-ke-server,
+   * yang tiba walaupun pelanggan menutup tab selepas membayar.
+   */
+  submitPay() {
+    const a = this.payAccount();
+    if (!a) return;
+
+    const ids = [...this.picked()];
+    if (!ids.length) { this.payError.set('Pilih sekurang-kurangnya satu bil.'); return; }
+
+    const amt = Number(this.payAmount);
+    if (!amt || amt <= 0) { this.payError.set('Masukkan amaun bayaran.'); return; }
+
+    this.payBusy.set(true);
+    this.payError.set(null);
+
+    this.api.startOnlinePayment(a.id, ids, amt).subscribe({
+      next: r => {
+        try { sessionStorage.setItem('monthley.pay.ref', r.ourRef); } catch { /* abaikan */ }
+        window.location.href = r.paymentUrl;
+      },
+      error: e => {
+        this.payBusy.set(false);
+        this.payError.set(e?.error?.message ?? 'Gagal memulakan bayaran.');
+      }
+    });
+  }
   payAll() { /* TODO: FPX bayar semua */ }
   subscribe() { /* TODO: modal langgan akaun */ }
 }
