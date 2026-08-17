@@ -1,0 +1,172 @@
+<div class="gw-wrap">
+  <div class="gw-head">
+    <div>
+      <h1>Tetapan Gerbang Bayaran</h1>
+      <p>Kelayakan gerbang, model yuran, dan had bayaran untuk setiap SP.</p>
+    </div>
+  </div>
+
+  <div class="gw-note">
+    SP <b>tidak melihat</b> skrin ini dan tidak tahu gerbang mana yang digunakan.
+    Kunci rahsia milik Rapidevelop dan tidak pernah dipaparkan semula selepas
+    disimpan.
+  </div>
+
+  @if (error() && !editOpen()) { <div class="gw-alert">{{ error() }}</div> }
+  @if (ok()) { <div class="gw-ok">{{ ok() }}</div> }
+
+  @if (loading()) {
+    <div class="gw-empty">Memuatkan…</div>
+  } @else if (!rows().length) {
+    <div class="gw-empty">Tiada SP.</div>
+  } @else {
+    <div class="gw-table">
+      <div class="gw-tr gw-th">
+        <span>SP</span>
+        <span>Gerbang</span>
+        <span>Kunci</span>
+        <span>Mod</span>
+        <span>Online</span>
+        <span>Yuran</span>
+        <span>Ditanggung</span>
+        <span></span>
+      </div>
+
+      @for (r of rows(); track r.spCode) {
+        <div class="gw-tr">
+          <span>
+            <b>{{ r.spCode }}</b>
+            <div class="gw-sub">{{ r.spName }}</div>
+          </span>
+          <span>{{ labelGateway(r.gateway) }}</span>
+          <span>
+            @if (r.keySet) {
+              <span class="gw-chip ok">Ditetapkan</span>
+            } @else {
+              <span class="gw-chip warn">Belum</span>
+            }
+          </span>
+          <span>
+            <span class="gw-chip" [class.warn]="r.sandbox" [class.ok]="!r.sandbox">
+              {{ r.sandbox ? 'Sandbox' : 'Live' }}
+            </span>
+          </span>
+          <span>
+            <span class="gw-chip" [class.ok]="r.onlinePayment" [class.off]="!r.onlinePayment">
+              {{ r.onlinePayment ? 'Aktif' : 'Tutup' }}
+            </span>
+          </span>
+          <span class="gw-rate">
+            1 bil: <b>{{ r.rateSingle ?? 0 | number:'1.2-2' }}</b><br />
+            &gt;1 bil: <b>{{ r.rateMulti ?? 0 | number:'1.2-2' }}</b>
+          </span>
+          <span>
+            <span class="gw-chip" [class.ok]="r.absorb" [class.warn]="!r.absorb">
+              {{ r.absorb ? 'SP serap' : 'Pelanggan' }}
+            </span>
+          </span>
+          <span class="gw-act">
+            <button class="gw-btn" (click)="openEdit(r)">Edit</button>
+          </span>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+<!-- ===== MODAL ===== -->
+@if (editOpen()) {
+  <div class="gw-ov" (click)="close()">
+    <div class="gw-modal" (click)="$event.stopPropagation()">
+      <div class="gw-modal-head">
+        <div>
+          <div class="gw-modal-title">{{ editing()?.spName }}</div>
+          <div class="gw-sub">{{ editing()?.spCode }}</div>
+        </div>
+        <button class="gw-x" (click)="close()">&times;</button>
+      </div>
+
+      @if (error()) { <div class="gw-alert">{{ error() }}</div> }
+
+      <div class="gw-body">
+        <h4>Kelayakan Gerbang</h4>
+
+        <label class="gw-lbl">Gerbang</label>
+        <select class="gw-fld" [(ngModel)]="fGateway">
+          <option value="TP">ToyyibPay</option>
+          <option value="MP">MonthleyPay</option>
+        </select>
+
+        <label class="gw-lbl">
+          Kunci Rahsia
+          @if (editing()?.keySet) {
+            <span class="gw-hint">— sudah ditetapkan; biarkan kosong untuk kekalkan</span>
+          }
+        </label>
+        <input class="gw-fld" type="password" [(ngModel)]="fSecretKey"
+               [placeholder]="editing()?.keySet ? '••••••••  (tidak berubah)' : 'Kunci rahsia gerbang'" />
+
+        <label class="gw-lbl">{{ labelKod() }}</label>
+        <input class="gw-fld" [(ngModel)]="fCategoryCode"
+               [placeholder]="hintKod()" />
+
+        <div class="gw-row">
+          <label class="gw-check">
+            <input type="checkbox" [(ngModel)]="fSandbox" />
+            Mod sandbox
+          </label>
+          <label class="gw-check">
+            <input type="checkbox" [(ngModel)]="fOnline" />
+            Bayaran online aktif
+          </label>
+        </div>
+
+        <p class="gw-warn">
+          Mod sandbox menggunakan hos ujian gerbang. Kunci pengeluaran tidak
+          berfungsi dalam sandbox, dan sebaliknya.
+        </p>
+
+        <h4 style="margin-top:22px">Model Yuran</h4>
+
+        <label class="gw-check gw-absorb">
+          <input type="checkbox" [(ngModel)]="fAbsorb" />
+          <span>
+            <b>SP menyerap yuran</b>
+            <div class="gw-sub">
+              Ditanda: pelanggan bayar amaun invois sahaja, SP terima kurang yuran.<br />
+              Tidak ditanda: yuran ditambah kepada bayaran pelanggan.
+            </div>
+          </span>
+        </label>
+
+        <div class="gw-row">
+          <div style="flex:1">
+            <label class="gw-lbl">Yuran — satu bil (MYR)</label>
+            <input class="gw-fld" type="number" step="0.01" min="0"
+                   [(ngModel)]="fRateSingle" />
+          </div>
+          <div style="flex:1">
+            <label class="gw-lbl">Yuran — pelbagai bil (MYR)</label>
+            <input class="gw-fld" type="number" step="0.01" min="0"
+                   [(ngModel)]="fRateMulti" />
+          </div>
+        </div>
+
+        <label class="gw-lbl">Bayaran minimum (MYR)</label>
+        <input class="gw-fld" type="number" step="0.01" min="0"
+               [(ngModel)]="fMinAmount" placeholder="kosong = tiada minimum" />
+        <p class="gw-hint2">
+          Gerbang mengenakan yuran tetap pada setiap transaksi, jadi bayaran
+          yang terlalu kecil kos lebih daripada nilainya.
+        </p>
+      </div>
+
+      <div class="gw-foot">
+        <button class="gw-btn ghost" (click)="close()">Batal</button>
+        <button class="gw-btn pri" [disabled]="saving()" (click)="save()">
+          {{ saving() ? 'Menyimpan…' : 'Simpan' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

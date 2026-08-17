@@ -203,6 +203,13 @@ export const routes: Routes = [
         path: 'users',
         loadComponent: () =>
           import('./features/platform/users.component').then(m => m.PlatformUsersComponent)
+      },
+      {
+        // Guard sudah di peringkat induk 'platform'.
+        path: 'gateway',
+        loadComponent: () =>
+          import('./features/platform/gateway-settings.component')
+            .then(m => m.GatewaySettingsComponent)
       }
     ]
   },
