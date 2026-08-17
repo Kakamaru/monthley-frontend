@@ -102,6 +102,26 @@ export class PortalShellComponent {
   readonly aduOpen = signal(false);
   toggleAdu() { this.aduOpen.set(!this.aduOpen()); }
 
+  /**
+   * Pengurusan Pelajar — modul sektor pendidikan.
+   *
+   * Ditawarkan kepada EDU sahaja (ref_module.business_types), jadi JMB
+   * tidak akan melihat kumpulan ini langsung.
+   */
+  readonly navStudents: NavItem[] = [
+    { id: 'stuDash',   icon: '📊', label: 'Dashboard Pelajar', route: '/portal/students/dashboard' },
+    { id: 'stuList',   icon: '🎓', label: 'Senarai Pelajar',   route: '/portal/students/list' },
+    { id: 'stuClass',  icon: '🏫', label: 'Kelas & Darjah',    route: '/portal/students/classes' },
+    { id: 'stuAttend', icon: '✅', label: 'Kehadiran',         route: '/portal/students/attendance' },
+    { id: 'stuAssess', icon: '📝', label: 'Penilaian (PBD)',   route: '/portal/students/assessment' }
+  ];
+
+  readonly visibleStudents = computed(() =>
+    this.navStudents.filter(it => this.bolehLihat(it)));
+
+  readonly stuOpen = signal(false);
+  toggleStu() { this.stuOpen.set(!this.stuOpen()); }
+
   /** Memo — satu skrin sahaja, tetapi kumpulan sendiri untuk konsisten. */
   readonly navMemo: NavItem[] = [
     { id: 'memoList', icon: '📝', label: 'Memo & Pengumuman', route: '/portal/memos', roles: ['SP_ADMIN'] }

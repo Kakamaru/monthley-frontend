@@ -111,6 +111,40 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/complaints/complaint-list.component').then(m => m.ComplaintListComponent)
       },
+
+      // ----- Pengurusan Pelajar (EDU) — MOCKUP -----
+      // Tiada guard modul lagi: skrin ini data contoh sahaja, jadi tiada
+      // apa untuk dilindungi. Guard ditambah bersama backend.
+      {
+        path: 'students/dashboard',
+        loadComponent: () =>
+          import('./features/students/student-dashboard.component')
+            .then(m => m.StudentDashboardComponent)
+      },
+      {
+        path: 'students/list',
+        loadComponent: () =>
+          import('./features/students/student-list.component')
+            .then(m => m.StudentListComponent)
+      },
+      {
+        path: 'students/classes',
+        loadComponent: () =>
+          import('./features/students/student-classes.component')
+            .then(m => m.StudentClassesComponent)
+      },
+      {
+        path: 'students/attendance',
+        loadComponent: () =>
+          import('./features/students/student-attendance.component')
+            .then(m => m.StudentAttendanceComponent)
+      },
+      {
+        path: 'students/assessment',
+        loadComponent: () =>
+          import('./features/students/student-assessment.component')
+            .then(m => m.StudentAssessmentComponent)
+      },
       {
         path: 'expenses/dashboard',
         loadComponent: () =>
