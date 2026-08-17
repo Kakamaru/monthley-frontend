@@ -96,8 +96,8 @@
 
 <!-- ===== MODAL: TUKAR KATA LALUAN ===== -->
 @if (pwdTarget(); as u) {
-  <div class="m-backdrop" (click)="pwdTarget.set(null)">
-    <div class="m-modal" (click)="$event.stopPropagation()">
+  <div class="m-backdrop">
+    <div class="m-modal" >
       <div class="m-modal-head">
         <h3>Tukar Kata Laluan</h3>
         <button class="m-close" (click)="pwdTarget.set(null)">✕</button>

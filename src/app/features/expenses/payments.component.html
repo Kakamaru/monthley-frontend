@@ -89,8 +89,8 @@
 
 <!-- ===== PILIH INVOIS ===== -->
 @if (chooserOpen()) {
-  <div class="ov show exp-module exp-ov" (click)="closeChooser()">
-    <div class="modal" style="max-width:560px" (click)="$event.stopPropagation()">
+  <div class="ov show exp-module exp-ov">
+    <div class="modal" style="max-width:560px" >
       <div class="modal-head">
         <h2>Pilih Invois untuk Bayar</h2>
         <button type="button" class="mclose" (click)="closeChooser()">×</button>
@@ -128,8 +128,8 @@
 
 <!-- ===== BAYAR ===== -->
 @if (payOpen()) {
-  <div class="ov show exp-module exp-ov" (click)="closePay()">
-    <div class="modal" style="max-width:500px" (click)="$event.stopPropagation()">
+  <div class="ov show exp-module exp-ov">
+    <div class="modal" style="max-width:500px" >
       <div class="modal-head">
         <h2>Rekod Bayaran</h2>
         <button type="button" class="mclose" (click)="closePay()">×</button>

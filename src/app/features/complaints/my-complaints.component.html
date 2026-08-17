@@ -86,8 +86,8 @@
 
 <!-- ===== BUAT ADUAN ===== -->
 @if (newOpen()) {
-  <div class="ov show adu-module adu-ov" (click)="closeNew()">
-    <div class="modal" style="max-width:520px" (click)="$event.stopPropagation()">
+  <div class="ov show adu-module adu-ov">
+    <div class="modal" style="max-width:520px" >
       <div class="modal-head">
         <h2>Buat Aduan</h2>
         <button type="button" class="mclose" (click)="closeNew()">×</button>
@@ -145,8 +145,8 @@
 
 <!-- ===== DETAIL ===== -->
 @if (detailOpen()) {
-  <div class="ov show adu-module adu-ov" (click)="closeDetail()">
-    <div class="modal" style="max-width:600px" (click)="$event.stopPropagation()">
+  <div class="ov show adu-module adu-ov">
+    <div class="modal" style="max-width:600px" >
       @if (!detail()) {
         <div class="loading">Memuatkan…</div>
       } @else {

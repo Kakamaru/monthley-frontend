@@ -103,8 +103,8 @@
 
 <!-- ===== DAFTAR INVOIS ===== -->
 @if (formOpen()) {
-  <div class="ov show exp-module exp-ov" (click)="closeForm()">
-    <div class="modal" (click)="$event.stopPropagation()">
+  <div class="ov show exp-module exp-ov">
+    <div class="modal" >
       <div class="modal-head">
         <h2>Daftar Invois</h2>
         <button type="button" class="mclose" (click)="closeForm()">×</button>
@@ -201,8 +201,8 @@
 
 <!-- ===== LIHAT INVOIS ===== -->
 @if (viewOpen()) {
-  <div class="ov show exp-module exp-ov" (click)="closeView()">
-    <div class="modal" style="max-width:620px" (click)="$event.stopPropagation()">
+  <div class="ov show exp-module exp-ov">
+    <div class="modal" style="max-width:620px" >
       @if (!detail()) {
         <div class="loading">Memuatkan…</div>
       } @else {
@@ -252,8 +252,8 @@
 
 <!-- ===== BAYAR ===== -->
 @if (payOpen()) {
-  <div class="ov show exp-module exp-ov" (click)="closePay()">
-    <div class="modal" style="max-width:480px" (click)="$event.stopPropagation()">
+  <div class="ov show exp-module exp-ov">
+    <div class="modal" style="max-width:480px" >
       <div class="modal-head">
         <h2>Bayar Invois</h2>
         <button type="button" class="mclose" (click)="closePay()">×</button>

@@ -131,8 +131,8 @@
 
 <!-- ===== MODAL BALAS ===== -->
 @if (replyOpen()) {
-  <div class="ov show adu-module adu-ov" (click)="closeReply()">
-    <div class="modal" style="max-width:1000px" (click)="$event.stopPropagation()">
+  <div class="ov show adu-module adu-ov">
+    <div class="modal" style="max-width:1000px" >
       @if (!detail()) {
         <div class="loading">Memuatkan…</div>
       } @else {
@@ -285,8 +285,8 @@
 
 <!-- ===== MODAL REKOD ADUAN (KERANI) ===== -->
 @if (newOpen()) {
-  <div class="ov show adu-module adu-ov" (click)="closeNew()">
-    <div class="modal" style="max-width:600px" (click)="$event.stopPropagation()">
+  <div class="ov show adu-module adu-ov">
+    <div class="modal" style="max-width:600px" >
       <div class="modal-head">
         <h2>Rekod Aduan</h2>
         <button type="button" class="mclose" (click)="closeNew()">×</button>

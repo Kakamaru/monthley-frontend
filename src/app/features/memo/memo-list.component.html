@@ -125,8 +125,8 @@
 
 <!-- ===== MODAL ===== -->
 @if (formOpen()) {
-  <div class="ov show adu-module adu-ov" (click)="close()">
-    <div class="modal" style="max-width:560px" (click)="$event.stopPropagation()">
+  <div class="ov show adu-module adu-ov">
+    <div class="modal" style="max-width:560px" >
       <div class="modal-head">
         <h2>{{ editing() ? 'Kemaskini Memo' : 'Cipta Memo' }}</h2>
         <button type="button" class="mclose" (click)="close()">×</button>
@@ -175,8 +175,8 @@
 
 <!-- ===== BACA PENUH ===== -->
 @if (readOpen(); as m) {
-  <div class="ov show adu-module adu-ov" (click)="readOpen.set(null)">
-    <div class="modal" style="max-width:720px" (click)="$event.stopPropagation()">
+  <div class="ov show adu-module adu-ov">
+    <div class="modal" style="max-width:720px" >
       <div class="modal-head" style="align-items:flex-start">
         <div>
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">

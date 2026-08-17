@@ -290,6 +290,39 @@ export class LandingComponent {
   // borang daftar
   rName = ''; rEmail = ''; rMobile = ''; rPassword = '';
 
+  /**
+   * Kata laluan boleh dilihat.
+   *
+   * Pendaftaran hanya meminta kata laluan SEKALI — tiada medan sahkan —
+   * jadi tersalah taip tidak akan ditangkap sehingga log masuk pertama
+   * gagal. Membenarkan pengguna melihat apa yang ditaip menggantikan
+   * medan kedua itu.
+   */
+  readonly showLoginPw = signal(false);
+  readonly showRegPw = signal(false);
+
+  /**
+   * Nombor telefon Malaysia.
+   *
+   * Menerima 9-11 digit dengan pemisah pilihan: 0123456789,
+   * 012-345 6789, +60123456789. Disimpan sebagai digit sahaja.
+   *
+   * Sebelum ini medan menerima apa-apa teks — '0189898jhjgu7878' lulus,
+   * dan nombor itu hanya ditemui rosak apabila SMS atau WhatsApp gagal
+   * dihantar berbulan kemudian.
+   */
+  private static readonly TEL = /^(?:\+?60|0)[0-9]{8,10}$/;
+
+  telefonSah(v: string): boolean {
+    const bersih = (v || '').replace(/[\s()-]/g, '');
+    return LandingComponent.TEL.test(bersih);
+  }
+
+  /** Buang pemisah supaya yang disimpan konsisten. */
+  private telefonBersih(v: string): string {
+    return (v || '').replace(/[\s()-]/g, '');
+  }
+
   // borang hubungi
   cName = ''; cEmail = ''; cPhone = ''; cOrg = '';
   cSubject = 'Nak mula guna Monthley'; cMessage = '';
@@ -336,11 +369,23 @@ export class LandingComponent {
   }
 
   register() {
+    // Telefon disemak SEBELUM menghantar. Medan pilihan, tetapi kalau
+    // diisi ia mesti nombor sebenar — nombor rosak hanya ditemui apabila
+    // penghantaran gagal berbulan kemudian.
+    if (this.rMobile.trim() && !this.telefonSah(this.rMobile)) {
+      this.authError.set('No. telefon tidak sah. Contoh: 0123456789');
+      return;
+    }
+    if (this.rPassword.length < 6) {
+      this.authError.set('Kata laluan mesti sekurang-kurangnya 6 aksara.');
+      return;
+    }
+
     this.busy.set(true);
     this.authError.set(null);
     this.auth.register({
       fullName: this.rName, email: this.rEmail,
-      mobile: this.rMobile, password: this.rPassword
+      mobile: this.telefonBersih(this.rMobile), password: this.rPassword
     }).subscribe({
       next: r => {
         this.busy.set(false);

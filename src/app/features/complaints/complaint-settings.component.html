@@ -95,8 +95,8 @@
 
 <!-- ===== MODAL KATEGORI ===== -->
 @if (catOpen()) {
-  <div class="ov show adu-module adu-ov" (click)="closeCat()">
-    <div class="modal" style="max-width:460px" (click)="$event.stopPropagation()">
+  <div class="ov show adu-module adu-ov">
+    <div class="modal" style="max-width:460px" >
       <div class="modal-head">
         <h2>{{ editing() ? 'Kemaskini Kategori' : 'Kategori Baharu' }}</h2>
         <button type="button" class="mclose" (click)="closeCat()">×</button>

@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { UsersService, UserRow } from './users.service';
@@ -163,4 +163,7 @@ export class PlatformUsersComponent {
     if (u.accountCount > 0) return 'var(--muted-2)';
     return 'var(--muted)';
   }
+  @HostListener('document:keydown.escape')
+  onEscape() { this.pwdTarget.set(null); }
+
 }

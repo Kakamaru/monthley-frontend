@@ -352,7 +352,15 @@
         <input class="minput" placeholder="cth: admin@organisasi.com" [(ngModel)]="loginId" />
 
         <label>Kata Laluan</label>
-        <input class="minput" type="password" placeholder="••••••••" [(ngModel)]="loginPassword" />
+        <div class="pw-wrap">
+          <input class="minput" [type]="showLoginPw() ? 'text' : 'password'"
+                 placeholder="••••••••" [(ngModel)]="loginPassword" />
+          <button type="button" class="pw-eye"
+                  [attr.aria-label]="showLoginPw() ? 'Sembunyikan kata laluan' : 'Papar kata laluan'"
+                  (click)="showLoginPw.set(!showLoginPw())">
+            {{ showLoginPw() ? '🙈' : '👁' }}
+          </button>
+        </div>
 
         <div class="forgot"><a (click)="openForgot()">Lupa kata laluan?</a></div>
 
@@ -427,10 +435,27 @@
         <input class="minput" type="email" placeholder="cth: nama@email.com" [(ngModel)]="rEmail" />
 
         <label>No. Telefon</label>
-        <input class="minput" placeholder="cth: 0123456789" [(ngModel)]="rMobile" />
+        <!-- inputmode="tel" memaparkan papan kekunci nombor pada telefon;
+             type kekal text supaya '+' dan pemisah masih boleh ditaip. -->
+        <input class="minput" type="text" inputmode="tel" maxlength="15"
+               placeholder="cth: 0123456789" [(ngModel)]="rMobile" />
+        @if (rMobile.trim() && !telefonSah(rMobile)) {
+          <div class="fld-err">No. telefon tidak sah. Contoh: 0123456789</div>
+        }
 
         <label>Kata Laluan</label>
-        <input class="minput" type="password" placeholder="minimum 6 aksara" [(ngModel)]="rPassword" />
+        <div class="pw-wrap">
+          <input class="minput" [type]="showRegPw() ? 'text' : 'password'"
+                 placeholder="minimum 6 aksara" [(ngModel)]="rPassword" />
+          <button type="button" class="pw-eye"
+                  [attr.aria-label]="showRegPw() ? 'Sembunyikan kata laluan' : 'Papar kata laluan'"
+                  (click)="showRegPw.set(!showRegPw())">
+            {{ showRegPw() ? '🙈' : '👁' }}
+          </button>
+        </div>
+        @if (rPassword && rPassword.length < 6) {
+          <div class="fld-err">Kata laluan mesti sekurang-kurangnya 6 aksara.</div>
+        }
 
         @if (authError()) { <div class="auth-err">{{ authError() }}</div> }
 

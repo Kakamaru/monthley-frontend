@@ -76,8 +76,8 @@
 
 <!-- ===== MODAL ===== -->
 @if (editOpen()) {
-  <div class="gw-ov" (click)="close()">
-    <div class="gw-modal" (click)="$event.stopPropagation()">
+  <div class="gw-ov">
+    <div class="gw-modal" >
       <div class="gw-modal-head">
         <div>
           <div class="gw-modal-title">{{ editing()?.spName }}</div>

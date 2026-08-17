@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -163,8 +163,10 @@ import { AccountsService, MyAccountRow, HistoryRow, HistoryResponse, OnlineOutst
     </div>
 <!-- ===== BAYARAN DALAM TALIAN ===== -->
 @if (payOpen()) {
-  <div class="pay-ov" (click)="closePay()">
-    <div class="pay-modal" (click)="$event.stopPropagation()">
+  <!-- Klik latar TIDAK menutup: borang yang separuh diisi hilang kerana
+       terklik di luar kotak. Tutup melalui X atau Escape sahaja. -->
+  <div class="pay-ov">
+    <div class="pay-modal">
       <div class="pay-head">
         <div>
           <div class="pay-title">Bayar Bil</div>
@@ -211,18 +213,43 @@ import { AccountsService, MyAccountRow, HistoryRow, HistoryResponse, OnlineOutst
         <div class="pay-amt-box">
           <label class="pay-amt-lbl">Amaun Bayaran (MYR)</label>
           <input class="pay-amt-inp" type="number" step="0.01" min="0.01"
-                 [(ngModel)]="payAmount" />
+                 [(ngModel)]="payAmount" (ngModelChange)="onAmountChange()" />
           <p class="pay-note">
             Jumlah bil dipilih: <b>MYR {{ pickedTotal() | number:'1.2-2' }}</b>.
             Bayar kurang untuk bayaran sebahagian, atau lebih — lebihan menjadi
             kredit untuk bil akan datang.
           </p>
+
+          @if (fee(); as f) {
+            <div class="pay-break">
+              <div class="pay-break-row">
+                <span>Bayaran bil</span>
+                <span>MYR {{ f.amount | number:'1.2-2' }}</span>
+              </div>
+              @if (!f.absorb && f.fee > 0) {
+                <div class="pay-break-row">
+                  <span>Caj transaksi</span>
+                  <span>MYR {{ f.fee | number:'1.2-2' }}</span>
+                </div>
+              }
+              <div class="pay-break-row total">
+                <span>Jumlah dibayar</span>
+                <span>MYR {{ f.charged | number:'1.2-2' }}</span>
+              </div>
+              @if (f.absorb && f.fee > 0) {
+                <p class="pay-break-note">
+                  Caj transaksi ditanggung oleh pihak pengurusan.
+                </p>
+              }
+            </div>
+          }
         </div>
 
         <div class="pay-foot">
           <button type="button" class="pay-cancel" (click)="closePay()">Batal</button>
           <button type="button" class="pay-go" [disabled]="payBusy()" (click)="submitPay()">
-            {{ payBusy() ? 'Menghubungkan…' : 'Bayar MYR ' + (payAmount | number:'1.2-2') + ' →' }}
+            {{ payBusy() ? 'Menghubungkan…'
+                : 'Bayar MYR ' + ((fee()?.charged ?? payAmount) | number:'1.2-2') + ' →' }}
           </button>
         </div>
       }
@@ -329,6 +356,23 @@ import { AccountsService, MyAccountRow, HistoryRow, HistoryResponse, OnlineOutst
     }
     .pay-amt-inp:focus { outline: none; border-color: #16a34a; }
     .pay-note { font-size: 12px; color: #6b7f86; line-height: 1.55; margin: 8px 0 0; }
+
+    .pay-break {
+      margin: 12px 0 0; padding: 13px 15px; border-radius: 12px;
+      background: #f4fbf6; border: 1px solid #d5e9db;
+    }
+    .pay-break-row {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 13.5px; color: #3a4c53; padding: 3px 0;
+    }
+    .pay-break-row.total {
+      margin-top: 8px; padding-top: 10px; border-top: 1px solid #d5e9db;
+      font-family: 'Sora', sans-serif; font-weight: 800; font-size: 15px;
+      color: #122029;
+    }
+    .pay-break-note {
+      font-size: 12px; color: #16a34a; margin: 8px 0 0; font-weight: 600;
+    }
 
     .pay-foot { display: flex; gap: 10px; padding: 16px 22px 20px; }
     .pay-cancel, .pay-go {
@@ -684,6 +728,44 @@ export class MyAccountsComponent implements OnInit {
    */
   payAmount = 0;
 
+  /**
+   * Pecahan caj transaksi.
+   *
+   * Dikira oleh BACKEND, bukan di sini: kadar dan tetapan serap hidup
+   * pada tetapan SP, dan menyalin logiknya ke skrin bermakna dua tempat
+   * mengira nombor yang sama — dan menyimpang selepas suntingan pertama.
+   */
+  readonly fee = signal<{ amount: number; fee: number; charged: number;
+                          absorb: boolean } | null>(null);
+
+  private feeTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /**
+   * Pratonton dinyahlantun 400ms.
+   *
+   * Pelanggan menaip amaun aksara demi aksara; satu permintaan setiap
+   * ketukan membanjiri pelayan untuk nilai separa yang tidak pernah
+   * dihantar.
+   */
+  private mintaPratonton() {
+    const a = this.payAccount();
+    const ids = [...this.picked()];
+    const amt = Number(this.payAmount);
+
+    if (!a || !ids.length || !amt || amt <= 0) { this.fee.set(null); return; }
+
+    if (this.feeTimer) clearTimeout(this.feeTimer);
+    this.feeTimer = setTimeout(() => {
+      this.api.previewFee(a.id, ids, amt).subscribe({
+        next: f => this.fee.set(f),
+        error: () => this.fee.set(null)
+      });
+    }, 400);
+  }
+
+  /** Dipanggil bila pelanggan menaip amaun. */
+  onAmountChange() { this.mintaPratonton(); }
+
   readonly pickedTotal = computed(() =>
     this.bills()
         .filter(b => this.picked().has(b.documentId))
@@ -694,6 +776,7 @@ export class MyAccountsComponent implements OnInit {
     this.bills.set([]);
     this.picked.set(new Set());
     this.payAmount = 0;
+    this.fee.set(null);
     this.payError.set(null);
     this.payOpen.set(true);
     this.billsLoading.set(true);
@@ -706,6 +789,7 @@ export class MyAccountsComponent implements OnInit {
         this.picked.set(new Set(b.map(x => x.documentId)));
         this.payAmount = b.reduce((t, x) => t + x.balance, 0);
         this.billsLoading.set(false);
+        this.mintaPratonton();
       },
       error: e => {
         this.payError.set(e?.error?.message ?? 'Gagal memuatkan bil.');
@@ -716,17 +800,22 @@ export class MyAccountsComponent implements OnInit {
 
   closePay() { this.payOpen.set(false); }
 
+  @HostListener('document:keydown.escape')
+  onEscapePay() { if (this.payOpen()) this.closePay(); }
+
   togglePick(id: number) {
     const set = new Set(this.picked());
     if (set.has(id)) set.delete(id); else set.add(id);
     this.picked.set(set);
     this.payAmount = this.pickedTotal();
+    this.mintaPratonton();
   }
 
   pickAll() {
     const semua = this.picked().size === this.bills().length;
     this.picked.set(semua ? new Set() : new Set(this.bills().map(b => b.documentId)));
     this.payAmount = this.pickedTotal();
+    this.mintaPratonton();
   }
 
   /**

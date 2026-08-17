@@ -147,6 +147,19 @@ export class AccountsService {
       { accountId, documentIds, amount });
   }
 
+  /**
+   * Pratonton caj transaksi tanpa mencipta bil.
+   *
+   * Modal perlu menunjukkan pecahan sebelum pelanggan meneruskan —
+   * melompat ke gerbang dan melihat jumlah berbeza daripada yang dipilih
+   * kelihatan seperti sistem menambah caj secara senyap.
+   */
+  previewFee(accountId: number, documentIds: number[], amount: number)
+      : Observable<{ amount: number; fee: number; charged: number; absorb: boolean }> {
+    return this.http.post<{ amount: number; fee: number; charged: number; absorb: boolean }>(
+      '/api/v1/payments/online/preview', { accountId, documentIds, amount });
+  }
+
   /** Status selepas pelanggan kembali dari gerbang. */
   onlinePaymentStatus(ourRef: string): Observable<PaymentStatus> {
     return this.http.get<PaymentStatus>(`/api/v1/payments/online/status/${ourRef}`);
@@ -324,7 +337,13 @@ export interface OnlineOutstanding {
 }
 
 export interface PaymentStarted {
-  ourRef: string; billCode: string; paymentUrl: string; amount: number;
+  ourRef: string; billCode: string; paymentUrl: string;
+  /** Amaun terhadap invois — ini yang menjadi resit. */
+  amount: number;
+  /** Caj transaksi gerbang. */
+  fee: number;
+  /** Jumlah yang pelanggan hantar ke gerbang (amount + fee bila SP tidak serap). */
+  charged: number;
 }
 
 export interface PaymentStatus {

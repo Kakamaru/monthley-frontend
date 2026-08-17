@@ -69,8 +69,8 @@
 
 <!-- ===== MODAL ===== -->
 @if (formOpen()) {
-  <div class="ov show exp-module exp-ov" (click)="close()">
-    <div class="modal" style="max-width:520px" (click)="$event.stopPropagation()">
+  <div class="ov show exp-module exp-ov">
+    <div class="modal" style="max-width:520px" >
       <div class="modal-head">
         <h2>{{ tajukModal() }}</h2>
         <button type="button" class="mclose" (click)="close()">×</button>

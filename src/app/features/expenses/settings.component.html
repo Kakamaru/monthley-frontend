@@ -107,8 +107,8 @@
 
 <!-- ===== MODAL KAEDAH ===== -->
 @if (methodOpen()) {
-  <div class="ov show exp-module exp-ov" (click)="closeMethod()">
-    <div class="modal" style="max-width:460px" (click)="$event.stopPropagation()">
+  <div class="ov show exp-module exp-ov">
+    <div class="modal" style="max-width:460px" >
       <div class="modal-head">
         <h2>{{ editingMethod() ? 'Kemaskini Kaedah' : 'Kaedah Bayaran Baru' }}</h2>
         <button type="button" class="mclose" (click)="closeMethod()">×</button>

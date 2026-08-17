@@ -68,8 +68,8 @@
 
 <!-- ===== MODAL ===== -->
 @if (formOpen()) {
-  <div class="ov show exp-module exp-ov" (click)="close()">
-    <div class="modal" (click)="$event.stopPropagation()">
+  <div class="ov show exp-module exp-ov">
+    <div class="modal" >
       <div class="modal-head">
         <h2>{{ editingId() ? 'Kemaskini Pembekal' : 'Daftar Pembekal' }}</h2>
         <button type="button" class="mclose" (click)="close()">×</button>

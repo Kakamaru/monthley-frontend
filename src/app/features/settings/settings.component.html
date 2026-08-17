@@ -683,8 +683,8 @@
 
 <!-- ===== MODAL: TAMBAH AHLI ===== -->
 @if (addOpen()) {
-  <div class="m-backdrop" (click)="addOpen.set(false)">
-    <div class="m-modal" (click)="$event.stopPropagation()">
+  <div class="m-backdrop">
+    <div class="m-modal" >
       <div class="m-modal-head">
         <h3>Tambah Ahli</h3>
         <button class="m-close" (click)="addOpen.set(false)">✕</button>
