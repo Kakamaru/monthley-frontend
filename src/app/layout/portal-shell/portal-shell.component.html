@@ -17,15 +17,17 @@
           <span>Platform</span><span class="chev">{{ platOpen() ? '▾' : '▸' }}</span>
         </button>
         @if (platOpen()) {
-          @for (it of navPlatform; track it.id) {
-            @if (it.route) {
-              <a class="nav" [routerLink]="it.route" routerLinkActive="on">
-                <span class="ic">{{ it.icon }}</span>{{ it.label }}
-              </a>
-            } @else {
-              <span class="nav off"><span class="ic">{{ it.icon }}</span>{{ it.label }}</span>
+          <div class="grp-kids">
+            @for (it of navPlatform; track it.id) {
+              @if (it.route) {
+                <a class="nav" [routerLink]="it.route" routerLinkActive="on">
+                  <span class="ic">{{ it.icon }}</span>{{ it.label }}
+                </a>
+              } @else {
+                <span class="nav off"><span class="ic">{{ it.icon }}</span>{{ it.label }}</span>
+              }
             }
-          }
+          </div>
         }
       }
 
@@ -35,15 +37,17 @@
         <span>Menu Pelanggan</span><span class="chev">{{ custOpen() ? '▾' : '▸' }}</span>
       </button>
       @if (custOpen()) {
-        @for (it of navCust; track it.id) {
-          @if (it.route) {
-            <a class="nav" [routerLink]="it.route" routerLinkActive="on">
-              <span class="ic">{{ it.icon }}</span>{{ it.label }}
-            </a>
-          } @else {
-            <span class="nav off"><span class="ic">{{ it.icon }}</span>{{ it.label }}</span>
+        <div class="grp-kids">
+          @for (it of navCust; track it.id) {
+            @if (it.route) {
+              <a class="nav" [routerLink]="it.route" routerLinkActive="on">
+                <span class="ic">{{ it.icon }}</span>{{ it.label }}
+              </a>
+            } @else {
+              <span class="nav off"><span class="ic">{{ it.icon }}</span>{{ it.label }}</span>
+            }
           }
-        }
+        </div>
       }
       }
 
@@ -53,15 +57,17 @@
           <span>Service Provider</span><span class="chev">{{ spOpen() ? '▾' : '▸' }}</span>
         </button>
         @if (spOpen()) {
-          @for (it of visibleSP(); track it.id) {
-            @if (it.route) {
-              <a class="nav" [routerLink]="it.route" routerLinkActive="on">
-                <span class="ic">{{ it.icon }}</span>{{ it.label }}
-              </a>
-            } @else {
-              <span class="nav off"><span class="ic">{{ it.icon }}</span>{{ it.label }}</span>
+          <div class="grp-kids">
+            @for (it of visibleSP(); track it.id) {
+              @if (it.route) {
+                <a class="nav" [routerLink]="it.route" routerLinkActive="on">
+                  <span class="ic">{{ it.icon }}</span>{{ it.label }}
+                </a>
+              } @else {
+                <span class="nav off"><span class="ic">{{ it.icon }}</span>{{ it.label }}</span>
+              }
             }
-          }
+          </div>
         }
       }
 
@@ -83,11 +89,13 @@
         }
 
         @if (memoOpen()) {
-          @for (it of visibleMemo(); track it.id) {
-            <a class="nav" [routerLink]="it.route" routerLinkActive="on">
-              <span class="ic">{{ it.icon }}</span>{{ it.label }}
-            </a>
-          }
+          <div class="grp-kids">
+            @for (it of visibleMemo(); track it.id) {
+              <a class="nav" [routerLink]="it.route" routerLinkActive="on">
+                <span class="ic">{{ it.icon }}</span>{{ it.label }}
+              </a>
+            }
+          </div>
         }
       }
 
@@ -111,11 +119,13 @@
         }
 
         @if (aduOpen()) {
-          @for (it of visibleComplaints(); track it.id) {
-            <a class="nav" [routerLink]="it.route" routerLinkActive="on">
-              <span class="ic">{{ it.icon }}</span>{{ it.label }}
-            </a>
-          }
+          <div class="grp-kids">
+            @for (it of visibleComplaints(); track it.id) {
+              <a class="nav" [routerLink]="it.route" routerLinkActive="on">
+                <span class="ic">{{ it.icon }}</span>{{ it.label }}
+              </a>
+            }
+          </div>
         }
       }
 
@@ -137,11 +147,13 @@
         }
 
         @if (stuOpen()) {
-          @for (it of visibleStudents(); track it.id) {
-            <a class="nav" [routerLink]="it.route" routerLinkActive="on">
-              <span class="ic">{{ it.icon }}</span>{{ it.label }}
-            </a>
-          }
+          <div class="grp-kids">
+            @for (it of visibleStudents(); track it.id) {
+              <a class="nav" [routerLink]="it.route" routerLinkActive="on">
+                <span class="ic">{{ it.icon }}</span>{{ it.label }}
+              </a>
+            }
+          </div>
         }
       }
 
@@ -168,11 +180,13 @@
           </div>
         }
         @if (expOpen()) {
-          @for (it of visibleExpenses(); track it.id) {
-            <a class="nav" [routerLink]="it.route" routerLinkActive="on">
-              <span class="ic">{{ it.icon }}</span>{{ it.label }}
-            </a>
-          }
+          <div class="grp-kids">
+            @for (it of visibleExpenses(); track it.id) {
+              <a class="nav" [routerLink]="it.route" routerLinkActive="on">
+                <span class="ic">{{ it.icon }}</span>{{ it.label }}
+              </a>
+            }
+          </div>
         }
       }
     </div>

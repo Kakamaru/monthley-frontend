@@ -426,9 +426,17 @@
   font-size: 11.5px; color: var(--muted);
 }
 
+.mark-in {
+  width: 72px; padding: 7px 9px; text-align: center;
+  border: 1.5px solid var(--line); border-radius: 9px;
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 14px;
+  background: var(--surface); color: var(--ink);
+}
+.mark-in:focus { outline: none; border-color: #16a34a; }
+
 .slip-scroll { max-height: 64vh; overflow-y: auto; }
 .slip-class-tr {
-  display: grid; grid-template-columns: 1.8fr repeat(5, 1fr) 1.1fr;
+  display: grid; grid-template-columns: 1.7fr repeat(9, 1fr) 1fr;
   padding: 11px 20px; font-size: 13px; border-top: 1px solid var(--line);
   align-items: center; color: var(--ink);
 }

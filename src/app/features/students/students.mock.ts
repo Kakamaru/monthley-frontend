@@ -41,26 +41,81 @@ export const KELAS: SchoolClass[] = [
   { klass: '5 Ehsan',   form: 'Darjah 5', teacher: 'Pn. Noraini Yusof',   count: 2, cap: 30, room: 'BK-01' }
 ];
 
-export const SUBJEK = [
-  'Amali Solat', 'Bacaan Al-Quran', 'Pelajaran Jawi',
-  'Hafazan Surah', 'Adab & Akhlak'
+/**
+ * Sembilan mata pelajaran KAFA mengikut format UPKK.
+ *
+ * `jenis` disimpan kerana kaedah pentaksiran berbeza dan itu menentukan
+ * bagaimana markah dikumpul: Lisan dan Amali dinilai semasa sesi, Bertulis
+ * melalui kertas, dan Berterusan sepanjang penggal. Menyimpan nama sahaja
+ * bermakna maklumat itu hilang dan setiap skrin perlu mengekodkannya
+ * semula.
+ *
+ * `pendek` untuk lajur jadual — nama penuh memecahkan susun atur slip
+ * kelas yang mempunyai sembilan lajur.
+ */
+export interface Subjek {
+  nama: string;
+  pendek: string;
+  jenis: 'Lisan' | 'Bertulis' | 'Amali' | 'Berterusan';
+}
+
+export const SUBJEK: Subjek[] = [
+  { nama: 'Al-Quran (Lisan / Tilawah)',              pendek: 'Quran',  jenis: 'Lisan' },
+  { nama: 'Akidah',                                   pendek: 'Akidah', jenis: 'Bertulis' },
+  { nama: 'Sirah',                                    pendek: 'Sirah',  jenis: 'Bertulis' },
+  { nama: 'Adab / Akhlak Islamiah',                   pendek: 'Adab',   jenis: 'Bertulis' },
+  { nama: 'Jawi dan Khat',                            pendek: 'Jawi',   jenis: 'Bertulis' },
+  { nama: 'Bahasa Arab / Asas Lughatul Quran',        pendek: 'Arab',   jenis: 'Bertulis' },
+  { nama: 'Ibadah',                                   pendek: 'Ibadah', jenis: 'Bertulis' },
+  { nama: 'Penghayatan Cara Hidup Islam (PCHI)',      pendek: 'PCHI',   jenis: 'Berterusan' },
+  { nama: 'Amali Solat',                              pendek: 'Solat',  jenis: 'Amali' }
 ];
 
-export const PENGGAL = ['Penggal 1', 'Penggal 2', 'Penggal 3'];
+export const PENGGAL = [
+  'Penilaian Pertengahan Tahun', 'Penilaian Akhir Tahun'
+];
 
 /**
- * Tahap Penguasaan PBD.
+ * Pangkat mengikut MARKAH, bukan tahap.
  *
- * TP1–TP6 ialah skala rasmi Pentaksiran Bilik Darjah KPM. Padanan pangkat
- * Arab mengikut amalan KAFA.
+ * Diterbitkan daripada slip sebenar SRITI: 26 dan 35 → Musaadah; 40, 47,
+ * 52 → Maqbul; 70, 74 → Jayyid; 76, 80 → Jayyid Jiddan. Bahagian
+ * berwajaran pada slip yang sama menepati skala ini (55.5% → Maqbul,
+ * 76% → Jayyid Jiddan, 92% → Mumtaz, 73.2% → Jayyid).
+ *
+ * Sempadan tepat (59/60, 74/75, 89/90) ialah anggaran daripada sembilan
+ * titik data — sahkan dengan sekolah sebelum digunakan untuk slip rasmi.
  */
-export const TAHAP = [
-  { tp: 1, arab: 'Dhaif',   desc: 'Tahu perkara asas',            bg: '#fdecec', c: '#d64545' },
-  { tp: 2, arab: 'Maqbul',  desc: 'Faham perkara asas',           bg: '#fdf0e6', c: '#c26a1f' },
-  { tp: 3, arab: 'Jayyid',  desc: 'Boleh guna pengetahuan',       bg: '#fdf9e6', c: '#a3891f' },
-  { tp: 4, arab: 'Jayyid Jiddan', desc: 'Guna dengan beradab',    bg: '#eef4ff', c: '#2a6fdb' },
-  { tp: 5, arab: 'Mumtaz',  desc: 'Boleh dicontohi',              bg: '#e7f6ec', c: '#128a41' },
-  { tp: 6, arab: 'Mumtaz Jiddan', desc: 'Teladan dan boleh bimbing rakan', bg: '#e0f5ea', c: '#0f7a52' }
+export interface Pangkat {
+  min: number; max: number; nama: string; bg: string; c: string;
+}
+
+export const PANGKAT: Pangkat[] = [
+  { min: 90, max: 100, nama: 'MUMTAZ',        bg: '#e0f5ea', c: '#0f7a52' },
+  { min: 75, max: 89,  nama: 'JAYYID JIDDAN', bg: '#e7f6ec', c: '#128a41' },
+  { min: 60, max: 74,  nama: 'JAYYID',        bg: '#eef4ff', c: '#2a6fdb' },
+  { min: 40, max: 59,  nama: 'MAQBUL',        bg: '#fdf9e6', c: '#a3891f' },
+  { min: 0,  max: 39,  nama: 'MUSAADAH',      bg: '#fdf0e6', c: '#c26a1f' }
+];
+
+export function pangkatBagi(markah: number): Pangkat {
+  return PANGKAT.find(p => markah >= p.min && markah <= p.max) ?? PANGKAT[PANGKAT.length - 1];
+}
+
+/**
+ * Komponen berwajaran pada slip.
+ *
+ * Markah mata pelajaran hanya 40% daripada keseluruhan. Baki datang
+ * daripada hafazan, adab, dan penilaian ibu bapa — sekolah menilai lebih
+ * daripada apa yang muncul dalam kertas peperiksaan.
+ */
+export interface Komponen { nama: string; wajaran: number; }
+
+export const KOMPONEN: Komponen[] = [
+  { nama: 'Subjek',              wajaran: 40 },
+  { nama: 'Hafazan & Tilawah',   wajaran: 25 },
+  { nama: 'Adab & Tarbiyyah',    wajaran: 25 },
+  { nama: 'Ibubapa',             wajaran: 10 }
 ];
 
 export const PELAJAR: Student[] = [
@@ -160,7 +215,3 @@ export function guruKelas(klass: string): string {
   return KELAS.find(k => k.klass === klass)?.teacher ?? '—';
 }
 
-/** Pangkat Arab bagi satu TP. */
-export function tahapBagi(tp: number) {
-  return TAHAP.find(t => t.tp === tp) ?? null;
-}
