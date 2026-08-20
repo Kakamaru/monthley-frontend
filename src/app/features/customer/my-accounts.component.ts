@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
-import { AccountsService, MyAccountRow, HistoryRow, HistoryResponse, OnlineOutstanding } from '../accounts/accounts.service';
+import { AccountsService, MyAccountRow, HistoryRow, HistoryResponse, OnlineOutstanding, OutstandingAccount } from '../accounts/accounts.service';
 
 @Component({
   selector: 'app-my-accounts',
@@ -48,7 +48,7 @@ import { AccountsService, MyAccountRow, HistoryRow, HistoryResponse, OnlineOutst
             </div>
             <div class="banner-pay">
               <div class="banner-pay-lbl">Jumlah perlu dibayar</div>
-              <button class="btn-payall" (click)="payAll()">Bayar Semua RM {{ totalToPay() | number:'1.0-0' }} →</button>
+              <button class="btn-payall" (click)="bukaBayarSemua()">Bayar Semua RM {{ totalToPay() | number:'1.0-0' }} →</button>
             </div>
           </div>
         </div>
@@ -161,6 +161,160 @@ import { AccountsService, MyAccountRow, HistoryRow, HistoryResponse, OnlineOutst
         </div>
       }
     </div>
+<!-- ===== BAYAR SEMUA (merentas akaun) ===== -->
+@if (allOpen()) {
+  <div class="pay-ov">
+    <div class="pay-modal all-modal">
+      <div class="pay-head">
+        <div>
+          <div class="pay-title">Bayar Bil</div>
+          <div class="pay-sub">Pilih bil daripada akaun anda</div>
+        </div>
+        <button type="button" class="pay-x" (click)="tutupBayarSemua()">&times;</button>
+      </div>
+
+      @if (allError()) { <div class="pay-err">{{ allError() }}</div> }
+
+      @if (lockedSp(); as sp) {
+        <div class="sp-lock">
+          🔒 Bayaran untuk <b>satu organisasi</b> sahaja setiap kali.
+          Nyahtanda semua bil untuk memilih organisasi lain.
+        </div>
+      }
+
+      @if (allLoading()) {
+        <div class="pay-empty">Memuatkan akaun…</div>
+      } @else if (!allAccounts().length) {
+        <div class="pay-empty">Tiada bil tertunggak.</div>
+      } @else {
+        <!-- Tiga lajur, sama seperti Manual Payment: pelanggan yang
+             sudah biasa dengan satu skrin tidak perlu belajar yang lain. -->
+        <div class="acct-head">
+          <span></span>
+          <span>Akaun</span>
+          <span>Service Provider</span>
+          <span style="text-align:right">Amaun</span>
+        </div>
+
+        <div class="pay-list">
+          @for (a of allAccounts(); track a.accountId) {
+            <div class="acct-card"
+                 [class.on]="akaunPenuh(a) || akaunSebahagian(a)"
+                 [class.dim]="!bolehPilih(a)">
+
+              <div class="acct-row">
+                <div class="acct-chk-col">
+                  <input type="checkbox" class="acct-chk"
+                         [checked]="akaunPenuh(a)"
+                         [indeterminate]="akaunSebahagian(a)"
+                         [disabled]="!bolehPilih(a)"
+                         (change)="toggleAkaun(a)" />
+                  <!-- Penunjuk kembangan DI BAWAH checkbox, bukan di
+                       hujung baris: pada susunan tiga lajur ia hilang di
+                       sebelah amaun. -->
+                  <button type="button" class="acct-exp"
+                          [class.open]="expanded().has(a.accountId)"
+                          (click)="toggleExpand(a.accountId)">
+                    {{ a.bil.length }} bil
+                    <span class="chev">{{ expanded().has(a.accountId) ? '▾' : '▸' }}</span>
+                  </button>
+                </div>
+
+                <div class="acct-col" (click)="toggleExpand(a.accountId)">
+                  <div class="acct-no">{{ a.accountNo }}</div>
+                  <div class="acct-nm">{{ a.accountName }}</div>
+                </div>
+
+                <div class="acct-col" (click)="toggleExpand(a.accountId)">
+                  <div class="acct-sp">{{ a.spName }}</div>
+                  @if (!bolehPilih(a)) { <span class="sp-tag">organisasi lain</span> }
+                </div>
+
+                <div class="acct-col right" (click)="toggleExpand(a.accountId)">
+                  <div class="acct-amt">MYR {{ a.jumlah | number:'1.2-2' }}</div>
+                </div>
+              </div>
+
+              @if (expanded().has(a.accountId)) {
+                <div class="acct-bils">
+                  @for (b of a.bil; track b.documentId) {
+                    <label class="bil-row" [class.on]="allPicked().has(b.documentId)">
+                      <input type="checkbox"
+                             [checked]="allPicked().has(b.documentId)"
+                             [disabled]="!bolehPilih(a)"
+                             (change)="toggleBilAll(a, b.documentId)" />
+                      <span class="bil-main">
+                        <span class="bil-no">{{ b.docNo }}</span>
+                        <span class="bil-desc">
+                          {{ b.description || 'Bil' }}
+                          @if (b.period) { · {{ b.period }} }
+                        </span>
+                        @if (b.dueDate) {
+                          <span class="bil-sub" [class.pay-late]="b.overdue">
+                            Tarikh akhir {{ b.dueDate | date:'dd/MM/yyyy' }}
+                          </span>
+                        }
+                      </span>
+                      <span class="bil-amt">MYR {{ b.balance | number:'1.2-2' }}</span>
+                    </label>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="all-foot-box">
+          @if (allFee(); as f) {
+            <div class="pay-break" style="margin:0 0 12px">
+              <div class="pay-break-row">
+                <span>Bayaran bil
+                  @if (allAkaunCount() > 1) {
+                    <span class="acct-n">({{ allAkaunCount() }} akaun)</span>
+                  }
+                </span>
+                <span>MYR {{ f.amount | number:'1.2-2' }}</span>
+              </div>
+              @if (!f.absorb && f.fee > 0) {
+                <div class="pay-break-row">
+                  <span>Caj transaksi</span>
+                  <span>MYR {{ f.fee | number:'1.2-2' }}</span>
+                </div>
+              }
+              <div class="pay-break-row total">
+                <span>Jumlah dibayar</span>
+                <span>MYR {{ f.charged | number:'1.2-2' }}</span>
+              </div>
+              @if (f.absorb && f.fee > 0) {
+                <p class="pay-break-note">
+                  Caj transaksi ditanggung oleh pihak pengurusan.
+                </p>
+              }
+            </div>
+          }
+
+          @if (allAkaunCount() > 1) {
+            <p class="all-note">
+              Bayaran merentas beberapa akaun mesti tepat jumlah bil yang
+              dipilih — tiada baki kredit.
+            </p>
+          }
+
+          <div class="pay-foot" style="padding:0">
+            <button type="button" class="pay-cancel" (click)="tutupBayarSemua()">Batal</button>
+            <button type="button" class="pay-go"
+                    [disabled]="allBusy() || !allPicked().size"
+                    (click)="submitBayarSemua()">
+              {{ allBusy() ? 'Menghubungkan…'
+                  : 'Bayar MYR ' + ((allFee()?.charged ?? allTotal()) | number:'1.2-2') + ' →' }}
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+}
+
 <!-- ===== BAYARAN DALAM TALIAN ===== -->
 @if (payOpen()) {
   <!-- Klik latar TIDAK menutup: borang yang separuh diisi hilang kerana
@@ -196,14 +350,15 @@ import { AccountsService, MyAccountRow, HistoryRow, HistoryResponse, OnlineOutst
                      (change)="togglePick(b.documentId)" />
               <div class="pay-row-main">
                 <div class="pay-row-no">{{ b.docNo }}</div>
-                <div class="pay-row-sub">
-                  {{ b.period || '—' }}
-                  @if (b.dueDate) {
-                    · <span [class.pay-late]="b.overdue">
-                        {{ b.dueDate | date:'dd/MM/yyyy' }}
-                      </span>
-                  }
+                <div class="pay-row-desc">
+                  {{ b.description || 'Bil' }}
+                  @if (b.period) { · {{ b.period }} }
                 </div>
+                @if (b.dueDate) {
+                  <div class="pay-row-sub" [class.pay-late]="b.overdue">
+                    Tarikh akhir {{ b.dueDate | date:'dd/MM/yyyy' }}
+                  </div>
+                }
               </div>
               <div class="pay-row-amt">MYR {{ b.balance | number:'1.2-2' }}</div>
             </label>
@@ -337,7 +492,8 @@ import { AccountsService, MyAccountRow, HistoryRow, HistoryResponse, OnlineOutst
     .pay-row input { width: 17px; height: 17px; flex: none; accent-color: #16a34a; }
     .pay-row-main { flex: 1; min-width: 0; }
     .pay-row-no   { font-weight: 700; font-size: 14px; color: #122029; }
-    .pay-row-sub  { font-size: 12px; color: #6b7f86; margin-top: 2px; }
+    .pay-row-desc { font-size: 12.5px; color: #3a4c53; margin-top: 2px; }
+    .pay-row-sub  { font-size: 11.5px; color: #94a3a9; margin-top: 1px; }
     .pay-late     { color: #c2564c; font-weight: 700; }
     .pay-row-amt  {
       font-family: 'Sora', sans-serif; font-weight: 800; font-size: 14.5px;
@@ -356,6 +512,90 @@ import { AccountsService, MyAccountRow, HistoryRow, HistoryResponse, OnlineOutst
     }
     .pay-amt-inp:focus { outline: none; border-color: #16a34a; }
     .pay-note { font-size: 12px; color: #6b7f86; line-height: 1.55; margin: 8px 0 0; }
+
+    /* ===== Bayar Semua ===== */
+    .all-modal { max-width: 600px; }
+
+    .sp-lock {
+      margin: 12px 22px 0; padding: 10px 14px; border-radius: 10px;
+      background: #eef4ff; border: 1px solid #d5e2fb;
+      font-size: 12.5px; color: #2a6fdb; line-height: 1.5;
+    }
+
+    .acct-card {
+      border: 1.5px solid #e6ebe7; border-radius: 13px; margin-bottom: 10px;
+      background: #fff; overflow: hidden; transition: opacity .15s;
+    }
+    .acct-card.on  { border-color: #16a34a; background: #f7fdf9; }
+    .acct-card.dim { opacity: .42; }
+
+    .acct-head {
+      display: grid; grid-template-columns: 62px 1.5fr 1.6fr 1fr;
+      gap: 12px; padding: 0 14px 8px; margin: 0 22px;
+      font-size: 11px; font-weight: 700; color: #94a3a9;
+      text-transform: uppercase; letter-spacing: .04em;
+    }
+
+    .acct-row {
+      display: grid; grid-template-columns: 62px 1.5fr 1.6fr 1fr;
+      gap: 12px; align-items: start; padding: 13px 14px;
+    }
+    .acct-chk-col { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; }
+    .acct-chk { width: 19px; height: 19px; accent-color: #16a34a; cursor: pointer; }
+    .acct-chk:disabled { cursor: not-allowed; }
+
+    .acct-exp {
+      background: #f1f5f2; border: 1px solid #e2e9e4; border-radius: 8px;
+      padding: 3px 8px; cursor: pointer; white-space: nowrap;
+      font-size: 11.5px; font-weight: 700; color: #4a5c63;
+    }
+    .acct-exp.open { background: #e7f6ec; border-color: #cfe9d6; color: #128a41; }
+
+    .acct-col { min-width: 0; cursor: pointer; }
+    .acct-col.right { text-align: right; }
+
+    .acct-no {
+      font-family: 'Sora', sans-serif; font-weight: 800; font-size: 14px;
+      color: #122029;
+    }
+    .acct-nm { font-size: 12px; color: #6b7f86; margin-top: 2px; }
+    .acct-sp { font-size: 13px; color: #3a4c53; font-weight: 600; line-height: 1.35; }
+    .sp-tag {
+      display: inline-block; margin-top: 4px; padding: 1px 7px;
+      border-radius: 6px; background: #eef2f7; color: #7d8b95;
+      font-size: 10.5px; font-weight: 700;
+    }
+
+    .acct-amt {
+      font-family: 'Sora', sans-serif; font-weight: 800; font-size: 14.5px;
+      color: #122029; white-space: nowrap;
+    }
+    .acct-n { font-size: 11.5px; color: #94a3a9; }
+    .chev { margin-left: 3px; }
+
+    @media (max-width: 560px) {
+      .acct-head { display: none; }
+      .acct-row { grid-template-columns: 52px 1fr 1fr; }
+      .acct-row .acct-col.right { grid-column: 2 / -1; text-align: left; margin-top: 4px; }
+    }
+
+    .acct-bils { border-top: 1px solid #eef2ef; background: #fbfdfc; padding: 6px 14px 10px; }
+    .bil-row {
+      display: flex; align-items: center; gap: 10px; cursor: pointer;
+      padding: 8px 6px; border-radius: 9px;
+    }
+    .bil-row.on { background: #eef9f1; }
+    .bil-row input { width: 15px; height: 15px; flex: none; accent-color: #16a34a; }
+    .bil-main { flex: 1; min-width: 0; }
+    .bil-no { display: block; font-weight: 700; font-size: 13px; color: #122029; }
+    .bil-desc { display: block; font-size: 12px; color: #3a4c53; margin-top: 1px; }
+    .bil-sub { display: block; font-size: 11px; color: #94a3a9; margin-top: 1px; }
+    .bil-amt { font-weight: 700; font-size: 13px; color: #122029; white-space: nowrap; }
+
+    .all-foot-box { padding: 14px 22px 20px; border-top: 1px solid #eef2ef; }
+    .all-note {
+      font-size: 12px; color: #6b7f86; margin: 0 0 12px; line-height: 1.5;
+    }
 
     .pay-break {
       margin: 12px 0 0; padding: 13px 15px; border-radius: 12px;
@@ -705,6 +945,178 @@ export class MyAccountsComponent implements OnInit {
   tutupHasil() {
     this.payResult.set(null);
     this.router.navigate([], { queryParams: {} });
+  }
+
+  // ---------- Bayar Semua (merentas akaun, ADR 0019) ----------
+
+  readonly allOpen = signal(false);
+  readonly allLoading = signal(false);
+  readonly allBusy = signal(false);
+  readonly allError = signal<string | null>(null);
+  readonly allAccounts = signal<OutstandingAccount[]>([]);
+
+  /** documentId yang ditanda, merentas semua akaun. */
+  readonly allPicked = signal<Set<number>>(new Set());
+
+  /** accountId yang dikembangkan untuk melihat invoisnya. */
+  readonly expanded = signal<Set<number>>(new Set());
+
+  readonly allFee = signal<{ amount: number; fee: number; charged: number;
+                             absorb: boolean } | null>(null);
+  private allFeeTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /**
+   * SP yang dikunci oleh pilihan semasa.
+   *
+   * Kosong bermakna belum ada pilihan — semua akaun boleh ditanda. Sebaik
+   * satu invois ditanda, hanya SP itu kekal boleh dipilih (ADR 0018).
+   */
+  readonly lockedSp = computed<string | null>(() => {
+    const picked = this.allPicked();
+    if (!picked.size) return null;
+    for (const a of this.allAccounts()) {
+      if (a.bil.some(b => picked.has(b.documentId))) return a.spCode;
+    }
+    return null;
+  });
+
+  /** Akaun ini boleh ditanda? */
+  bolehPilih(a: OutstandingAccount): boolean {
+    const sp = this.lockedSp();
+    return sp === null || sp === a.spCode;
+  }
+
+  /** Semua invois akaun ini ditanda? */
+  akaunPenuh(a: OutstandingAccount): boolean {
+    const p = this.allPicked();
+    return a.bil.length > 0 && a.bil.every(b => p.has(b.documentId));
+  }
+
+  /** Sebahagian sahaja — untuk keadaan checkbox separa. */
+  akaunSebahagian(a: OutstandingAccount): boolean {
+    const p = this.allPicked();
+    const n = a.bil.filter(b => p.has(b.documentId)).length;
+    return n > 0 && n < a.bil.length;
+  }
+
+  readonly allTotal = computed(() => {
+    const p = this.allPicked();
+    let t = 0;
+    for (const a of this.allAccounts()) {
+      for (const b of a.bil) if (p.has(b.documentId)) t += b.balance;
+    }
+    return t;
+  });
+
+  /** Bilangan AKAUN yang tersentuh — menentukan kadar caj. */
+  readonly allAkaunCount = computed(() => {
+    const p = this.allPicked();
+    return this.allAccounts()
+               .filter(a => a.bil.some(b => p.has(b.documentId))).length;
+  });
+
+  bukaBayarSemua() {
+    this.allAccounts.set([]);
+    this.allPicked.set(new Set());
+    this.expanded.set(new Set());
+    this.allFee.set(null);
+    this.allError.set(null);
+    this.allOpen.set(true);
+    this.allLoading.set(true);
+
+    this.api.onlineOutstandingAll().subscribe({
+      next: r => {
+        this.allAccounts.set(r);
+        this.allLoading.set(false);
+
+        // Akaun SP PERTAMA ditanda secara lalai. Menanda semuanya
+        // bermakna pilihan merentas SP, yang segera ditolak.
+        if (r.length) {
+          const sp = r[0].spCode;
+          const set = new Set<number>();
+          for (const a of r) {
+            if (a.spCode === sp) for (const b of a.bil) set.add(b.documentId);
+          }
+          this.allPicked.set(set);
+          this.mintaPratontonSemua();
+        }
+      },
+      error: e => {
+        this.allError.set(e?.error?.message ?? 'Gagal memuatkan akaun.');
+        this.allLoading.set(false);
+      }
+    });
+  }
+
+  tutupBayarSemua() { this.allOpen.set(false); }
+
+  @HostListener('document:keydown.escape')
+  onEscapeAll() { if (this.allOpen()) this.tutupBayarSemua(); }
+
+  toggleExpand(accountId: number) {
+    const set = new Set(this.expanded());
+    if (set.has(accountId)) set.delete(accountId); else set.add(accountId);
+    this.expanded.set(set);
+  }
+
+  /** Tanda atau nyahtanda SEMUA invois satu akaun. */
+  toggleAkaun(a: OutstandingAccount) {
+    if (!this.bolehPilih(a)) return;
+
+    const set = new Set(this.allPicked());
+    if (this.akaunPenuh(a)) {
+      for (const b of a.bil) set.delete(b.documentId);
+    } else {
+      for (const b of a.bil) set.add(b.documentId);
+    }
+    this.allPicked.set(set);
+    this.mintaPratontonSemua();
+  }
+
+  toggleBilAll(a: OutstandingAccount, docId: number) {
+    if (!this.bolehPilih(a)) return;
+
+    const set = new Set(this.allPicked());
+    if (set.has(docId)) set.delete(docId); else set.add(docId);
+    this.allPicked.set(set);
+    this.mintaPratontonSemua();
+  }
+
+  private mintaPratontonSemua() {
+    const ids = [...this.allPicked()];
+    if (!ids.length) { this.allFee.set(null); return; }
+
+    if (this.allFeeTimer) clearTimeout(this.allFeeTimer);
+    this.allFeeTimer = setTimeout(() => {
+      this.api.previewMultiFee(ids, this.allTotal()).subscribe({
+        next: f => this.allFee.set(f),
+        error: () => this.allFee.set(null)
+      });
+    }, 300);
+  }
+
+  submitBayarSemua() {
+    const ids = [...this.allPicked()];
+    if (!ids.length) {
+      this.allError.set('Pilih sekurang-kurangnya satu bil.');
+      return;
+    }
+
+    this.allBusy.set(true);
+    this.allError.set(null);
+
+    // Amaun ialah jumlah TEPAT bil yang ditanda. Merentas akaun tiada
+    // advance (ADR 0019), jadi tiada medan amaun untuk pelanggan ubah.
+    this.api.startMultiPayment(ids, this.allTotal()).subscribe({
+      next: r => {
+        try { sessionStorage.setItem('monthley.pay.ref', r.ourRef); } catch { /* abaikan */ }
+        window.location.href = r.paymentUrl;
+      },
+      error: e => {
+        this.allBusy.set(false);
+        this.allError.set(e?.error?.message ?? 'Gagal memulakan bayaran.');
+      }
+    });
   }
 
   // ---------- Bayaran dalam talian ----------

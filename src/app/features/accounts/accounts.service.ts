@@ -160,6 +160,31 @@ export class AccountsService {
       '/api/v1/payments/online/preview', { accountId, documentIds, amount });
   }
 
+  /**
+   * Semua akaun pelanggan dengan bil tertunggak.
+   *
+   * Satu panggilan dan bukan satu setiap akaun: skrin perlu tahu SP mana
+   * setiap akaun tergolong SEBELUM pelanggan menanda apa-apa, kerana
+   * menanda akaun pertama mengunci pilihan kepada SP itu.
+   */
+  onlineOutstandingAll(): Observable<OutstandingAccount[]> {
+    return this.http.get<OutstandingAccount[]>(
+      '/api/v1/payments/online/outstanding-all');
+  }
+
+  /** Mulakan bayaran merentas beberapa akaun. */
+  startMultiPayment(documentIds: number[], amount: number): Observable<PaymentStarted> {
+    return this.http.post<PaymentStarted>('/api/v1/payments/online/start-multi',
+      { documentIds, amount });
+  }
+
+  /** Pratonton caj bagi bayaran merentas akaun. */
+  previewMultiFee(documentIds: number[], amount: number)
+      : Observable<{ amount: number; fee: number; charged: number; absorb: boolean }> {
+    return this.http.post<{ amount: number; fee: number; charged: number; absorb: boolean }>(
+      '/api/v1/payments/online/preview-multi', { documentIds, amount });
+  }
+
   /** Status selepas pelanggan kembali dari gerbang. */
   onlinePaymentStatus(ourRef: string): Observable<PaymentStatus> {
     return this.http.get<PaymentStatus>(`/api/v1/payments/online/status/${ourRef}`);
@@ -333,6 +358,8 @@ export interface AdjInvoiceOption {
 
 export interface OnlineOutstanding {
   documentId: number; docNo: string; period: string | null;
+  /** Keterangan baris pertama — 'YURAN BELAJAR', 'MAINTENANCE FEE'. */
+  description: string | null;
   dueDate: string | null; total: number; balance: number; overdue: boolean;
 }
 
@@ -344,6 +371,14 @@ export interface PaymentStarted {
   fee: number;
   /** Jumlah yang pelanggan hantar ke gerbang (amount + fee bila SP tidak serap). */
   charged: number;
+}
+
+/** Satu akaun dengan bil tertunggaknya. */
+export interface OutstandingAccount {
+  accountId: number; accountNo: string; accountName: string;
+  spCode: string; spName: string;
+  jumlah: number;
+  bil: OnlineOutstanding[];
 }
 
 export interface PaymentStatus {
