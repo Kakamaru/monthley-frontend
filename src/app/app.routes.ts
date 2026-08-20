@@ -239,6 +239,12 @@ export const routes: Routes = [
           import('./features/platform/users.component').then(m => m.PlatformUsersComponent)
       },
       {
+        path: 'reconciliation',
+        loadComponent: () =>
+          import('./features/platform/reconciliation.component')
+            .then(m => m.ReconciliationComponent)
+      },
+      {
         // Guard sudah di peringkat induk 'platform'.
         path: 'gateway',
         loadComponent: () =>

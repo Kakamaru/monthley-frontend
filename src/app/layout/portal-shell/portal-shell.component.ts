@@ -36,7 +36,8 @@ export class PortalShellComponent {
     { id: 'p_users',    icon: '👤', label: 'Pengguna', route: '/platform/users' },
     { id: 'p_modules',  icon: '🧩', label: 'Katalog Modul', route: '/platform/modules' },
     { id: 'p_reqs',     icon: '📨', label: 'Permohonan SP', route: '/platform/change-requests' },
-    { id: 'p_gateway',  icon: '💳', label: 'Gerbang Bayaran', route: '/platform/gateway' }
+    { id: 'p_gateway',  icon: '💳', label: 'Gerbang Bayaran', route: '/platform/gateway' },
+    { id: 'p_recon',    icon: '🧾', label: 'Reconciliation', route: '/platform/reconciliation' }
   ];
 
   /** Menu Pelanggan — ikon & label tepat dari prototaip */

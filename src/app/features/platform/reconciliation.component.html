@@ -1,0 +1,159 @@
+<div class="rc-wrap">
+  <div class="rc-head">
+    <div>
+      <h1>Reconciliation Gerbang</h1>
+      <p>Padanan bayaran gerbang dengan resit — untuk pengagihan wang &amp; siasatan.</p>
+    </div>
+    <button class="rc-btn dark" [disabled]="!barisan().length" (click)="eksport()">
+      ⬇ Eksport CSV
+    </button>
+  </div>
+
+  <div class="rc-filters">
+    <div>
+      <label class="rc-lbl">Dari</label>
+      <input class="rc-fld" type="date" [(ngModel)]="dari" />
+    </div>
+    <div>
+      <label class="rc-lbl">Hingga</label>
+      <input class="rc-fld" type="date" [(ngModel)]="hingga" />
+    </div>
+    <div style="flex:1;min-width:240px">
+      <label class="rc-lbl">Service Provider</label>
+      <select class="rc-fld" style="width:100%" [(ngModel)]="spCode">
+        <option value="">Semua SP</option>
+        @for (sp of spList(); track sp.spCode) {
+          <option [value]="sp.spCode">{{ sp.spCode }} — {{ sp.spName }}</option>
+        }
+      </select>
+    </div>
+    <button class="rc-btn pri" [disabled]="loading()" (click)="muat()">
+      {{ loading() ? 'Memuatkan…' : 'Papar' }}
+    </button>
+  </div>
+
+  @if (error()) { <div class="rc-alert">{{ error() }}</div> }
+
+  @if (data(); as d) {
+    @if (d.bilMasalah > 0) {
+      <div class="rc-warn">
+        <span class="rc-warn-ic">!</span>
+        <div>
+          <b>{{ d.bilMasalah }} transaksi memerlukan perhatian.</b>
+          Bayaran gerbang berjaya tanpa resit bermakna pelanggan sudah membayar
+          tetapi invois masih terbuka.
+        </div>
+        <button class="rc-btn soft" (click)="hanyaMasalah.set(!hanyaMasalah())">
+          {{ hanyaMasalah() ? 'Tunjuk semua' : 'Tunjuk yang bermasalah' }}
+        </button>
+      </div>
+    }
+
+    <!-- ===== RINGKASAN PER SP ===== -->
+    <h3 class="rc-h3">Ringkasan Kutipan</h3>
+    <p class="rc-sub">
+      Bayaran berjaya sahaja. Lajur <b>Bersih</b> ialah jumlah yang tiba di
+      akaun bank — yuran sudah ditolak bagi SP yang menyerapnya.
+    </p>
+
+    <div class="rc-tbl">
+      <div class="rc-tr rc-th" style="grid-template-columns:1fr 2fr 1.2fr .9fr 1fr 1fr 1.1fr">
+        <span>SP</span><span>Nama</span><span>Model Yuran</span>
+        <span style="text-align:center">Bil</span>
+        <span style="text-align:right">Kutipan</span>
+        <span style="text-align:right">Caj</span>
+        <span style="text-align:right">Bersih</span>
+      </div>
+
+      @for (s of d.ringkasan; track s.spCode) {
+        <div class="rc-tr" style="grid-template-columns:1fr 2fr 1.2fr .9fr 1fr 1fr 1.1fr">
+          <span class="rc-code">{{ s.spCode }}</span>
+          <span>{{ s.spName }}</span>
+          <span>
+            <span class="rc-pill" [class.warn]="!s.absorb" [class.ok]="s.absorb">
+              {{ s.absorb ? 'SP serap' : 'Pelanggan' }}
+            </span>
+          </span>
+          <span style="text-align:center">{{ s.bilangan }}</span>
+          <span style="text-align:right">{{ s.gross | number:'1.2-2' }}</span>
+          <span style="text-align:right" class="rc-fee">
+            {{ s.fee > 0 ? (s.fee | number:'1.2-2') : '—' }}
+          </span>
+          <span style="text-align:right" class="rc-net">{{ s.net | number:'1.2-2' }}</span>
+        </div>
+      }
+
+      @if (d.ringkasan.length) {
+        <div class="rc-tr rc-total" style="grid-template-columns:1fr 2fr 1.2fr .9fr 1fr 1fr 1.1fr">
+          <span></span><span>JUMLAH</span><span></span><span></span>
+          <span style="text-align:right">{{ jumlahGross() | number:'1.2-2' }}</span>
+          <span style="text-align:right">{{ jumlahFee() | number:'1.2-2' }}</span>
+          <span style="text-align:right">{{ jumlahNet() | number:'1.2-2' }}</span>
+        </div>
+      } @else {
+        <div class="rc-empty">Tiada bayaran berjaya dalam julat ini.</div>
+      }
+    </div>
+
+    <!-- ===== TRANSAKSI ===== -->
+    <h3 class="rc-h3">Transaksi</h3>
+    <p class="rc-sub">
+      Termasuk yang gagal dan tertunggak — transaksi yang tidak pernah selesai
+      bukan bayaran, tetapi ia sebahagian daripada gambaran.
+    </p>
+
+    <div class="rc-tbl">
+      <div class="rc-tr rc-th" style="grid-template-columns:1.5fr 1.4fr .9fr .9fr .9fr .9fr 1fr 1.3fr">
+        <span>Rujukan Kami</span><span>Rujukan Gerbang</span>
+        <span style="text-align:right">Amaun</span>
+        <span style="text-align:right">Caj</span>
+        <span style="text-align:right">Diterima</span>
+        <span style="text-align:center">Status</span>
+        <span>Resit</span><span>Masalah</span>
+      </div>
+
+      @for (t of barisan(); track t.id) {
+        <div class="rc-tr" [class.rc-bad]="t.masalah"
+             style="grid-template-columns:1.5fr 1.4fr .9fr .9fr .9fr .9fr 1fr 1.3fr">
+          <span>
+            <span class="rc-code">{{ t.ourRef }}</span>
+            <span class="rc-dim">{{ t.spCode }} · {{ t.gateway }}</span>
+          </span>
+          <span class="rc-dim">{{ t.gatewayRef || '—' }}</span>
+          <span style="text-align:right">{{ t.amount | number:'1.2-2' }}</span>
+          <span style="text-align:right" class="rc-fee">
+            {{ t.fee ? (t.fee | number:'1.2-2') : '—' }}
+          </span>
+          <span style="text-align:right">
+            {{ t.paidAmount ? (t.paidAmount | number:'1.2-2') : '—' }}
+          </span>
+          <span style="text-align:center">
+            <span class="rc-pill"
+                  [style.background]="warnaStatus(t.status).bg"
+                  [style.color]="warnaStatus(t.status).c">{{ t.status }}</span>
+          </span>
+          <span>
+            @if (t.receiptNo) {
+              <span class="rc-receipt">{{ t.receiptNo }}</span>
+            } @else {
+              <span class="rc-dim">—</span>
+            }
+          </span>
+          <span>
+            @if (t.masalah) {
+              <span class="rc-issue">{{ t.masalah }}</span>
+            } @else {
+              <span class="rc-dim">—</span>
+            }
+          </span>
+        </div>
+      }
+
+      @if (!barisan().length) {
+        <div class="rc-empty">
+          {{ hanyaMasalah() ? 'Tiada transaksi bermasalah.' : 'Tiada transaksi dalam julat ini.' }}
+        </div>
+      }
+    </div>
+  }
+</div>
