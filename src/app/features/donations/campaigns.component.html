@@ -1,0 +1,288 @@
+<div class="dn-wrap">
+  <div class="dn-head">
+    <div>
+      <h1>Kutipan Derma</h1>
+      <p>Cipta borang bayaran dan kongsi pautan untuk menerima sumbangan.</p>
+    </div>
+    <button class="dn-btn pri" (click)="bukaTambah()">+ Cipta Borang Bayaran</button>
+  </div>
+
+  @if (error()) { <div class="dn-alert">{{ error() }}</div> }
+  @if (ok()) { <div class="dn-ok">{{ ok() }}</div> }
+
+  @if (rows().length) {
+    <div class="dn-kpis">
+      <div class="dn-kpi">
+        <div class="dn-kpi-lbl">Jumlah Terkumpul</div>
+        <div class="dn-kpi-val">MYR {{ jumlahTerkumpul() | number:'1.2-2' }}</div>
+      </div>
+      <div class="dn-kpi">
+        <div class="dn-kpi-lbl">Penderma</div>
+        <div class="dn-kpi-val">{{ jumlahPenderma() }}</div>
+      </div>
+      <div class="dn-kpi">
+        <div class="dn-kpi-lbl">Kempen Aktif</div>
+        <div class="dn-kpi-val">{{ bilAktif() }}</div>
+      </div>
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="dn-empty">Memuatkan…</div>
+  } @else if (!rows().length) {
+    <div class="dn-empty">
+      <div class="dn-empty-ic">🤲</div>
+      <h3>Belum ada kutipan</h3>
+      <p>Cipta borang bayaran untuk mula menerima sumbangan.</p>
+      <button class="dn-btn pri" (click)="bukaTambah()">+ Cipta Borang Bayaran</button>
+    </div>
+  } @else {
+    <div class="dn-grid">
+      @for (c of rows(); track c.id) {
+        <div class="dn-card">
+          @if (c.posterUrl) {
+            <div class="dn-poster" [style.background-image]="'url(' + c.posterUrl + ')'"></div>
+          } @else {
+            <div class="dn-poster none">🤲</div>
+          }
+
+          <div class="dn-body">
+            <div class="dn-top">
+              <span class="dn-pill"
+                    [style.background]="warnaStatus(c.status).bg"
+                    [style.color]="warnaStatus(c.status).c">
+                {{ labelStatus(c.status) }}
+              </span>
+              <span class="dn-type">{{ c.campaignType }}</span>
+            </div>
+
+            <h3 class="dn-title">{{ c.title }}</h3>
+            @if (c.description) {
+              <p class="dn-desc">{{ c.description }}</p>
+            }
+
+            <div class="dn-raised">
+              <span class="dn-amt">MYR {{ c.raised | number:'1.2-2' }}</span>
+              @if (c.targetAmount) {
+                <span class="dn-target">daripada MYR {{ c.targetAmount | number:'1.2-2' }}</span>
+              } @else {
+                <span class="dn-target">kutipan terbuka</span>
+              }
+            </div>
+
+            @if (c.targetAmount) {
+              <div class="dn-bar">
+                <div class="dn-fill" [style.width.%]="peratus(c)"></div>
+              </div>
+              <div class="dn-pct">{{ peratus(c) }}% · {{ c.donors }} penderma</div>
+            } @else {
+              <div class="dn-pct">{{ c.donors }} penderma</div>
+            }
+
+            <div class="dn-link">
+              <span class="dn-link-url">{{ pautan(c.slug) }}</span>
+              <button class="dn-copy" (click)="salinPautan(c.slug)" title="Salin pautan">
+                📋
+              </button>
+            </div>
+
+            <div class="dn-foot">
+              <button class="dn-btn ghost" (click)="bukaEdit(c)">Edit</button>
+              <a class="dn-btn ghost" [href]="pautan(c.slug)" target="_blank">Lihat Borang</a>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+<!-- ===== BORANG KEMPEN ===== -->
+@if (formOpen()) {
+  <div class="dn-ov modal-back top">
+    <div class="dn-modal modal-card">
+      <div class="dn-modal-head">
+        <div>
+          <div class="dn-modal-title">
+            {{ editingId() === null ? 'Cipta Borang Bayaran' : 'Edit Kutipan' }}
+          </div>
+          <div class="dn-modal-sub">Borang yang penderma akan lihat</div>
+        </div>
+        <button class="dn-x" (click)="tutupForm()">&times;</button>
+      </div>
+
+      @if (formError()) { <div class="dn-alert" style="margin:14px 24px 0">{{ formError() }}</div> }
+
+      <div class="dn-modal-body">
+
+        <div class="dn-sec">Maklumat Kutipan</div>
+
+        <label class="dn-lbl">Nama Kutipan <span class="req">*</span></label>
+        <input class="dn-fld" [(ngModel)]="f.title" (ngModelChange)="tajukBerubah()"
+               placeholder="cth: Tabung Pembinaan Surau" />
+
+        <label class="dn-lbl">Keterangan</label>
+        <textarea class="dn-fld" rows="3" [(ngModel)]="f.description"
+                  placeholder="Terangkan tujuan kutipan ini"></textarea>
+
+        <label class="dn-lbl">Poster</label>
+        <div class="dn-upload">
+          @if (f.posterUrl) {
+            <div class="dn-thumb" [style.background-image]="'url(' + f.posterUrl + ')'"></div>
+          }
+          <div style="flex:1">
+            <input type="file" accept="image/jpeg,image/png" (change)="pilihPoster($event)"
+                   [disabled]="uploading()" />
+            <div class="dn-hint">
+              @if (uploading()) {
+                Memuat naik…
+              } @else {
+                JPEG atau PNG, maksimum 2MB.<br />
+                <b>Saiz disyorkan: 1080 × 1440 piksel (nisbah 3:4, menegak)</b><br />
+                Poster menegak dipaparkan penuh tanpa dipotong — sama
+                seperti poster yang dikongsi dalam WhatsApp.
+              }
+            </div>
+          </div>
+        </div>
+
+        <div class="dn-row">
+          <div style="flex:1">
+            <label class="dn-lbl">Jenis</label>
+            <select class="dn-fld" [(ngModel)]="f.campaignType">
+              @for (j of jenisKempen; track j.v) {
+                <option [value]="j.v">{{ j.l }}</option>
+              }
+            </select>
+          </div>
+          <div style="flex:1">
+            <label class="dn-lbl">Status</label>
+            <select class="dn-fld" [(ngModel)]="f.status">
+              <option value="DRAFT">Draf</option>
+              <option value="ACTIVE">Aktif</option>
+              <option value="CLOSED">Ditutup</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="dn-row">
+          <div style="flex:1">
+            <label class="dn-lbl">Tarikh Mula</label>
+            <input class="dn-fld" type="date" [(ngModel)]="f.startDate" />
+          </div>
+          <div style="flex:1">
+            <label class="dn-lbl">Tarikh Tamat</label>
+            <input class="dn-fld" type="date" [(ngModel)]="f.endDate" />
+          </div>
+        </div>
+
+        <label class="dn-lbl">
+          Pautan Awam <span class="req">*</span>
+          @if (editingId() !== null) {
+            <span class="dn-warn-inline">— menukarnya memecahkan pautan yang sudah dikongsi</span>
+          }
+        </label>
+        <div class="dn-slug">
+          <span class="dn-slug-pre">{{ pautan('') }}</span>
+          <input class="dn-fld" [(ngModel)]="f.slug" placeholder="tabung-surau" />
+        </div>
+
+        <div class="dn-sec">Sasaran &amp; Amaun</div>
+
+        <div class="dn-row">
+          <div style="flex:1">
+            <label class="dn-lbl">Sasaran (MYR)</label>
+            <input class="dn-fld" type="number" step="0.01" min="0"
+                   [(ngModel)]="f.targetAmount" placeholder="kosong = kutipan terbuka" />
+          </div>
+          <div style="flex:1">
+            <label class="dn-lbl">Minimum (MYR)</label>
+            <input class="dn-fld" type="number" step="0.01" min="0"
+                   [(ngModel)]="f.minAmount" placeholder="kosong = tiada minimum" />
+          </div>
+        </div>
+
+        <label class="dn-lbl">Amaun Pilihan Pantas</label>
+        <div class="dn-presets">
+          @for (p of presets; track $index; let i = $index) {
+            <div class="dn-preset">
+              <input class="dn-fld" type="number" [(ngModel)]="presets[i]" />
+              <button class="dn-preset-x" (click)="buangPreset(i)">×</button>
+            </div>
+          }
+          @if (presets.length < 4) {
+            <button class="dn-btn ghost" (click)="tambahPreset()">+ Tambah</button>
+          }
+        </div>
+
+        <label class="dn-check">
+          <input type="checkbox" [(ngModel)]="f.allowCustom" />
+          Benarkan penderma masukkan amaun sendiri
+        </label>
+
+        <div class="dn-sec">Maklumat Penderma</div>
+
+        <div class="dn-checks">
+          <label class="dn-check">
+            <input type="checkbox" [(ngModel)]="f.requireName" /> Nama
+          </label>
+          <label class="dn-check">
+            <input type="checkbox" [(ngModel)]="f.requireEmail" /> E-mel
+          </label>
+          <label class="dn-check">
+            <input type="checkbox" [(ngModel)]="f.requirePhone" /> No. Telefon
+          </label>
+          <label class="dn-check">
+            <input type="checkbox" [(ngModel)]="f.requireAccount" /> No. Akaun
+          </label>
+        </div>
+
+        <label class="dn-check">
+          <input type="checkbox" [(ngModel)]="f.allowAnonymous" />
+          Benarkan derma tanpa nama
+        </label>
+
+        <div class="dn-sec">Caj Transaksi</div>
+
+        <div class="dn-absorb">
+          <label class="dn-radio">
+            <input type="radio" name="absorb" [value]="null"
+                   [(ngModel)]="f.absorbFee" />
+            <span>
+              <b>Ikut tetapan organisasi</b>
+              <span class="dn-hint">Guna tetapan lalai yang ditetapkan platform</span>
+            </span>
+          </label>
+          <label class="dn-radio">
+            <input type="radio" name="absorb" [value]="false"
+                   [(ngModel)]="f.absorbFee" />
+            <span>
+              <b>Penderma tanggung caj</b>
+              <span class="dn-hint">Caj ditambah kepada jumlah yang dibayar</span>
+            </span>
+          </label>
+          <label class="dn-radio">
+            <input type="radio" name="absorb" [value]="true"
+                   [(ngModel)]="f.absorbFee" />
+            <span>
+              <b>Organisasi tanggung caj</b>
+              <span class="dn-hint">Caj ditolak daripada kutipan</span>
+            </span>
+          </label>
+        </div>
+
+        <label class="dn-check">
+          <input type="checkbox" [(ngModel)]="f.autoReceipt" />
+          Hantar resit automatik ke e-mel penderma
+        </label>
+      </div>
+
+      <div class="dn-modal-foot">
+        <button class="dn-btn ghost" (click)="tutupForm()">Batal</button>
+        <button class="dn-btn pri" [disabled]="saving()" (click)="simpan()">
+          {{ saving() ? 'Menyimpan…' : 'Simpan' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,202 @@
+<div class="m-fade">
+  <div class="md-head">
+    <div>
+      <h1>Sumbangan</h1>
+      <p>Kutipan derma daripada organisasi yang anda berdaftar.</p>
+    </div>
+  </div>
+
+  @if (hasil(); as h) {
+    <div class="md-result" [class.bad]="!h.ok">
+      <div class="md-result-ic">{{ h.ok ? '✓' : '!' }}</div>
+      <div>
+        <div class="md-result-title">
+          {{ h.ok ? 'Terima Kasih' : 'Bayaran Gagal' }}
+          @if (h.amount) { <span class="md-result-amt">MYR {{ h.amount | number:'1.2-2' }}</span> }
+        </div>
+        <div class="md-result-msg">{{ h.msg }}</div>
+        @if (h.receiptNo) {
+          <div class="md-result-msg">No. Resit: <b>{{ h.receiptNo }}</b></div>
+        }
+      </div>
+    </div>
+  }
+
+  @if (error()) { <div class="md-alert">{{ error() }}</div> }
+
+  @if (loading()) {
+    <div class="md-empty">Memuatkan…</div>
+  } @else if (!rows().length) {
+    <div class="md-empty">
+      <div class="md-empty-ic">🤲</div>
+      <h3>Tiada kutipan aktif</h3>
+      <p>Organisasi anda belum membuka sebarang kutipan derma.</p>
+    </div>
+  } @else {
+    <div class="md-grid">
+      @for (c of rows(); track c.id) {
+        <div class="md-card">
+          @if (c.posterUrl) {
+            <div class="md-poster" [style.background-image]="'url(' + c.posterUrl + ')'"></div>
+          } @else {
+            <div class="md-poster none">🤲</div>
+          }
+
+          <div class="md-body">
+            <div class="md-org">{{ c.spName }}</div>
+            <h3 class="md-title">{{ c.title }}</h3>
+            @if (c.description) { <p class="md-desc">{{ c.description }}</p> }
+
+            <div class="md-raised">
+              <span class="md-amt">MYR {{ c.raised | number:'1.2-2' }}</span>
+              @if (c.targetAmount) {
+                <span class="md-target">/ MYR {{ c.targetAmount | number:'1.2-2' }}</span>
+              }
+            </div>
+
+            @if (c.targetAmount) {
+              <div class="md-bar"><div class="md-fill" [style.width.%]="peratus(c)"></div></div>
+            }
+            <div class="md-donors">{{ c.donors }} penderma</div>
+
+            <button class="md-btn" (click)="buka(c)">Sumbang</button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+<!-- ===== MODAL SUMBANG ===== -->
+@if (open()) {
+  <div class="md-ov modal-back top">
+    <div class="md-modal modal-card">
+      <div class="md-modal-head">
+        <div>
+          <div class="md-modal-title">{{ aktif()?.title }}</div>
+          <div class="md-modal-sub">{{ aktif()?.spName }}</div>
+        </div>
+        <button class="md-x" (click)="tutup()">&times;</button>
+      </div>
+
+      @if (modalError()) { <div class="md-alert" style="margin:14px 22px 0">{{ modalError() }}</div> }
+
+      <div class="md-modal-body">
+        @if (aktif(); as c) {
+          @if (c.posterUrl) {
+            <div class="md-modal-poster"
+                 [style.background-image]="'url(' + c.posterUrl + ')'"></div>
+          }
+
+          @if (c.description) {
+            <p class="md-modal-desc">{{ c.description }}</p>
+          }
+
+          <div class="md-modal-raised">
+            <div>
+              <div class="md-modal-amt">MYR {{ c.raised | number:'1.2-2' }}</div>
+              @if (c.targetAmount) {
+                <div class="md-modal-target">
+                  daripada sasaran MYR {{ c.targetAmount | number:'1.2-2' }}
+                </div>
+              } @else {
+                <div class="md-modal-target">terkumpul setakat ini</div>
+              }
+            </div>
+            <div style="text-align:right">
+              <div class="md-modal-amt" style="color:var(--ink)">{{ c.donors }}</div>
+              <div class="md-modal-target">penderma</div>
+            </div>
+          </div>
+
+          @if (c.targetAmount) {
+            <div class="md-bar" style="margin:10px 0 4px">
+              <div class="md-fill" [style.width.%]="peratus(c)"></div>
+            </div>
+          }
+
+          @if (c.presets.length) {
+            <label class="md-lbl">Pilih jumlah</label>
+            <div class="md-chips">
+              @for (p of c.presets; track p) {
+                <button type="button" class="md-chip" [class.on]="amaun === p"
+                        (click)="pilihAmaun(p)">
+                  MYR {{ p | number:'1.0-0' }}
+                </button>
+              }
+            </div>
+          }
+
+          @if (c.allowCustom) {
+            <label class="md-lbl">Atau jumlah lain (MYR)</label>
+            <input class="md-fld md-amt-in" type="number" step="0.01" name="amaun"
+                   [(ngModel)]="amaun"
+                   (ngModelChange)="amaunBerubah(); tandaSentuh()"
+                   placeholder="0.00" />
+          }
+
+          @if (c.allowAnonymous) {
+            <label class="md-check">
+              <input type="checkbox" name="anon" [(ngModel)]="anonymous" />
+              Derma tanpa nama
+            </label>
+          }
+
+          <label class="md-lbl">Nama</label>
+          <input class="md-fld" name="dnama" [(ngModel)]="nama"
+                 (ngModelChange)="tandaSentuh()" placeholder="Nama penuh"
+                 [disabled]="anonymous" />
+
+          <label class="md-lbl">E-mel</label>
+          <input class="md-fld" type="email" name="demel" [(ngModel)]="emel"
+                 (ngModelChange)="tandaSentuh()" placeholder="untuk resit" />
+
+          <label class="md-lbl">No. Telefon</label>
+          <input class="md-fld" type="text" inputmode="tel" name="dtel"
+                 [(ngModel)]="telefon" placeholder="pilihan" />
+
+          <p class="md-info">
+            Diisi daripada profil anda — boleh diubah jika perlu.
+          </p>
+
+          @if (fee(); as f) {
+            <div class="md-break">
+              <div class="md-break-row">
+                <span>Sumbangan</span>
+                <span>MYR {{ f.amount | number:'1.2-2' }}</span>
+              </div>
+              @if (!f.absorb && f.fee > 0) {
+                <div class="md-break-row">
+                  <span>Caj transaksi</span>
+                  <span>MYR {{ f.fee | number:'1.2-2' }}</span>
+                </div>
+              }
+              <div class="md-break-row total">
+                <span>Jumlah dibayar</span>
+                <span>MYR {{ f.charged | number:'1.2-2' }}</span>
+              </div>
+              @if (f.absorb && f.fee > 0) {
+                <p class="md-break-note">
+                  Caj transaksi ditanggung oleh pihak pengurusan.
+                </p>
+              }
+            </div>
+          }
+
+          @if (disentuh && halangan(); as h) {
+            <div class="md-halang">{{ h }}</div>
+          }
+        }
+      </div>
+
+      <div class="md-modal-foot">
+        <button class="md-btn ghost" (click)="tutup()">Batal</button>
+        <button class="md-btn pri" [disabled]="!bolehHantar()" (click)="hantar()">
+          @if (busy()) { <span class="spin"></span> }
+          {{ busy() ? 'Menghubungkan…'
+              : 'Sumbang MYR ' + ((fee()?.charged ?? amaun ?? 0) | number:'1.2-2') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

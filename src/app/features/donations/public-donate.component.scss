@@ -1,0 +1,179 @@
+:host { display: block; min-height: 100vh; background: #eef2ef; }
+
+.pd-page {
+  max-width: 520px; margin: 0 auto; padding: 28px 16px 40px;
+}
+
+.pd-card {
+  background: #fff; border-radius: 20px; overflow: hidden;
+  box-shadow: 0 6px 28px rgba(9, 20, 26, .08);
+}
+
+/* Borang awam: poster kekal PENUH.
+ *
+ * Ini skrin yang penderma lihat sebelum memutuskan — memotong separuh
+ * poster bermakna memotong sebab mereka patut menderma. */
+.pd-poster {
+  width: 100%;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-color: #f4f7f4;
+  aspect-ratio: 3 / 4;
+}
+
+.pd-body { padding: 24px; }
+
+.pd-org {
+  font-size: 12px; font-weight: 700; color: #16a34a;
+  text-transform: uppercase; letter-spacing: .05em;
+}
+.pd-title {
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 23px;
+  margin: 6px 0 8px; color: #122029; line-height: 1.3;
+}
+.pd-desc { font-size: 14px; color: #5e6d73; line-height: 1.6; margin: 0 0 18px; }
+
+.pd-raised {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 16px; padding: 14px 16px; background: #f4fbf6;
+  border: 1px solid #d5e9db; border-radius: 13px;
+}
+.pd-amt {
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 24px;
+  color: #16a34a;
+}
+.pd-target { font-size: 12px; color: #6b7f86; margin-top: 2px; }
+.pd-donors { text-align: right; }
+.pd-donors-n {
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 20px;
+  color: #122029;
+}
+
+.pd-bar {
+  height: 9px; background: #e6ebe7; border-radius: 99px;
+  overflow: hidden; margin-top: 12px;
+}
+.pd-fill { height: 100%; background: linear-gradient(90deg, #bcd634, #16a34a); }
+
+.pd-result {
+  display: flex; gap: 13px; margin-top: 18px; padding: 14px 16px;
+  background: #e7f6ec; border: 1.5px solid #b6e3c6; border-radius: 13px;
+}
+.pd-result.bad { background: #fdecec; border-color: #f3c9c9; }
+.pd-result-ic {
+  width: 30px; height: 30px; flex: none; border-radius: 50%;
+  background: #16a34a; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 16px;
+}
+.pd-result.bad .pd-result-ic { background: #c2564c; }
+.pd-result-title {
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 15px;
+  color: #122029;
+}
+.pd-result-msg { font-size: 13px; color: #3a4c53; margin-top: 2px; }
+
+.pd-sec {
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 12px;
+  color: #6b7f86; letter-spacing: .05em; text-transform: uppercase;
+  margin: 24px 0 12px;
+}
+
+.pd-chips { display: flex; gap: 9px; flex-wrap: wrap; }
+.pd-chip {
+  flex: 1; min-width: 92px; padding: 14px 10px; cursor: pointer;
+  border: 1.8px solid #dbe3de; border-radius: 12px; background: #fff;
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 15px;
+  color: #122029;
+}
+.pd-chip.on { border-color: #16a34a; background: #f4fbf6; color: #16a34a; }
+
+.pd-lbl {
+  display: block; font-size: 12.5px; font-weight: 700; color: #122029;
+  margin: 16px 0 6px;
+}
+.pd-lbl .req { color: #d64545; }
+
+.pd-fld {
+  width: 100%; padding: 13px 14px; border: 1.8px solid #dbe3de;
+  border-radius: 12px; font-size: 15px; box-sizing: border-box;
+  font-family: inherit; color: #122029;
+}
+.pd-fld:focus { outline: none; border-color: #16a34a; }
+.pd-amt-in {
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 19px;
+}
+.pd-hint { font-size: 11.5px; color: #94a3a9; margin-top: 5px; }
+
+.pd-check {
+  display: flex; align-items: center; gap: 10px; cursor: pointer;
+  font-size: 14px; color: #122029; padding: 12px 0;
+}
+.pd-check input { width: 18px; height: 18px; accent-color: #16a34a; }
+
+.pd-break {
+  margin-top: 20px; padding: 14px 16px; border-radius: 13px;
+  background: #f4fbf6; border: 1px solid #d5e9db;
+}
+.pd-break-row {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 14px; color: #3a4c53; padding: 4px 0;
+}
+.pd-break-row.total {
+  margin-top: 9px; padding-top: 11px; border-top: 1px solid #d5e9db;
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 16px;
+  color: #122029;
+}
+.pd-break-note {
+  font-size: 12px; color: #16a34a; margin: 9px 0 0; font-weight: 600;
+  line-height: 1.5;
+}
+
+.pd-alert {
+  margin-top: 16px; padding: 12px 14px; border-radius: 11px;
+  background: #fdecec; color: #b0151e; font-size: 13.5px;
+}
+
+.pd-halang {
+  margin-top: 16px; padding: 11px 14px; border-radius: 11px;
+  background: #fdf4e3; border: 1px solid #f0e0c0;
+  font-size: 13px; color: #7a5a12; line-height: 1.5;
+}
+
+.pd-go {
+  width: 100%; margin-top: 20px; padding: 16px; border: none;
+  border-radius: 13px; cursor: pointer; background: #16a34a; color: #fff;
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 16px;
+}
+.pd-go:disabled { opacity: .45; cursor: default; }
+
+.pd-secure {
+  font-size: 12px; color: #94a3a9; text-align: center; margin: 14px 0 0;
+  line-height: 1.5;
+}
+
+.pd-empty { padding: 50px 24px; text-align: center; color: #6b7f86; }
+.pd-empty-ic { font-size: 38px; margin-bottom: 12px; }
+.pd-empty h3 {
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 18px;
+  color: #122029; margin: 0 0 6px;
+}
+.pd-empty p { margin: 0; font-size: 14px; }
+
+.pd-brand {
+  text-align: center; font-size: 11.5px; color: #94a3a9; margin-top: 18px;
+}
+
+
+/* Pemutar pada butang semasa menunggu gerbang.
+ *
+ * Panggilan mengambil 1-2 saat dan hampir kesemuanya ialah masa menunggu
+ * ToyyibPay. Pemutar menjadikan penantian itu kelihatan disengajakan. */
+.spin {
+  display: inline-block; width: 14px; height: 14px; margin-right: 8px;
+  border: 2px solid rgba(255,255,255,.35); border-top-color: #fff;
+  border-radius: 50%; animation: spin .7s linear infinite;
+  vertical-align: -2px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }

@@ -1,0 +1,212 @@
+:host { display: block; }
+
+.md-head { margin-bottom: 20px; }
+.md-head h1 {
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 28px;
+  margin: 0 0 4px; color: var(--ink);
+}
+.md-head p { color: var(--muted); font-size: 15px; margin: 0; }
+
+.md-alert {
+  margin-bottom: 14px; padding: 12px 15px; border-radius: 11px;
+  background: #fdecec; color: #b0151e; font-size: 14px;
+}
+
+.md-result {
+  display: flex; gap: 13px; margin-bottom: 18px; padding: 15px 17px;
+  background: #e7f6ec; border: 1.5px solid #b6e3c6; border-radius: 14px;
+}
+.md-result.bad { background: #fdecec; border-color: #f3c9c9; }
+.md-result-ic {
+  width: 32px; height: 32px; flex: none; border-radius: 50%;
+  background: #16a34a; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 16px;
+}
+.md-result.bad .md-result-ic { background: #c2564c; }
+.md-result-title {
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 15.5px;
+  color: #122029; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+}
+.md-result-amt { color: #16a34a; }
+.md-result-msg { font-size: 13.5px; color: #3a4c53; margin-top: 3px; }
+
+.md-empty {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 18px; padding: 50px 24px; text-align: center; color: var(--muted);
+}
+.md-empty-ic { font-size: 38px; margin-bottom: 12px; }
+.md-empty h3 {
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 18px;
+  color: var(--ink); margin: 0 0 6px;
+}
+.md-empty p { margin: 0; font-size: 14px; }
+
+.md-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
+
+.md-card {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 16px; overflow: hidden; display: flex; flex-direction: column;
+}
+.md-poster {
+  height: 140px; background-size: cover; background-position: center;
+  background-color: var(--surface-alt);
+}
+.md-poster.none {
+  height: 140px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 38px; opacity: .35;
+}
+
+.md-body { padding: 16px 18px 18px; display: flex; flex-direction: column; flex: 1; }
+.md-org {
+  font-size: 11px; font-weight: 700; color: #16a34a;
+  text-transform: uppercase; letter-spacing: .05em;
+}
+.md-title {
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 17px;
+  margin: 5px 0 6px; color: var(--ink); line-height: 1.35;
+}
+.md-desc {
+  font-size: 13px; color: var(--muted); margin: 0 0 12px; line-height: 1.5;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.md-raised { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.md-amt {
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 19px; color: #16a34a;
+}
+.md-target { font-size: 12.5px; color: var(--muted); }
+
+.md-bar {
+  height: 7px; background: var(--surface-alt); border-radius: 99px;
+  overflow: hidden; margin: 9px 0 5px;
+}
+.md-fill { height: 100%; background: linear-gradient(90deg, #bcd634, #16a34a); }
+.md-donors { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+
+.md-btn {
+  font-family: 'Sora', sans-serif; font-weight: 700; font-size: 14px;
+  padding: 12px 20px; border-radius: 11px; cursor: pointer; border: none;
+  background: #16a34a; color: #fff; margin-top: auto; width: 100%;
+}
+.md-btn.ghost {
+  background: var(--surface); color: var(--ink);
+  border: 1.5px solid var(--line); flex: 1; width: auto; margin: 0;
+}
+.md-btn.pri { flex: 1.6; width: auto; margin: 0; }
+.md-btn:disabled { opacity: .5; cursor: default; }
+
+/* ===== Modal ===== */
+.md-ov { z-index: 250; }
+.md-modal {
+  border-radius: 18px; width: 100%; max-width: 520px;
+  max-height: 88vh; display: flex; flex-direction: column; overflow: hidden;
+}
+.md-modal-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 20px 22px; border-bottom: 1px solid var(--line); gap: 14px;
+}
+.md-modal-title {
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 18px; color: var(--ink);
+}
+.md-modal-sub { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+.md-x {
+  border: none; background: var(--surface-alt); width: 31px; height: 31px;
+  border-radius: 9px; font-size: 17px; cursor: pointer; color: var(--muted); flex: none;
+}
+.md-modal-body { flex: 1; min-height: 0; overflow-y: auto; padding: 18px 22px; }
+
+/* Poster PENUH dalam modal.
+ *
+ * Kad memotong poster dengan cover untuk menjaga grid kemas; modal ialah
+ * tempat penderma melihat apa yang mereka sumbangkan, jadi tiada yang
+ * dipotong. */
+.md-modal-poster {
+  width: 100%; aspect-ratio: 3 / 4; border-radius: 12px;
+  background-size: contain; background-repeat: no-repeat;
+  background-position: center; background-color: var(--surface-alt);
+  margin-bottom: 14px;
+}
+.md-modal-desc {
+  font-size: 13.5px; color: var(--muted); line-height: 1.6; margin: 0 0 14px;
+}
+.md-modal-raised {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 16px; padding: 13px 15px; background: #f4fbf6;
+  border: 1px solid #d5e9db; border-radius: 12px; margin-bottom: 6px;
+}
+.md-modal-amt {
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 20px; color: #16a34a;
+}
+.md-modal-target { font-size: 11.5px; color: #6b7f86; margin-top: 2px; }
+.md-modal-foot {
+  display: flex; gap: 10px; padding: 16px 22px; border-top: 1px solid var(--line);
+}
+
+.md-lbl {
+  display: block; font-size: 12.5px; font-weight: 700; color: var(--ink);
+  margin: 14px 0 8px;
+}
+.md-lbl:first-child { margin-top: 0; }
+
+.md-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.md-chip {
+  flex: 1; min-width: 84px; padding: 12px 8px; cursor: pointer;
+  border: 1.8px solid var(--line); border-radius: 11px;
+  background: var(--surface); color: var(--ink);
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 14px;
+}
+.md-chip.on { border-color: #16a34a; background: #f4fbf6; color: #16a34a; }
+
+.md-fld {
+  width: 100%; padding: 12px 13px; border: 1.8px solid var(--line);
+  border-radius: 11px; font-size: 15px; box-sizing: border-box;
+  background: var(--surface); color: var(--ink); font-family: inherit;
+}
+.md-fld:focus { outline: none; border-color: #16a34a; }
+.md-amt-in { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 18px; }
+
+.md-check {
+  display: flex; align-items: center; gap: 9px; cursor: pointer;
+  font-size: 13.5px; color: var(--ink); margin-top: 14px;
+}
+.md-check input { width: 17px; height: 17px; accent-color: #16a34a; }
+
+.md-info {
+  font-size: 12px; color: var(--muted); margin: 12px 0 0; line-height: 1.5;
+}
+
+.md-break {
+  margin-top: 16px; padding: 13px 15px; border-radius: 12px;
+  background: #f4fbf6; border: 1px solid #d5e9db;
+}
+.md-break-row {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 13.5px; color: #3a4c53; padding: 3px 0;
+}
+.md-break-row.total {
+  margin-top: 8px; padding-top: 10px; border-top: 1px solid #d5e9db;
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 15px; color: #122029;
+}
+.md-break-note { font-size: 12px; color: #16a34a; margin: 8px 0 0; font-weight: 600; }
+
+.md-halang {
+  margin-top: 14px; padding: 10px 13px; border-radius: 10px;
+  background: #fdf4e3; border: 1px solid #f0e0c0;
+  font-size: 12.5px; color: #7a5a12; line-height: 1.5;
+}
+
+
+/* Pemutar pada butang semasa menunggu gerbang.
+ *
+ * Panggilan mengambil 1-2 saat dan hampir kesemuanya ialah masa menunggu
+ * ToyyibPay. Pemutar menjadikan penantian itu kelihatan disengajakan. */
+.spin {
+  display: inline-block; width: 14px; height: 14px; margin-right: 8px;
+  border: 2px solid rgba(255,255,255,.35); border-top-color: #fff;
+  border-radius: 50%; animation: spin .7s linear infinite;
+  vertical-align: -2px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }

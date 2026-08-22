@@ -79,6 +79,18 @@ export const routes: Routes = [
           import('./features/expenses/categories.component').then(m => m.ExpCategoriesComponent)
       },
       {
+        path: 'donations/my',
+        loadComponent: () =>
+          import('./features/donations/my-donations.component')
+            .then(m => m.MyDonationsComponent)
+      },
+      {
+        path: 'donations/campaigns', canActivate: [spAdminGuard],
+        loadComponent: () =>
+          import('./features/donations/campaigns.component')
+            .then(m => m.CampaignsComponent)
+      },
+      {
         path: 'memos', canActivate: [spAdminGuard],
         loadComponent: () =>
           import('./features/memo/memo-list.component').then(m => m.MemoListComponent)
@@ -252,6 +264,15 @@ export const routes: Routes = [
             .then(m => m.GatewaySettingsComponent)
       }
     ]
+  },
+
+  // Borang derma awam — tiada shell, tiada guard. Penderma ialah orang
+  // luar yang membuka pautan daripada WhatsApp.
+  {
+    path: 'derma/:slug',
+    loadComponent: () =>
+      import('./features/donations/public-donate.component')
+        .then(m => m.PublicDonateComponent)
   },
 
   { path: '**', redirectTo: '' }

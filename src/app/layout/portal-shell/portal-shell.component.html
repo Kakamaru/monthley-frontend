@@ -129,6 +129,34 @@
         }
       }
 
+      <!-- Sumbangan — kutipan derma. -->
+      @if (auth.isSpAdmin() && modules.loaded() && modulDitawarkan('SUMBANGAN')) {
+        <button class="grp-btn" (click)="toggleDn()">
+          <span>Sumbangan</span>
+          <span class="chev">{{ dnOpen() ? '▾' : '▸' }}</span>
+        </button>
+
+        @if (!modules.has('SUMBANGAN')) {
+          <div style="padding:0 12px 8px">
+            <span style="font-size:10px;font-weight:700;padding:2px 8px;
+                         border-radius:8px;background:#F59E0B;color:#3A2A00;
+                         text-transform:none;letter-spacing:0;white-space:nowrap">
+              belum dilanggan
+            </span>
+          </div>
+        }
+
+        @if (dnOpen()) {
+          <div class="grp-kids">
+            @for (it of visibleDonations(); track it.id) {
+              <a class="nav" [routerLink]="it.route" routerLinkActive="on">
+                <span class="ic">{{ it.icon }}</span>{{ it.label }}
+              </a>
+            }
+          </div>
+        }
+      }
+
       <!-- Pengurusan Pelajar — sektor pendidikan sahaja. -->
       @if (auth.isSpAdmin() && modules.loaded() && modulDitawarkan('PELAJAR')) {
         <button class="grp-btn" (click)="toggleStu()">

@@ -44,8 +44,8 @@ export class PortalShellComponent {
   readonly navCust: NavItem[] = [
     { id: 'c_dashboard',  icon: '📊',  label: 'Dashboard',  route: '/portal/my-accounts' },
     { id: 'c_accounts',   icon: '📁',  label: 'Akaun Saya', route: '/portal/my-accounts' },
-    { id: 'c_donations',  icon: '🤲',  label: 'Sumbangan' },
     { id: 'c_complaints', icon: '🗣️', label: 'Aduan', route: '/portal/my-complaints' },
+    { id: 'c_donations', icon: '🤲', label: 'Sumbangan', route: '/portal/donations/my' },
     { id: 'c_memo',       icon: '📝',  label: 'Memo', route: '/portal/my-memos' }
   ];
 
@@ -122,6 +122,18 @@ export class PortalShellComponent {
 
   readonly stuOpen = signal(false);
   toggleStu() { this.stuOpen.set(!this.stuOpen()); }
+
+  /** Sumbangan — kutipan derma melalui pautan awam. */
+  readonly navDonations: NavItem[] = [
+    { id: 'dnCamp', icon: '🤲', label: 'Kutipan Derma',
+      route: '/portal/donations/campaigns', roles: ['SP_ADMIN'] }
+  ];
+
+  readonly visibleDonations = computed(() =>
+    this.navDonations.filter(it => this.bolehLihat(it)));
+
+  readonly dnOpen = signal(false);
+  toggleDn() { this.dnOpen.set(!this.dnOpen()); }
 
   /** Memo — satu skrin sahaja, tetapi kumpulan sendiri untuk konsisten. */
   readonly navMemo: NavItem[] = [
