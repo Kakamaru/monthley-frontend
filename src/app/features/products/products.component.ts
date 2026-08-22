@@ -473,6 +473,9 @@ export class ProductsComponent {
   // ── Borang Add/Edit Product ──────────────────────────────────
   readonly formOpen = signal(false);
   readonly saving = signal(false);
+
+  /** Ralat dalam borang produk — berasingan daripada error() halaman. */
+  readonly formError = signal<string | null>(null);
   editingId: number | null = null;
 
   // draft borang — nilai lalai padan design
@@ -515,6 +518,7 @@ export class ProductsComponent {
   }
 
   openAdd() {
+    this.formError.set(null);
     this.editingId = null;
     this.draft = this.blankDraft();
     this.formOpen.set(true);
@@ -523,6 +527,7 @@ export class ProductsComponent {
   closeForm() { this.formOpen.set(false); }
 
   openEdit(p: Product) {
+    this.formError.set(null);
     this.editingId = p.id;
     this.draft = {
       mainProduct: p.mainProduct,
@@ -561,7 +566,18 @@ export class ProductsComponent {
       description: this.draft.description || undefined
     };
     const done = () => { this.saving.set(false); this.formOpen.set(false); this.page.set(0); this.load(); };
-    const fail = (e: any) => { this.saving.set(false); this.error.set('Gagal menyimpan produk.'); console.error(e); };
+    // Ralat dipaparkan DALAM modal, bukan pada halaman di belakangnya:
+    // pengguna sedang melihat borang, dan mesej yang muncul di luar
+    // pandangan kelihatan seperti simpanan gagal tanpa sebab.
+    //
+    // Mesej backend digunakan apabila ada — 'Kod produk INS sudah
+    // digunakan' memberitahu apa yang perlu dibetulkan; 'Gagal menyimpan
+    // produk' tidak.
+    const fail = (e: any) => {
+      this.saving.set(false);
+      this.formError.set(e?.error?.message ?? 'Gagal menyimpan produk.');
+      console.error(e);
+    };
 
     if (this.editingId == null) {
       this.api.create(body).subscribe({ next: done, error: fail });

@@ -58,7 +58,8 @@
           </span>
           <span class="gw-rate">
             1 bil: <b>{{ r.rateSingle ?? 0 | number:'1.2-2' }}</b><br />
-            &gt;1 bil: <b>{{ r.rateMulti ?? 0 | number:'1.2-2' }}</b>
+            &gt;1 bil: <b>{{ r.rateMulti ?? 0 | number:'1.2-2' }}</b><br />
+            &gt;1 akaun: <b>{{ r.rateMultiAcct ?? 0 | number:'1.2-2' }}</b>
           </span>
           <span>
             <span class="gw-chip" [class.ok]="r.absorb" [class.warn]="!r.absorb">
@@ -141,16 +142,27 @@
 
         <div class="gw-row">
           <div style="flex:1">
-            <label class="gw-lbl">Yuran — satu bil (MYR)</label>
+            <label class="gw-lbl">Satu bil (MYR)</label>
             <input class="gw-fld" type="number" step="0.01" min="0"
                    [(ngModel)]="fRateSingle" />
           </div>
           <div style="flex:1">
-            <label class="gw-lbl">Yuran — pelbagai bil (MYR)</label>
+            <label class="gw-lbl">Pelbagai bil (MYR)</label>
             <input class="gw-fld" type="number" step="0.01" min="0"
                    [(ngModel)]="fRateMulti" />
           </div>
+          <div style="flex:1">
+            <label class="gw-lbl">Pelbagai akaun (MYR)</label>
+            <input class="gw-fld" type="number" step="0.01" min="0"
+                   [(ngModel)]="fRateMultiAcct" />
+          </div>
         </div>
+        <p class="gw-hint2">
+          Bilangan <b>akaun</b> mengatasi bilangan bil: bayaran dua akaun dengan
+          lima bil menggunakan kadar pelbagai akaun. Beberapa resit daripada
+          satu transaksi ialah kerja yang lebih besar daripada beberapa bil
+          pada satu akaun.
+        </p>
 
         <label class="gw-lbl">Bayaran minimum (MYR)</label>
         <input class="gw-fld" type="number" step="0.01" min="0"

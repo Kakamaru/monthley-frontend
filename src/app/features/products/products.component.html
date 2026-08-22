@@ -437,6 +437,10 @@
           <button (click)="closeForm()" style="border:none;background:none;font-size:18px;cursor:pointer;color:#e23b3b;font-weight:700">✕</button>
         </div>
 
+      @if (formError()) {
+        <div class="alert" style="margin:14px 0 0">{{ formError() }}</div>
+      }
+
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1.5px solid #dbe3de;border-radius:10px;font-size:14px;font-weight:600">Main Product<input type="checkbox" [(ngModel)]="draft.mainProduct" /></label>
           <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1.5px solid #dbe3de;border-radius:10px;font-size:14px;font-weight:600">Mandatory<input type="checkbox" [(ngModel)]="draft.mandatory" /></label>

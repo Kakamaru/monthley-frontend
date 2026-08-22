@@ -20,6 +20,8 @@ interface GatewaySetting {
   onlinePayment: boolean; keySet: boolean;
   absorb: boolean;
   rateSingle: number | null; rateMulti: number | null;
+  /** Kadar bagi bayaran merentas beberapa AKAUN (ADR 0019). */
+  rateMultiAcct: number | null;
   minAmount: number | null;
 }
 
@@ -51,6 +53,7 @@ export class GatewaySettingsComponent {
   fAbsorb = false;
   fRateSingle: number | null = null;
   fRateMulti: number | null = null;
+  fRateMultiAcct: number | null = null;
   fMinAmount: number | null = null;
 
   constructor() { this.load(); }
@@ -104,6 +107,7 @@ export class GatewaySettingsComponent {
     this.fAbsorb = r.absorb;
     this.fRateSingle = r.rateSingle;
     this.fRateMulti = r.rateMulti;
+    this.fRateMultiAcct = r.rateMultiAcct;
     this.fMinAmount = r.minAmount;
     this.error.set(null);
     this.editOpen.set(true);
@@ -137,6 +141,7 @@ export class GatewaySettingsComponent {
       absorb: this.fAbsorb,
       rateSingle: this.fRateSingle,
       rateMulti: this.fRateMulti,
+      rateMultiAcct: this.fRateMultiAcct,
       minAmount: this.fMinAmount
     }).subscribe({
       next: () => {

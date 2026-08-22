@@ -357,9 +357,15 @@ import { binaCsv, muatTurunCsv } from '../../core/csv';
                         style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:15px;line-height:1">✕</button>
               </span>
             }
+            <!-- blur MENAMBAH juga, bukan Enter sahaja: pengguna yang
+                 menaip emel lalu terus klik Hantar menyangka emel itu
+                 diambil, dan butang yang mati kelihatan seperti sistem
+                 rosak. -->
             <input class="fld" style="flex:1;min-width:220px" type="email"
                    placeholder="Tambah e-mel, tekan Enter"
-                   [(ngModel)]="emailBaharu" (keyup.enter)="tambahEmail()" />
+                   [(ngModel)]="emailBaharu"
+                   (keyup.enter)="tambahEmail()"
+                   (blur)="tambahEmail()" />
           </div>
 
           @if (resendError()) {
@@ -369,7 +375,8 @@ import { binaCsv, muatTurunCsv } from '../../core/csv';
 
         <div style="padding:18px 26px;display:flex;justify-content:flex-end;gap:10px;border-top:1.5px solid var(--line-soft)">
           <button class="btn btn-ghost" (click)="resendOpen.set(false)">Close</button>
-          <button class="btn btn-green" [disabled]="resendBusy() || emails().length === 0"
+          <button class="btn btn-green"
+                  [disabled]="resendBusy() || (emails().length === 0 && !emailBaharu.trim())"
                   (click)="hantar()">
             {{ resendBusy() ? 'Menghantar…' : 'Hantar' }}
           </button>
@@ -760,6 +767,17 @@ export class DocumentsComponent implements OnInit {
     this.resendOpen.set(true);
   }
 
+  /**
+   * Emel yang masih dalam medan diambil sebelum menghantar.
+   *
+   * Tanpa ini, pengguna yang menaip emel dan terus klik Hantar
+   * kehilangannya — dan mesej ralat mengatakan tiada penerima walaupun
+   * emel jelas kelihatan di skrin.
+   */
+  private serapEmailBaharu() {
+    if (this.emailBaharu.trim()) this.tambahEmail();
+  }
+
   tambahEmail() {
     const e = this.emailBaharu.trim();
     if (!e) return;
@@ -783,6 +801,10 @@ export class DocumentsComponent implements OnInit {
   }
 
   hantar() {
+    // Emel yang masih dalam medan diambil dahulu — pengguna yang menaip
+    // dan terus klik Hantar tidak sepatutnya kehilangannya.
+    this.serapEmailBaharu();
+
     const d = this.resendDoc();
     if (!d || this.emails().length === 0) return;
 
